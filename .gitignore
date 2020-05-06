@@ -1,0 +1,16 @@
+/Debug
+/Product
+/Release
+/*.ncb
+/*.suo
+*.user
+/*.bin
+/Version.h
+/ipch
+/MK90BTL.APS
+/trace.log
+/*.sdf
+/*.opensdf
+/*.dsk
+/*.nmst
+/x-*
