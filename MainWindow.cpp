@@ -279,9 +279,6 @@ void MainWindow_RestorePositionAndShow()
     }
 
     ShowWindow(g_hwnd, Settings_GetWindowMaximized() ? SW_SHOWMAXIMIZED : SW_SHOW);
-
-    //if (Settings_GetWindowFullscreen())
-    //    MainWindow_DoViewFullscreen();
 }
 
 // Processes messages for the main window
@@ -435,12 +432,11 @@ void MainWindow_AdjustWindowLayout()
 
     RECT rc;  GetClientRect(g_hwnd, &rc);
 
-    if (!Settings_GetDebug())  // No debug views -- tape/keyboard snapped to bottom
+    if (!Settings_GetDebug())  // No debug views
     {
         cxScreen = rc.right;
 
         int yTape = rc.bottom - cyStatus + 4;
-        //int cyTape = 0;
 
         int yKeyboard = yTape;
         int cxKeyboard = 0, cyKeyboard = 0;
@@ -467,7 +463,7 @@ void MainWindow_AdjustWindowLayout()
     }
     if (Settings_GetDebug())  // Debug views shown -- keyboard/tape snapped to top
     {
-        cxScreen = MK90_SCREEN_WIDTH + 8;
+        cxScreen = 480/*MK90_SCREEN_WIDTH*/ + 8;
         cyScreen = 330;
 
         int yKeyboard = yScreen;
@@ -818,7 +814,7 @@ bool MainWindow_DoCommand(int commandId)
 
 void MainWindow_DoViewDebug()
 {
-    MainWindow_DoViewScreenMode(0);  // Switch to 512x256 Short mode
+    MainWindow_DoViewScreenMode(1);  // Switch to short mode
 
     Settings_SetDebug(!Settings_GetDebug());
     MainWindow_ShowHideDebug();

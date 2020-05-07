@@ -67,76 +67,76 @@ struct KeyboardKeys
 }
 m_arrKeyboardKeys[] =
 {
-    {  18,  23, 22, 18, KEYCLASSLITE, _T("?"),      0007 },
-    {  52,  22, 24, 23, KEYCLASSGRAY, _T("1"),      0124 }, // 1 !
-    {  86,  22, 24, 23, KEYCLASSGRAY, _T("2"),      0011 }, // 2 "
-    { 120,  22, 24, 23, KEYCLASSGRAY, _T("3"),      0121 }, // 3 #
-    { 154,  22, 24, 23, KEYCLASSGRAY, _T("4"),      0012 }, // 4
-    { 188,  22, 24, 23, KEYCLASSGRAY, _T("5"),      0122 }, // 5 %
-    { 222,  22, 24, 23, KEYCLASSGRAY, _T(":"),      0122 }, // :
-    { 256,  22, 24, 23, KEYCLASSGRAY, _T(";"),      0122 }, // ;
+    {  18,  23, 22, 18, KEYCLASSLITE, _T("?"),      0000 }, // Power
+    {  52,  22, 24, 23, KEYCLASSGRAY, _T("1"),      0043 }, // 1 !
+    {  86,  22, 24, 23, KEYCLASSGRAY, _T("2"),      0103 }, // 2 "
+    { 120,  22, 24, 23, KEYCLASSGRAY, _T("3"),      0143 }, // 3 #
+    { 154,  22, 24, 23, KEYCLASSGRAY, _T("4"),      0203 }, // 4
+    { 188,  22, 24, 23, KEYCLASSGRAY, _T("5"),      0243 }, // 5 %
+    { 222,  22, 24, 23, KEYCLASSGRAY, _T(":"),      0303 }, // :
+    { 256,  22, 24, 23, KEYCLASSGRAY, _T(";"),      0343 }, // ;
 
-    {  18,  61, 22, 18, KEYCLASSLITE, _T("?"),      0007 },
-    {  52,  60, 24, 23, KEYCLASSGRAY, _T("6"),      0013 }, // 6 &
-    {  86,  60, 24, 23, KEYCLASSGRAY, _T("7"),      0123 }, // 7 '
-    { 120,  60, 24, 23, KEYCLASSGRAY, _T("8"),      0113 }, // 8 (
-    { 154,  60, 24, 23, KEYCLASSGRAY, _T("9"),      0110 }, // 9 )
-    { 188,  60, 24, 23, KEYCLASSGRAY, _T("0"),      0010 }, // 0
-    { 222,  60, 24, 23, KEYCLASSGRAY, _T("/"),      0060 }, // /
-    { 256,  60, 24, 23, KEYCLASSGRAY, _T("-"),      0016 }, // ~
+    {  18,  61, 22, 18, KEYCLASSLITE, _T("?"),      0000 }, // Reset
+    {  52,  60, 24, 23, KEYCLASSGRAY, _T("6"),      0047 }, // 6 &
+    {  86,  60, 24, 23, KEYCLASSGRAY, _T("7"),      0107 }, // 7 '
+    { 120,  60, 24, 23, KEYCLASSGRAY, _T("8"),      0147 }, // 8 (
+    { 154,  60, 24, 23, KEYCLASSGRAY, _T("9"),      0207 }, // 9 )
+    { 188,  60, 24, 23, KEYCLASSGRAY, _T("0"),      0247 }, // 0
+    { 222,  60, 24, 23, KEYCLASSGRAY, _T("/"),      0307 }, // /
+    { 256,  60, 24, 23, KEYCLASSGRAY, _T("-"),      0347 }, // ~
 
-    {  18,  98, 24, 20, KEYCLASSGRAY, _T("A"),      0052 }, // À A
-    {  52,  98, 24, 20, KEYCLASSGRAY, _T("B"),      0132 }, // Á B
-    {  86,  98, 24, 20, KEYCLASSGRAY, _T("W"),      0021 }, // Â W
-    { 120,  98, 24, 20, KEYCLASSGRAY, _T("G"),      0112 }, // Ã G
-    { 154,  98, 24, 20, KEYCLASSGRAY, _T("D"),      0073 }, // Ä D
-    { 188,  98, 24, 20, KEYCLASSGRAY, _T("E"),      0002 }, // Å E
-    { 222,  98, 24, 20, KEYCLASSGRAY, _T("V"),      0040 }, // Æ V
-    { 256,  98, 24, 20, KEYCLASSGRAY, _T("Z"),      0033 }, // Ç Z
+    {  18,  98, 24, 20, KEYCLASSGRAY, _T("A"),      0013 }, // À A
+    {  52,  98, 24, 20, KEYCLASSGRAY, _T("B"),      0053 }, // Á B
+    {  86,  98, 24, 20, KEYCLASSGRAY, _T("W"),      0113 }, // Â W
+    { 120,  98, 24, 20, KEYCLASSGRAY, _T("G"),      0153 }, // Ã G
+    { 154,  98, 24, 20, KEYCLASSGRAY, _T("D"),      0213 }, // Ä D
+    { 188,  98, 24, 20, KEYCLASSGRAY, _T("E"),      0253 }, // Å E
+    { 222,  98, 24, 20, KEYCLASSGRAY, _T("V"),      0313 }, // Æ V
+    { 256,  98, 24, 20, KEYCLASSGRAY, _T("Z"),      0353 }, // Ç Z
 
-    {  18, 136, 24, 20, KEYCLASSGRAY, _T("I"),      0061 }, // È I
-    {  52, 136, 24, 20, KEYCLASSGRAY, _T("J"),      0034 }, // É J
-    {  86, 136, 24, 20, KEYCLASSGRAY, _T("K"),      0111 }, // Ê K
-    { 120, 136, 24, 20, KEYCLASSGRAY, _T("L"),      0043 }, // Ë L
-    { 154, 136, 24, 20, KEYCLASSGRAY, _T("M"),      0072 }, // Ì M
-    { 188, 136, 24, 20, KEYCLASSGRAY, _T("N"),      0032 }, // Í N
-    { 222, 136, 24, 20, KEYCLASSGRAY, _T("O"),      0053 }, // Î O
-    { 256, 136, 24, 20, KEYCLASSGRAY, _T("P"),      0022 }, // Ï P
+    {  18, 136, 24, 20, KEYCLASSGRAY, _T("I"),      0017 }, // È I
+    {  52, 136, 24, 20, KEYCLASSGRAY, _T("J"),      0057 }, // É J
+    {  86, 136, 24, 20, KEYCLASSGRAY, _T("K"),      0117 }, // Ê K
+    { 120, 136, 24, 20, KEYCLASSGRAY, _T("L"),      0157 }, // Ë L
+    { 154, 136, 24, 20, KEYCLASSGRAY, _T("M"),      0217 }, // Ì M
+    { 188, 136, 24, 20, KEYCLASSGRAY, _T("N"),      0257 }, // Í N
+    { 222, 136, 24, 20, KEYCLASSGRAY, _T("O"),      0317 }, // Î O
+    { 256, 136, 24, 20, KEYCLASSGRAY, _T("P"),      0357 }, // Ï P
 
-    {  18, 174, 24, 20, KEYCLASSGRAY, _T("R"),      0042 }, // Ð R
-    {  52, 174, 24, 20, KEYCLASSGRAY, _T("S"),      0041 }, // Ñ S
-    {  86, 174, 24, 20, KEYCLASSGRAY, _T("T"),      0131 }, // Ò T
-    { 120, 174, 24, 20, KEYCLASSGRAY, _T("U"),      0031 }, // Ó U
-    { 154, 174, 24, 20, KEYCLASSGRAY, _T("F"),      0024 }, // Ô F
-    { 188, 174, 24, 20, KEYCLASSGRAY, _T("H"),      0000 }, // Õ H
-    { 222, 174, 24, 20, KEYCLASSGRAY, _T("C"),      0001 }, // Ö C
-    { 256, 174, 24, 20, KEYCLASSGRAY, _T("\u00ac"), 0071 }, // × ^
+    {  18, 174, 24, 20, KEYCLASSGRAY, _T("R"),      0023 }, // Ð R
+    {  52, 174, 24, 20, KEYCLASSGRAY, _T("S"),      0063 }, // Ñ S
+    {  86, 174, 24, 20, KEYCLASSGRAY, _T("T"),      0123 }, // Ò T
+    { 120, 174, 24, 20, KEYCLASSGRAY, _T("U"),      0163 }, // Ó U
+    { 154, 174, 24, 20, KEYCLASSGRAY, _T("F"),      0223 }, // Ô F
+    { 188, 174, 24, 20, KEYCLASSGRAY, _T("H"),      0263 }, // Õ H
+    { 222, 174, 24, 20, KEYCLASSGRAY, _T("C"),      0323 }, // Ö C
+    { 256, 174, 24, 20, KEYCLASSGRAY, _T("\u00ac"), 0363 }, // × ^
 
-    {  18, 212, 24, 20, KEYCLASSGRAY, _T("["),      0003 }, // Ø [
-    {  52, 212, 24, 20, KEYCLASSGRAY, _T("]"),      0023 }, // Ù ]
-    {  86, 212, 24, 20, KEYCLASSGRAY, _T("X"),      0062 }, // Ü X
-    { 120, 212, 24, 20, KEYCLASSGRAY, _T("Y"),      0051 }, // Û Y
-    { 154, 212, 24, 20, KEYCLASSGRAY, _T("-"),      0020 }, // Ú }
-    { 188, 212, 24, 20, KEYCLASSGRAY, _T("\\"),     0050 }, // Ý backslash
-    { 222, 212, 24, 20, KEYCLASSGRAY, _T("@"),      0063 }, // Þ @
-    { 256, 212, 24, 20, KEYCLASSGRAY, _T("Q"),      0044 }, // ß Q
+    {  18, 212, 24, 20, KEYCLASSGRAY, _T("["),      0027 }, // Ø [
+    {  52, 212, 24, 20, KEYCLASSGRAY, _T("]"),      0067 }, // Ù ]
+    {  86, 212, 24, 20, KEYCLASSGRAY, _T("X"),      0127 }, // Ü X
+    { 120, 212, 24, 20, KEYCLASSGRAY, _T("Y"),      0167 }, // Û Y
+    { 154, 212, 24, 20, KEYCLASSGRAY, _T("-"),      0227 }, // Ú }
+    { 188, 212, 24, 20, KEYCLASSGRAY, _T("\\"),     0267 }, // Ý backslash
+    { 222, 212, 24, 20, KEYCLASSGRAY, _T("@"),      0327 }, // Þ @
+    { 256, 212, 24, 20, KEYCLASSGRAY, _T("Q"),      0367 }, // ß Q
 
-    {  18, 250, 24, 20, KEYCLASSLITE, _T("?"),      0007 },
-    {  52, 250, 24, 20, KEYCLASSLITE, _T("\u2191"), 0000 }, // Up
-    {  86, 250, 24, 20, KEYCLASSLITE, _T("<-"),     0007 }, // Left
-    { 120, 250, 24, 20, KEYCLASSLITE, _T(","),      0133 }, // , <
-    { 154, 250, 24, 20, KEYCLASSLITE, _T("."),      0070 }, // . >
-    { 188, 250, 24, 20, KEYCLASSLITE, _T("->"),     0007 }, // Right
-    { 222, 250, 24, 20, KEYCLASSLITE, _T("ÇÂ"),     0007 },
-    { 256, 250, 24, 20, KEYCLASSLITE, _T("ÂÊ"),     0046 }, // ÂÂÎÄ
+    {  18, 250, 24, 20, KEYCLASSLITE, _T("?"),      0033 },
+    {  52, 250, 24, 20, KEYCLASSLITE, _T("\u2191"), 0073 }, // Up
+    {  86, 250, 24, 20, KEYCLASSLITE, _T("<-"),     0133 }, // Left
+    { 120, 250, 24, 20, KEYCLASSLITE, _T(","),      0173 }, // , <
+    { 154, 250, 24, 20, KEYCLASSLITE, _T("."),      0233 }, // . >
+    { 188, 250, 24, 20, KEYCLASSLITE, _T("->"),     0273 }, // Right
+    { 222, 250, 24, 20, KEYCLASSLITE, _T("ÇÂ"),     0333 },
+    { 256, 250, 24, 20, KEYCLASSLITE, _T("ÂÊ"),     0373 }, // ÂÂÎÄ
 
-    {  18, 288, 24, 20, KEYCLASSLITE, _T("Ð/Ë"),    0007 },
-    {  52, 288, 24, 20, KEYCLASSLITE, _T("?"),      0007 }, // Down
-    {  86, 288, 24, 20, KEYCLASSLITE, _T("?"),      0007 },
-    { 120, 288, 58, 20, KEYCLASSLITE, NULL,         0102 }, // Space
-    { 188, 288, 24, 20, KEYCLASSLITE, _T("?"),      0007 },
-    { 222, 288, 24, 20, KEYCLASSLITE, _T("ÔÊ"),     0007 },
-    { 256, 288, 24, 20, KEYCLASSLITE, _T("Â/Í"),    0000 }, // Shift
+    {  18, 288, 24, 20, KEYCLASSLITE, _T("Ð/Ë"),    0037 },
+    {  52, 288, 24, 20, KEYCLASSLITE, _T("?"),      0077 }, // Down
+    {  86, 288, 24, 20, KEYCLASSLITE, _T("?"),      0137 },
+    { 120, 288, 58, 20, KEYCLASSLITE, NULL,         0177 }, // Space
+    { 188, 288, 24, 20, KEYCLASSLITE, _T("?"),      0277 },
+    { 222, 288, 24, 20, KEYCLASSLITE, _T("ÔÊ"),     0337 },
+    { 256, 288, 24, 20, KEYCLASSLITE, _T("Â/Í"),    0377 }, // Shift
 };
 
 const int m_nKeyboardKeysCount = sizeof(m_arrKeyboardKeys) / sizeof(KeyboardKeys);
