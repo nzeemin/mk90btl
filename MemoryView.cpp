@@ -248,7 +248,7 @@ void MemoryView_OnDraw(HDC hdc)
             int addrtype;
             BOOL okHalt = g_pBoard->GetCPU()->IsHaltMode();
             WORD word = g_pBoard->GetWordView(address, okHalt, FALSE, &addrtype);
-            BOOL okValid = (addrtype != ADDRTYPE_IO) && (addrtype != ADDRTYPE_TERM) && (addrtype != ADDRTYPE_DENY);
+            BOOL okValid = (addrtype != ADDRTYPE_IO) && (addrtype != ADDRTYPE_DENY);
             WORD wChanged = Emulator_GetChangeRamStatus(address);
 
             if (okValid)

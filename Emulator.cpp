@@ -73,9 +73,9 @@ static ScreenModeReference[] =
     { 480, 256, Emulator_PrepareScreenBW480x256 },
 };
 
-const uint32_t ScreenView_Palette[4] =
+const uint32_t ScreenView_Palette[2] =
 {
-    0x000000, 0xB0B0B0, 0x404040, 0xFFFFFF
+    0xB0B0B0, 0x000000
 };
 
 
@@ -469,14 +469,10 @@ int Emulator_SystemFrame()
         MainWindow_SetStatusbarText(StatusbarPartUptime, buffer);
     }
 
-    // Auto-boot option processing: select "boot from disk" and press Enter
+    // Auto-boot option processing
     if (Option_AutoBoot)
     {
-        if (m_dwEmulatorUptime == 2 && m_nUptimeFrameCount == 16)
-        {
-            ScreenView_KeyEvent(68, true);  // Press "D"
-            Option_AutoBoot = false;  // All done
-        }
+        //TODO
     }
 
     return 1;
@@ -545,28 +541,33 @@ const uint32_t * Emulator_GetPalette()
     return ScreenView_Palette;
 }
 
-#define AVERAGERGB(a, b)  ( (((a) & 0xfefefeffUL) + ((b) & 0xfefefeffUL)) >> 1 )
+//#define AVERAGERGB(a, b)  ( (((a) & 0xfefefeffUL) + ((b) & 0xfefefeffUL)) >> 1 )
 
 void CALLBACK Emulator_PrepareScreenBW480x256(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits)
 {
-    for (int y = 0; y < 256; y++)
+    for (int y = 0; y < 64; y++)
     {
-        const uint16_t* pVideo = (uint16_t*)(pVideoBuffer + y * 480 / 4);
-        uint32_t* pBits = (uint32_t*)pImageBits + (256 - 1 - y) * 480;
-        for (int x = 0; x < 480 / 8; x++)
+        const uint8_t* pVideo = (pVideoBuffer + (y & 31) * 30) + (y >> 5);
+        uint32_t* pBits1 = (uint32_t*)pImageBits + (256 - 4 - y * 4) * 480;
+        uint32_t* pBits2 = pBits1 + 480;
+        uint32_t* pBits3 = pBits2 + 480;
+        uint32_t* pBits4 = pBits3 + 480;
+        for (int col = 0; col < 15; col++)
         {
-            uint16_t src = *pVideo;
+            uint8_t src = *pVideo;
 
             for (int bit = 0; bit < 8; bit++)
             {
-                int colorindex = (src & 0x80) >> 7 | (src & 0x8000) >> 14;
+                int colorindex = (src & 0x80) >> 7;
                 uint32_t color = palette[colorindex];
-                //*pBits = color;
-                pBits++;
+                *pBits1++ = palette[0]; *pBits2++ = *pBits3++ = *pBits4++ = color;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color;
                 src = src << 1;
             }
 
-            pVideo++;
+            pVideo += 2;
         }
     }
 }

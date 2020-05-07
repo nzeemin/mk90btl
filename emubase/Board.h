@@ -25,8 +25,6 @@ class CProcessor;
 #define ADDRTYPE_RAM     0  // RAM
 #define ADDRTYPE_ROM     8  // ROM
 #define ADDRTYPE_IO     16  // I/O port
-#define ADDRTYPE_TERM   64  // Terminal ports
-// Memory 177600-177777 gives HALT
 #define ADDRTYPE_DENY  128  // Access denied
 #define ADDRTYPE_MASK  255  // RAM type mask
 
@@ -43,8 +41,8 @@ class CProcessor;
 // Emulator image constants
 #define MK90IMAGE_HEADER_SIZE 32
 #define MK90IMAGE_SIZE 147456
-#define MK90IMAGE_HEADER1 0x494D454E  // "NEMI"
-#define MK90IMAGE_HEADER2 0x21214147  // "GA!!"
+#define MK90IMAGE_HEADER1 0x494D454E  // "MK90"
+#define MK90IMAGE_HEADER2 0x21214147  // "BTL!"
 #define MK90IMAGE_VERSION 0x00010000  // 1.0
 
 //////////////////////////////////////////////////////////////////////
@@ -77,7 +75,7 @@ typedef bool (CALLBACK* PARALLELOUTCALLBACK)(uint8_t byte);
 class CMotherboard  // MK90 computer
 {
 private:  // Devices
-    CProcessor*     m_pCPU;  // CPU device
+    CProcessor* m_pCPU;  // CPU device
     bool        m_okTimer50OnOff;
 private:  // Memory
     uint16_t    m_Configuration;  // See BK_COPT_Xxx flag constants
@@ -103,7 +101,7 @@ public:  // Debug
 public:  // System control
     void        SetConfiguration(uint16_t conf);
     void        Reset();  // Reset computer
-    void        LoadROM(const uint8_t* pBuffer);  // Load 8 KB ROM image from the biffer
+    void        LoadROM(const uint8_t* pBuffer);  // Load 32K ROM image from the buffer
     void        LoadRAM(int startbank, const uint8_t* pBuffer, int length);  // Load data into the RAM
     void        SetTimer50OnOff(bool okOnOff) { m_okTimer50OnOff = okOnOff; }
     bool        IsTimer50OnOff() const { return m_okTimer50OnOff; }
@@ -154,18 +152,19 @@ public:  // Saving/loading emulator status
     void        SaveToImage(uint8_t* pImage);
     void        LoadFromImage(const uint8_t* pImage);
 private:  // Ports: implementation
+    uint16_t    m_LcdAddr;
+    uint16_t    m_LcdConf;
+    uint16_t    m_LcdIndex;
     uint16_t    m_Port170006;       // Регистр данных клавиатуры (байт 170006) и регистр фиксации HALT-запросов (байт 170007)
     uint16_t    m_Port170006wr;     // Регистр 170006 на запись
     uint16_t    m_Port170020;       // Регистр состояния таймера
     uint16_t    m_Port170022;       // Регистр частоты
     uint16_t    m_Port170024;       // Регистр длительности
     uint16_t    m_Port170030;       // Регистр октавы и громкости
-    uint16_t    m_Port176500;       // Регистр состояния приёмника последовательного порта (отсутствует на реальной Немиге)
-    uint16_t    m_Port176502;       // Регистр данных приёмника последовательного порта (отсутствует на реальной Немиге)
-    uint16_t    m_Port176504;       // Регистр состояния передатчика последовательного порта (отсутствует на реальной Немиге)
-    uint16_t    m_Port176506;       // Регистр данных передатчика последовательного порта (отсутствует на реальной Немиге)
-    uint16_t    m_Port177572;       // Регистр адреса косвенной адресации
-    uint16_t    m_Port177574;       // Регистр ??
+    uint16_t    m_Port176500;       // Регистр состояния приёмника последовательного порта
+    uint16_t    m_Port176502;       // Регистр данных приёмника последовательного порта
+    uint16_t    m_Port176504;       // Регистр состояния передатчика последовательного порта
+    uint16_t    m_Port176506;       // Регистр данных передатчика последовательного порта
     uint16_t    m_Port177514;       // Регистр состояния ИРПР
     uint16_t    m_Port177516;       // Регистр данных ИРПР
 private:
@@ -176,7 +175,7 @@ private:
     uint16_t    m_Timer2;           // Timer 2 counter
     bool        m_okSoundOnOff;
 private:
-    SOUNDGENCALLBACK m_SoundGenCallback;
+    SOUNDGENCALLBACK    m_SoundGenCallback;
     SERIALINCALLBACK    m_SerialInCallback;
     SERIALOUTCALLBACK   m_SerialOutCallback;
     PARALLELOUTCALLBACK m_ParallelOutCallback;

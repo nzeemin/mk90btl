@@ -23,10 +23,9 @@ BOOL InputBoxOctal(HWND hwndOwner, LPCTSTR strTitle, LPCTSTR strPrompt, WORD* pV
 BOOL ShowSaveDialog(HWND hwndOwner, LPCTSTR strTitle, LPCTSTR strFilter, LPCTSTR strDefExt, TCHAR* bufFileName);
 BOOL ShowOpenDialog(HWND hwndOwner, LPCTSTR strTitle, LPCTSTR strFilter, TCHAR* bufFileName);
 
-void ShowCreateDiskDialog();
-
 void ShowSettingsDialog();
 
 void ShowSerialPortSettings(DCB * pDCB);
+
 
 //////////////////////////////////////////////////////////////////////

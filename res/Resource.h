@@ -13,11 +13,8 @@
 #define IDC_MK90BTL			109
 #define IDR_MAINFRAME                   128
 #define IDD_INPUTBOX                    129
-#define IDI_DISKETTE                    138
-#define IDI_DISKETTEWP                  141
 #define IDB_KEYBOARD                    142
 #define IDB_TOOLBAR                     143
-#define IDD_CREATEDISK                  144
 #define IDD_LOADBIN                     145
 #define IDD_SETTINGS                    146
 #define IDR_MK90_KEYB                   147
@@ -27,9 +24,7 @@
 #define IDC_EDIT1                       1000
 #define IDC_BUILDDATE                   1001
 #define IDC_EDITADDR                    1001
-#define IDC_DISKMD                      1002
 #define IDC_EDITSIZE                    1002
-#define IDC_DISKMX                      1003
 #define IDC_EDITNAME                    1003
 #define IDC_EDITSTACK                   1003
 #define IDC_BUTTONBROWSE                1004
@@ -54,8 +49,6 @@
 #define ID_FILE_LOADSTATE               32773
 #define ID_FILE_SCREENSHOT              32774
 #define ID_FILE_SAVESCREENSHOTAS        32775
-#define ID_FILE_LOADBIN                 32777
-#define ID_FILE_CREATEDISK              32778
 #define ID_FILE_SETTINGS                32779
 #define ID_VIEW                         32781
 #define ID_VIEW_MEMORY                  32782

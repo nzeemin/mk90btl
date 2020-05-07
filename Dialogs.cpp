@@ -23,11 +23,9 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 INT_PTR CALLBACK AboutBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK InputBoxProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK CreateDiskProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK SettingsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK DcbEditorProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-void Dialogs_DoCreateDisk(LONG fileSize);
 BOOL InputBoxValidate(HWND hDlg);
 
 LPCTSTR m_strInputBoxTitle = NULL;
@@ -184,73 +182,6 @@ BOOL ShowOpenDialog(HWND hwndOwner, LPCTSTR strTitle, LPCTSTR strFilter, TCHAR* 
 
     BOOL okResult = GetOpenFileName(&ofn);
     return okResult;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-// Create Disk Dialog
-
-void ShowCreateDiskDialog()
-{
-    DialogBox(g_hInst, MAKEINTRESOURCE(IDD_CREATEDISK), g_hwnd, CreateDiskProc);
-}
-
-INT_PTR CALLBACK CreateDiskProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        {
-            CheckRadioButton(hDlg, IDC_DISKMD, IDC_DISKMX, IDC_DISKMD);
-            return (INT_PTR)FALSE;
-        }
-    case WM_COMMAND:
-        switch (LOWORD(wParam))
-        {
-        case IDOK:
-            Dialogs_DoCreateDisk(IsDlgButtonChecked(hDlg, IDC_DISKMD) == BST_CHECKED ? 235392 : 450560);
-
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        case IDCANCEL:
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        default:
-            return (INT_PTR)FALSE;
-        }
-        break;
-    }
-    return (INT_PTR) FALSE;
-}
-
-void Dialogs_DoCreateDisk(LONG fileSize)
-{
-    TCHAR bufFileName[MAX_PATH];
-    BOOL okResult = ShowSaveDialog(g_hwnd,
-            _T("Save new disk as"),
-            _T("MK90 disks (*.dsk)\0*.dsk\0All Files (*.*)\0*.*\0\0"),
-            _T("dsk"),
-            bufFileName);
-    if (! okResult) return;
-
-    // Create the file
-    HANDLE hFile = ::CreateFile(bufFileName,
-            GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
-    {
-        DWORD dwError = ::GetLastError();
-        AlertWarningFormat(_T("Failed to create a file for the new disk (0x%08lx)."), dwError);
-        return;
-    }
-
-    // Zero-fill the file
-    ::SetFilePointer(hFile, fileSize, NULL, FILE_BEGIN);
-    ::SetEndOfFile(hFile);
-    ::CloseHandle(hFile);
-
-    ::MessageBox(g_hwnd, _T("New disk file created successfully.\nPlease initialize the disk using INIT command."),
-            _T("MK90BTL"), MB_OK | MB_ICONINFORMATION);
 }
 
 
