@@ -77,6 +77,11 @@
 #define ID_VIEW_SCREENMODE2             32849
 #define ID_VIEW_SCREENMODE3             32850
 #define ID_VIEW_SCREENMODE4             32851
+#define ID_VIEW_PALETTE0                32861
+#define ID_VIEW_PALETTE1                32862
+#define ID_VIEW_PALETTE2                32863
+#define ID_VIEW_PALETTE3                32864
+#define ID_VIEW_PALETTE4                32865
 #define ID_DEBUG                        32881
 #define ID_VIEW_DEBUG                   32882
 #define ID_DEBUG_STEPINTO               32883

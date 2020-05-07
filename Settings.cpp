@@ -254,6 +254,8 @@ void Settings_SetCartridgeFilePath(int slot, LPCTSTR sFilePath)
 
 SETTINGS_GETSET_DWORD(ScreenViewMode, _T("ScreenViewMode"), int, 0);
 
+SETTINGS_GETSET_DWORD(ScreenPalette, _T("ScreenPalette"), int, 0);
+
 SETTINGS_GETSET_DWORD(ScreenHeightMode, _T("ScreenHeightMode"), int, 0);
 
 SETTINGS_GETSET_DWORD(Toolbar, _T("Toolbar"), BOOL, TRUE);

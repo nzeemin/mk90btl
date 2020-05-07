@@ -36,6 +36,7 @@ int m_xScreenOffset = 0;
 int m_yScreenOffset = 0;
 BYTE m_ScreenKeyState[256];
 int m_ScreenMode = 0;
+int m_ScreenPalette = 0;
 
 void ScreenView_CreateDisplay();
 void ScreenView_OnDraw(HDC hdc);
@@ -200,6 +201,19 @@ void ScreenView_SetScreenMode(int newMode)
     ScreenView_RedrawScreen();
 }
 
+int ScreenView_GetScreenPalette()
+{
+    return m_ScreenPalette;
+}
+void ScreenView_SetScreenPalette(int newPalette)
+{
+    if (m_ScreenPalette == newPalette) return;
+
+    m_ScreenPalette = newPalette;
+
+    ScreenView_RedrawScreen();
+}
+
 void ScreenView_OnDraw(HDC hdc)
 {
     if (m_bits == NULL) return;
@@ -247,7 +261,7 @@ void ScreenView_PrepareScreen()
 {
     if (m_bits == NULL) return;
 
-    Emulator_PrepareScreenRGB32(m_bits, m_ScreenMode);
+    Emulator_PrepareScreenRGB32(m_bits, m_ScreenMode, m_ScreenPalette);
 }
 
 void ScreenView_PutKeyEventToQueue(WORD keyevent)
@@ -387,8 +401,8 @@ BOOL ScreenView_SaveScreenshot(LPCTSTR sFileName)
     ASSERT(m_bits != NULL);
 
     DWORD* pBits = (DWORD*) ::calloc(m_cxScreenWidth * m_cyScreenHeight, 4);
-    const uint32_t* colors = Emulator_GetPalette(/*m_ScreenMode*/);
-    Emulator_PrepareScreenRGB32(pBits, m_ScreenMode);
+    const uint32_t* colors = Emulator_GetPalette(m_ScreenPalette);
+    Emulator_PrepareScreenRGB32(pBits, m_ScreenMode, m_ScreenPalette);
 
     LPCTSTR sFileNameExt = _tcsrchr(sFileName, _T('.'));
     BOOL result = FALSE;

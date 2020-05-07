@@ -35,6 +35,8 @@ void ScreenView_Init();
 void ScreenView_Done();
 int ScreenView_GetScreenMode();
 void ScreenView_SetScreenMode(int);
+int ScreenView_GetScreenPalette();
+void ScreenView_SetScreenPalette(int);
 void ScreenView_PrepareScreen();
 void ScreenView_ScanKeyboard();
 void ScreenView_ProcessKeyboard();

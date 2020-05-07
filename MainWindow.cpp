@@ -60,6 +60,7 @@ void MainWindow_DoViewToolbar();
 void MainWindow_DoViewKeyboard();
 void MainWindow_DoViewFullscreen();
 void MainWindow_DoViewScreenMode(int newMode);
+void MainWindow_DoViewScreenPalette(int newPalette);
 void MainWindow_DoEmulatorRun();
 void MainWindow_DoEmulatorAutostart();
 void MainWindow_DoEmulatorReset();
@@ -230,6 +231,8 @@ void MainWindow_RestoreSettings()
     // Restore ScreenViewMode
     int scrmode = Settings_GetScreenViewMode();
     ScreenView_SetScreenMode(scrmode);
+    int scrpalette = Settings_GetScreenPalette();
+    ScreenView_SetScreenPalette(scrpalette);
 
     // Restore Serial flag
     if (Settings_GetSerial())
@@ -672,6 +675,16 @@ void MainWindow_UpdateMenu()
     }
     CheckMenuRadioItem(hMenu, ID_VIEW_SCREENMODE0, ID_VIEW_SCREENMODE4, scrmodecmd, MF_BYCOMMAND);
 
+    UINT scrpalcmd = 0;
+    switch (ScreenView_GetScreenPalette())
+    {
+    case 0: scrpalcmd = ID_VIEW_PALETTE0; break;
+    case 1: scrpalcmd = ID_VIEW_PALETTE1; break;
+    case 2: scrpalcmd = ID_VIEW_PALETTE2; break;
+    case 3: scrpalcmd = ID_VIEW_PALETTE3; break;
+    }
+    CheckMenuRadioItem(hMenu, ID_VIEW_PALETTE0, ID_VIEW_PALETTE3, scrpalcmd, MF_BYCOMMAND);
+
     // Emulator menu options
     CheckMenuItem(hMenu, ID_EMULATOR_AUTOSTART, (Settings_GetAutostart() ? MF_CHECKED : MF_UNCHECKED));
     CheckMenuItem(hMenu, ID_EMULATOR_SOUND, (Settings_GetSound() ? MF_CHECKED : MF_UNCHECKED));
@@ -743,6 +756,18 @@ bool MainWindow_DoCommand(int commandId)
         break;
     case ID_VIEW_SCREENMODE4:
         MainWindow_DoViewScreenMode(4);
+        break;
+    case ID_VIEW_PALETTE0:
+        MainWindow_DoViewScreenPalette(0);
+        break;
+    case ID_VIEW_PALETTE1:
+        MainWindow_DoViewScreenPalette(1);
+        break;
+    case ID_VIEW_PALETTE2:
+        MainWindow_DoViewScreenPalette(2);
+        break;
+    case ID_VIEW_PALETTE3:
+        MainWindow_DoViewScreenPalette(3);
         break;
     case ID_EMULATOR_RUN:
         MainWindow_DoEmulatorRun();
@@ -848,6 +873,14 @@ void MainWindow_DoViewScreenMode(int newMode)
     Settings_SetScreenViewMode(newMode);
 }
 
+void MainWindow_DoViewScreenPalette(int newPalette)
+{
+    ScreenView_SetScreenPalette(newPalette);
+
+    MainWindow_UpdateMenu();
+
+    Settings_SetScreenPalette(newPalette);
+}
 
 void MainWindow_DoViewFullscreen()
 {

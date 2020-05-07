@@ -56,8 +56,8 @@ int  Emulator_SystemFrame();
 void Emulator_SetSpeed(uint16_t realspeed);
 
 void Emulator_GetScreenSize(int scrmode, int* pwid, int* phei);
-const uint32_t * Emulator_GetPalette();
-void Emulator_PrepareScreenRGB32(void* pBits, int screenMode);
+const uint32_t * Emulator_GetPalette(int palette);
+void Emulator_PrepareScreenRGB32(void* pBits, int screenMode, int palette);
 
 // Update cached values after Run or Step
 void Emulator_OnUpdate();

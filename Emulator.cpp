@@ -63,6 +63,8 @@ typedef void (CALLBACK* PREPARE_SCREEN_CALLBACK)(const uint8_t* pVideoBuffer, co
 void CALLBACK Emulator_PrepareScreenBW360x192(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits);
 void CALLBACK Emulator_PrepareScreenBW480x256(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits);
 void CALLBACK Emulator_PrepareScreenBW600x320(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits);
+void CALLBACK Emulator_PrepareScreenBW720x384(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits);
+void CALLBACK Emulator_PrepareScreenBW960x512(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits);
 
 struct ScreenModeStruct
 {
@@ -72,14 +74,24 @@ struct ScreenModeStruct
 }
 static ScreenModeReference[] =
 {
-    { 360, 192, Emulator_PrepareScreenBW360x192 },
-    { 480, 256, Emulator_PrepareScreenBW480x256 },
-    { 600, 320, Emulator_PrepareScreenBW600x320 },
+    { 360, 192, Emulator_PrepareScreenBW360x192 },  // x3
+    { 480, 256, Emulator_PrepareScreenBW480x256 },  // x4
+    { 600, 320, Emulator_PrepareScreenBW600x320 },  // x5
+    { 720, 384, Emulator_PrepareScreenBW720x384 },  // x6
+    { 960, 512, Emulator_PrepareScreenBW960x512 },  // x8
 };
 
-const uint32_t ScreenView_Palette[2] =
+// Palette colors:
+// #0 - inactive pixel
+// #1 - active pixel
+// #2 - active pixel edge, used to separate active pixels
+// #3 - background are outside of the pixels, a little lighter than an inactive pixel
+const uint32_t ScreenView_Palette[][4] =
 {
-    0xB0B0B0, 0x000000
+    { 0xB0B0B0, 0x000000, 0xA0A0A0, 0xC0C0C0 },  // Gray with pixel edges
+    { 0xB0B0B0, 0x000000, 0x000000, 0xC0C0C0 },  // Gray, no pixel edges
+    { 0xFFFFFF, 0x000000, 0xA0A0A0, 0xFFFFFF },  // High contrast black & white with pixel edges
+    { 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF },  // High contrast black & white, no pixel edges
 };
 
 
@@ -528,21 +540,23 @@ void Emulator_GetScreenSize(int scrmode, int* pwid, int* phei)
     *phei = pinfo->height;
 }
 
-void Emulator_PrepareScreenRGB32(void* pImageBits, int screenMode)
+void Emulator_PrepareScreenRGB32(void* pImageBits, int screenMode, int palette)
 {
     if (pImageBits == NULL) return;
 
     const uint8_t* pVideoBuffer = g_pBoard->GetVideoBuffer();
     ASSERT(pVideoBuffer != NULL);
 
+    const uint32_t * pPalette = Emulator_GetPalette(palette);
+
     // Render to bitmap
     PREPARE_SCREEN_CALLBACK callback = ScreenModeReference[screenMode].callback;
-    callback(pVideoBuffer, ScreenView_Palette, pImageBits);
+    callback(pVideoBuffer, pPalette, pImageBits);
 }
 
-const uint32_t * Emulator_GetPalette()
+const uint32_t * Emulator_GetPalette(int palette)
 {
-    return ScreenView_Palette;
+    return ScreenView_Palette[palette];
 }
 
 //#define AVERAGERGB(a, b)  ( (((a) & 0xfefefeffUL) + ((b) & 0xfefefeffUL)) >> 1 )
@@ -576,14 +590,15 @@ void CALLBACK Emulator_PrepareScreenBW360x192(const uint8_t* pVideoBuffer, const
 
 void CALLBACK Emulator_PrepareScreenBW480x256(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits)
 {
+    const int scale = 4;
+    const int width = 120 * scale;
     for (int y = 0; y < 64; y++)
     {
         const uint8_t* pVideo = (pVideoBuffer + (y & 31) * 30) + (y >> 5);
-        uint32_t* pBits1 = (uint32_t*)pImageBits + (256 - 4 - y * 4) * 480;
-        uint32_t* pBits2 = pBits1 + 480;
-        uint32_t* pBits3 = pBits2 + 480;
-        uint32_t* pBits4 = pBits3 + 480;
-        uint32_t color0 = palette[0];
+        uint32_t* pBits1 = (uint32_t*)pImageBits + (64 * scale - scale - y * scale) * width;
+        uint32_t* pBits2 = pBits1 + width;
+        uint32_t* pBits3 = pBits2 + width;
+        uint32_t* pBits4 = pBits3 + width;
         for (int col = 0; col < 15; col++)
         {
             uint8_t src = *pVideo;
@@ -591,8 +606,9 @@ void CALLBACK Emulator_PrepareScreenBW480x256(const uint8_t* pVideoBuffer, const
             for (int bit = 0; bit < 8; bit++)
             {
                 int colorindex = (src & 0x80) >> 7;
+                uint32_t color2 = palette[colorindex << 1];
                 uint32_t color = palette[colorindex];
-                *pBits1++ = color0; *pBits2++ = *pBits3++ = *pBits4++ = color;
+                *pBits1++ = color2; *pBits2++ = *pBits3++ = *pBits4++ = color;
                 *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color;
                 *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color;
                 *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color;
@@ -606,15 +622,16 @@ void CALLBACK Emulator_PrepareScreenBW480x256(const uint8_t* pVideoBuffer, const
 
 void CALLBACK Emulator_PrepareScreenBW600x320(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits)
 {
+    const int scale = 5;
+    const int width = 120 * scale;
     for (int y = 0; y < 64; y++)
     {
         const uint8_t* pVideo = (pVideoBuffer + (y & 31) * 30) + (y >> 5);
-        uint32_t* pBits1 = (uint32_t*)pImageBits + (320 - 5 - y * 5) * 600;
-        uint32_t* pBits2 = pBits1 + 600;
-        uint32_t* pBits3 = pBits2 + 600;
-        uint32_t* pBits4 = pBits3 + 600;
-        uint32_t* pBits5 = pBits4 + 600;
-        uint32_t color0 = palette[0];
+        uint32_t* pBits1 = (uint32_t*)pImageBits + (64 * scale - scale - y * scale) * width;
+        uint32_t* pBits2 = pBits1 + width;
+        uint32_t* pBits3 = pBits2 + width;
+        uint32_t* pBits4 = pBits3 + width;
+        uint32_t* pBits5 = pBits4 + width;
         for (int col = 0; col < 15; col++)
         {
             uint8_t src = *pVideo;
@@ -623,11 +640,12 @@ void CALLBACK Emulator_PrepareScreenBW600x320(const uint8_t* pVideoBuffer, const
             {
                 int colorindex = (src & 0x80) >> 7;
                 uint32_t color = palette[colorindex];
-                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color; *pBits5++ = color0;
-                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color; *pBits5++ = color0;
-                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color; *pBits5++ = color0;
-                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color; *pBits5++ = color0;
-                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color0; *pBits5++ = color0;
+                uint32_t color2 = palette[colorindex << 1];
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color; *pBits5++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color; *pBits5++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color; *pBits5++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color; *pBits5++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = color2; *pBits5++ = color2;
                 src = src << 1;
             }
 
@@ -636,6 +654,81 @@ void CALLBACK Emulator_PrepareScreenBW600x320(const uint8_t* pVideoBuffer, const
     }
 }
 
+void CALLBACK Emulator_PrepareScreenBW720x384(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits)
+{
+    const int scale = 6;
+    const int width = 120 * scale;
+    for (int y = 0; y < 64; y++)
+    {
+        const uint8_t* pVideo = (pVideoBuffer + (y & 31) * 30) + (y >> 5);
+        uint32_t* pBits1 = (uint32_t*)pImageBits + (64 * scale - scale - y * scale) * width;
+        uint32_t* pBits2 = pBits1 + width;
+        uint32_t* pBits3 = pBits2 + width;
+        uint32_t* pBits4 = pBits3 + width;
+        uint32_t* pBits5 = pBits4 + width;
+        uint32_t* pBits6 = pBits5 + width;
+        for (int col = 0; col < 15; col++)
+        {
+            uint8_t src = *pVideo;
+
+            for (int bit = 0; bit < 8; bit++)
+            {
+                int colorindex = (src & 0x80) >> 7;
+                uint32_t color = palette[colorindex];
+                uint32_t color2 = palette[colorindex << 1];
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = color; *pBits6++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = color; *pBits6++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = color; *pBits6++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = color; *pBits6++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = color; *pBits6++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = color2; *pBits6++ = color2;
+                src = src << 1;
+            }
+
+            pVideo += 2;
+        }
+    }
+}
+
+void CALLBACK Emulator_PrepareScreenBW960x512(const uint8_t* pVideoBuffer, const uint32_t* palette, void* pImageBits)
+{
+    const int scale = 8;
+    const int width = 120 * scale;
+    for (int y = 0; y < 64; y++)
+    {
+        const uint8_t* pVideo = (pVideoBuffer + (y & 31) * 30) + (y >> 5);
+        uint32_t* pBits1 = (uint32_t*)pImageBits + (64 * scale - scale - y * scale) * width;
+        uint32_t* pBits2 = pBits1 + width;
+        uint32_t* pBits3 = pBits2 + width;
+        uint32_t* pBits4 = pBits3 + width;
+        uint32_t* pBits5 = pBits4 + width;
+        uint32_t* pBits6 = pBits5 + width;
+        uint32_t* pBits7 = pBits6 + width;
+        uint32_t* pBits8 = pBits7 + width;
+        for (int col = 0; col < 15; col++)
+        {
+            uint8_t src = *pVideo;
+
+            for (int bit = 0; bit < 8; bit++)
+            {
+                int colorindex = (src & 0x80) >> 7;
+                uint32_t color = palette[colorindex];
+                uint32_t color2 = palette[colorindex << 1];
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = *pBits6++ = *pBits7++ = color; *pBits8++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = *pBits6++ = *pBits7++ = color; *pBits8++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = *pBits6++ = *pBits7++ = color; *pBits8++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = *pBits6++ = *pBits7++ = color; *pBits8++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = *pBits6++ = *pBits7++ = color; *pBits8++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = *pBits6++ = *pBits7++ = color; *pBits8++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = *pBits6++ = *pBits7++ = color; *pBits8++ = color2;
+                *pBits1++ = *pBits2++ = *pBits3++ = *pBits4++ = *pBits5++ = *pBits6++ = *pBits7++ = color2; *pBits8++ = color2;
+                src = src << 1;
+            }
+
+            pVideo += 2;
+        }
+    }
+}
 
 
 //////////////////////////////////////////////////////////////////////

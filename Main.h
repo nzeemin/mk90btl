@@ -101,6 +101,8 @@ void Settings_SetCartridgeFilePath(int slot, LPCTSTR sFilePath);
 void Settings_GetCartridgeFilePath(int slot, LPTSTR buffer);
 void Settings_SetScreenViewMode(int mode);
 int  Settings_GetScreenViewMode();
+void Settings_SetScreenPalette(int palette);
+int  Settings_GetScreenPalette();
 void Settings_SetDebug(BOOL flag);
 BOOL Settings_GetDebug();
 void Settings_GetDebugFontName(LPTSTR buffer);
