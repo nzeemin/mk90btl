@@ -36,8 +36,8 @@ HWND m_hwndToolbar = NULL;
 HWND m_hwndStatusbar = NULL;
 HWND m_hwndSplitter = (HWND)INVALID_HANDLE_VALUE;
 
-int m_MainWindowMinCx = MK90_SCREEN_WIDTH + 16;
-int m_MainWindowMinCy = MK90_SCREEN_HEIGHT + 40;
+int m_MainWindowMinCx = DEFAULT_SCREEN_WIDTH + 40;
+int m_MainWindowMinCy = DEFAULT_SCREEN_HEIGHT + 40;
 
 BOOL m_MainWindow_Fullscreen = FALSE;
 LONG m_MainWindow_FullscreenOldStyle = 0;
@@ -419,8 +419,6 @@ void MainWindow_AdjustWindowLayout()
 {
     RECT rcStatus;  GetWindowRect(m_hwndStatusbar, &rcStatus);
     int cyStatus = rcStatus.bottom - rcStatus.top;
-    if (m_MainWindow_Fullscreen)
-        cyStatus = 0;
 
     int yScreen = 0;
     int cxScreen = 0, cyScreen = 0;
@@ -434,25 +432,27 @@ void MainWindow_AdjustWindowLayout()
     }
 
     RECT rc;  GetClientRect(g_hwnd, &rc);
+    int cxStatus = rc.right;
 
     if (!Settings_GetDebug())  // No debug views
     {
+        SIZE sizeScreen;  ScreenView_GetDesiredSize(sizeScreen);
         cxScreen = rc.right;
 
-        int yTape = rc.bottom - cyStatus + 4;
-
-        int yKeyboard = yTape;
         int cxKeyboard = 0, cyKeyboard = 0;
+
+        int yKeyboard = yScreen;
         if (Settings_GetKeyboard())  // Snapped to bottom
         {
             RECT rcKeyboard;  GetWindowRect(g_hwndKeyboard, &rcKeyboard);
-            cxKeyboard = cxScreen;
             cyKeyboard = rcKeyboard.bottom - rcKeyboard.top;
-            yKeyboard = yTape - cyKeyboard - 4;
+
+            cxScreen = sizeScreen.cx;
+            cxKeyboard = rc.right - cxScreen;
         }
 
-        cyScreen = yKeyboard - yScreen - (Settings_GetKeyboard() ? 0 : 4);
-        if (cyScreen < MK90_SCREEN_HEIGHT) cyScreen = MK90_SCREEN_HEIGHT;
+        cyScreen = rc.bottom - cyToolbar - cyStatus;
+        if (cyScreen < DEFAULT_SCREEN_HEIGHT) cyScreen = DEFAULT_SCREEN_HEIGHT;
 
         //m_MainWindowMinCx = cxScreen + ::GetSystemMetrics(SM_CXSIZEFRAME) * 2;
         //m_MainWindowMinCy = ::GetSystemMetrics(SM_CYCAPTION) + ::GetSystemMetrics(SM_CYMENU) +
@@ -460,13 +460,14 @@ void MainWindow_AdjustWindowLayout()
 
         if (Settings_GetKeyboard())
         {
-            int xKeyboard = (cxScreen - cxKeyboard) / 2;
+            int xKeyboard = cxScreen;
+            cyKeyboard = cyScreen;
             SetWindowPos(g_hwndKeyboard, NULL, xKeyboard, yKeyboard, cxKeyboard, cyKeyboard, SWP_NOZORDER | SWP_NOCOPYBITS);
         }
     }
     if (Settings_GetDebug())  // Debug views shown -- keyboard/tape snapped to top
     {
-        cxScreen = 480/*MK90_SCREEN_WIDTH*/ + 8;
+        cxScreen = 480/*MK90_SCREEN_WIDTH*/ + 16;
         cyScreen = 330;
 
         int yKeyboard = yScreen;
@@ -486,6 +487,7 @@ void MainWindow_AdjustWindowLayout()
 
         int cxConsole = cxScreen + cxKeyboard;
         int cyConsole = rc.bottom - cyStatus - yConsole - 4;
+        cxStatus = cxConsole;
         SetWindowPos(g_hwndConsole, NULL, 0, yConsole, cxConsole, cyConsole, SWP_NOZORDER);
 
         RECT rcDebug;  GetWindowRect(g_hwndDebug, &rcDebug);
@@ -525,7 +527,7 @@ void MainWindow_AdjustWindowLayout()
     SetWindowPos(g_hwndScreen, NULL, 0, yScreen, cxScreen, cyScreen, SWP_NOZORDER);
 
     int cyStatusReal = rcStatus.bottom - rcStatus.top;
-    SetWindowPos(m_hwndStatusbar, NULL, 0, rc.bottom - cyStatusReal, cxScreen, cyStatusReal,
+    SetWindowPos(m_hwndStatusbar, NULL, 0, rc.bottom - cyStatusReal, cxStatus, cyStatusReal,
             SWP_NOZORDER | (m_MainWindow_Fullscreen ? SWP_HIDEWINDOW : SWP_SHOWWINDOW));
 }
 

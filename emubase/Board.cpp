@@ -79,24 +79,28 @@ void CMotherboard::SetTrace(uint32_t dwTrace)
     m_dwTrace = dwTrace;
 }
 
-void CMotherboard::Reset ()
+void CMotherboard::Reset()
 {
     m_pCPU->Stop();
 
     // Reset ports
     m_LcdAddr = 0;  m_LcdConf = 0x88c6;  m_LcdIndex = 0xffff;
-    m_Port170006 = m_Port170006wr = 0;
     m_Port177514 = 0377;
     m_Port170020 = m_Port170022 = m_Port170024 = m_Port170030 = 0;
     m_okSoundOnOff = false;
     //m_Timer1 = m_Timer1div = m_Timer2 = 0;
     m_Port176500 = m_Port176502 = m_Port176504 = m_Port176506 = 0;
 
+    // External devices controller
+    m_ExtDeviceKeyboardScan = 0;
+    m_ExtDeviceControl = 0;
+    m_ExtDeviceShift = 0xff;
+    m_ExtDeviceSelect = false;
+    m_ExtDeviceIntStatus = 0xffff;
+
     ResetDevices();
 
     m_pCPU->Start();
-    if (m_Configuration >= 400)
-        m_pCPU->FireHALT();
 }
 
 // Load 4 KB ROM image from the buffer
@@ -152,9 +156,6 @@ uint8_t CMotherboard::GetROMByte(uint16_t offset)
 void CMotherboard::ResetDevices()
 {
     //m_pCPU->DeassertHALT();//DEBUG
-    m_Port170006 |= 0100000;
-    m_Port170006wr = 0;
-    m_pCPU->FireHALT();
 
     // Reset ports
     //TODO
@@ -162,8 +163,6 @@ void CMotherboard::ResetDevices()
 
 void CMotherboard::ResetHALT()
 {
-    m_Port170006 = 0;
-    m_Port170006wr = 0;
 }
 
 void CMotherboard::Tick50()  // 50 Hz timer
@@ -171,13 +170,6 @@ void CMotherboard::Tick50()  // 50 Hz timer
     if (m_okTimer50OnOff)
     {
         m_pCPU->TickEVNT();
-    }
-
-    //NOTE: Прерывание HALT с кодом Н3 должно генерироваться каждые 1/50 секунды
-    m_Port170006 |= 010000;  // Сигнал Н3
-    if ((m_Port170006wr & 3) == 0 && !m_pCPU->IsHaltMode())
-    {
-        m_pCPU->FireHALT();
     }
 
     if (m_Timer2 == 0)
@@ -345,21 +337,81 @@ void CMotherboard::KeyboardEvent(uint8_t scancode, bool okPressed)
 {
     if (okPressed)  // Key released
     {
-        m_Port170006 |= 02000;
-        m_Port170006 |= scancode;
-        //if (m_Port177560 | 0100)
-        m_pCPU->FireHALT();
 #if !defined(PRODUCT)
-        if (m_dwTrace & TRACE_KEYBOARD)
+        //if (m_dwTrace & TRACE_KEYBOARD)
         {
-            if (scancode >= ' ' && scancode <= 127)
-                DebugLogFormat(_T("Keyboard '%c'\r\n"), scancode);
-            else
-                DebugLogFormat(_T("Keyboard 0x%02x\r\n"), scancode);
+            DebugLogFormat(_T("Keyboard %03o %d\r\n"), (uint16_t)scancode, (int)okPressed);
         }
 #endif
+        m_ExtDeviceKeyboardScan = scancode;
+        //TODO: Interrupt??
         return;
     }
+}
+
+uint8_t CMotherboard::ExtDeviceReadData()
+{
+    uint8_t result = m_ExtDeviceShift;
+    m_ExtDeviceShift = 0xff;
+    m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
+    if (m_ExtDeviceSelect)
+    {
+        if ((m_ExtDeviceControl & 0x20) == 0)
+            m_pCPU->InterruptVIRQ(7, 0000304);
+        //TODO: Read
+    }
+
+    return result;
+}
+uint16_t CMotherboard::ExtDeviceReadStatus()
+{
+    return (m_ExtDeviceControl & 0x70) | 0xff84 | (m_ExtDeviceSelect ? 0 : 8);
+}
+uint8_t CMotherboard::ExtDeviceReadCommand()
+{
+    if (m_ExtDeviceSelect)
+    {
+        m_ExtDeviceSelect = false;
+        if ((m_ExtDeviceControl & 0x20) == 0)
+            m_pCPU->InterruptVIRQ(7, 0000304);
+        return m_ExtDeviceShift;
+    }
+
+    return 0;
+}
+void CMotherboard::ExtDeviceWriteData(uint8_t byte)
+{
+    m_ExtDeviceShift = byte;
+    m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
+    if (m_ExtDeviceSelect)
+    {
+        //if ((m_ExtDeviceControl & 0x20) == 0)
+        //    m_pCPU->InterruptVIRQ(7, 0000304);
+        //TODO: Read/Write
+    }
+}
+void CMotherboard::ExtDeviceWriteClockRate(uint16_t /*word*/)
+{
+    //TODO: Ignored for now
+}
+void CMotherboard::ExtDeviceWriteControl(uint8_t byte)
+{
+    m_ExtDeviceControl = byte;
+    if (m_ExtDeviceSelect)
+    {
+        //if ((m_ExtDeviceControl & 0x20) == 0)
+        //    m_pCPU->InterruptVIRQ(7, 0000304);
+        //TODO: Read
+    }
+}
+void CMotherboard::ExtDeviceWriteCommand(uint8_t byte)
+{
+    m_ExtDeviceSelect = true;
+    m_ExtDeviceShift = byte;
+    m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
+    //if ((m_ExtDeviceControl & 0x20) == 0)
+    //    m_pCPU->InterruptVIRQ(7, 0000304);
+    //TODO: Read/Write
 }
 
 
@@ -495,7 +547,7 @@ const uint8_t* CMotherboard::GetVideoBuffer()
     return (m_pRAM + m_LcdAddr);
 }
 
-int CMotherboard::TranslateAddress(uint16_t address, bool okHaltMode, bool /*okExec*/, uint16_t* pOffset)
+int CMotherboard::TranslateAddress(uint16_t address, bool /*okHaltMode*/, bool /*okExec*/, uint16_t* pOffset)
 {
     if (address < 0040000)  // 000000-037777 -- RAM, 16K
     {
@@ -549,6 +601,15 @@ uint16_t CMotherboard::GetPortWord(uint16_t address)
 {
     switch (address)
     {
+    case 0164020:  // External devices controller, data register
+        return ExtDeviceReadData();
+    case 0164022:  // External devices controller, interrupt status
+        return ExtDeviceReadIntStatus();
+    case 0164024:  // External devices controller, status register
+        return ExtDeviceReadStatus();
+    case 0164026:  // External devices controller, command
+        return ExtDeviceReadCommand();
+
         //TODO
 
     default:
@@ -612,10 +673,19 @@ void CMotherboard::SetPortWord(uint16_t address, uint16_t word)
         m_LcdConf = word;
         break;
 
+    case 0164020:
+        ExtDeviceWriteData(word & 0xff);
+        break;
     case 0164022:
+        ExtDeviceWriteClockRate(word);
+        break;
     case 0164024:
+        ExtDeviceWriteControl(word & 0xff);
+        break;
     case 0164026:
-        break;  //STUB
+        ExtDeviceWriteCommand(word & 0xff);
+        break;
+
     case 0164030:
     case 0164032:  // RG1
     case 0164034:  // RG2
@@ -659,8 +729,6 @@ void CMotherboard::SaveToImage(uint8_t* pImage)
     *pwImage++ = m_LcdAddr;
     *pwImage++ = m_LcdConf;
     *pwImage++ = m_LcdIndex;
-    *pwImage++ = m_Port170006;
-    *pwImage++ = m_Port170006wr;
     *pwImage++ = m_Port177514;
     *pwImage++ = m_Port177516;
     *pwImage++ = m_Port170020;
@@ -691,8 +759,6 @@ void CMotherboard::LoadFromImage(const uint8_t* pImage)
     m_LcdAddr = *pwImage++;
     m_LcdConf = *pwImage++;
     m_LcdIndex = *pwImage++;
-    m_Port170006 = *pwImage++;
-    m_Port170006wr = *pwImage++;
     m_Port177516 = *pwImage++;
     m_Port170020 = *pwImage++;
     m_Port170022 = *pwImage++;

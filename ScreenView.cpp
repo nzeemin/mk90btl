@@ -30,8 +30,8 @@ HDRAWDIB m_hdd = NULL;
 BITMAPINFO m_bmpinfo;
 HBITMAP m_hbmp = NULL;
 DWORD * m_bits = NULL;
-int m_cxScreenWidth = MK90_SCREEN_WIDTH;
-int m_cyScreenHeight = MK90_SCREEN_HEIGHT;
+int m_cxScreenWidth = DEFAULT_SCREEN_WIDTH;
+int m_cyScreenHeight = DEFAULT_SCREEN_HEIGHT;
 int m_xScreenOffset = 0;
 int m_yScreenOffset = 0;
 BYTE m_ScreenKeyState[256];
@@ -126,9 +126,8 @@ void ScreenView_Create(HWND hwndParent, int x, int y)
 
     int xLeft = x;
     int yTop = y;
-    int cyScreenHeight = 4 + MK90_SCREEN_HEIGHT + 4;
-    int cyHeight = cyScreenHeight;
-    int cxWidth = 4 + m_cxScreenWidth + 4;
+    int cyHeight = 8 + DEFAULT_SCREEN_HEIGHT + 8;
+    int cxWidth = 8 + m_cxScreenWidth + 8;
 
     g_hwndScreen = CreateWindow(
             CLASSNAME_SCREENVIEW, NULL,
@@ -138,6 +137,12 @@ void ScreenView_Create(HWND hwndParent, int x, int y)
 
     // Initialize m_ScreenKeyState
     VERIFY(::GetKeyboardState(m_ScreenKeyState));
+}
+
+void ScreenView_GetDesiredSize(SIZE& size)
+{
+    size.cx = m_cxScreenWidth / 120 * 6 + m_cxScreenWidth;
+    size.cy = m_cyScreenHeight / 64 * 6 + m_cyScreenHeight;
 }
 
 LRESULT CALLBACK ScreenViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)

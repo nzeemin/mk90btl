@@ -28,15 +28,13 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #define KEYCLASSGRAY 1
 #define KEYCLASSDARK 2
 
-#define KEYSCAN_NONE 255
+#define KEYSCAN_NONE 0
 
 HWND g_hwndKeyboard = (HWND) INVALID_HANDLE_VALUE;  // Keyboard View window handle
 
 int m_nKeyboardBitmapLeft = 0;
 int m_nKeyboardBitmapTop = 0;
-BYTE * m_pKeyboardRom = NULL;
 BYTE m_nKeyboardKeyPressed = KEYSCAN_NONE;  // Scan-code for the key pressed, or KEYSCAN_NONE
-BYTE m_nKeyboardCharPressed = 0;
 
 void KeyboardView_OnDraw(HDC hdc);
 int KeyboardView_GetKeyByPoint(int x, int y);
@@ -167,9 +165,6 @@ void KeyboardView_RegisterClass()
 
 void KeyboardView_Init()
 {
-    HRSRC hres = ::FindResource(NULL, MAKEINTRESOURCE(IDR_MK90_KEYB), RT_RCDATA);
-    HGLOBAL hgData = ::LoadResource(NULL, hres);
-    m_pKeyboardRom = (BYTE*) ::LockResource(hgData);
 }
 
 void KeyboardView_Done()
@@ -215,48 +210,16 @@ LRESULT CALLBACK KeyboardViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
         {
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
-            WORD fwkeys = (WORD) wParam;
+            //WORD fwkeys = (WORD) wParam;
 
             int keyindex = KeyboardView_GetKeyByPoint(x, y);
             if (keyindex == -1) break;
-            BYTE keyscan = (BYTE) m_arrKeyboardKeys[keyindex].scan;
-            if (keyscan == KEYSCAN_NONE) break;
+            BYTE keyscan = m_arrKeyboardKeys[keyindex].scan;
+            if (keyscan == KEYSCAN_NONE)
+                break;
 
-            if (keyscan < 128)
-            {
-                // Convert keyscan to key char
-                BOOL ctrl = (fwkeys & MK_CONTROL) != 0;
-                BOOL shift = (fwkeys & MK_SHIFT) != 0;
-                bool islat = true;//TODO
-                int tableindex = 1 | (shift ? 4 : 0) | (ctrl ? 0 : 2) | (islat ? 0 : 8);  //TODO
-                int index = tableindex * 128 + keyscan;
-                m_nKeyboardCharPressed = m_pKeyboardRom[index];
-//#if !defined(PRODUCT)
-//                DebugPrintFormat(_T("Keyboard key: 0x%0x\r\n"), m_nKeyboardCharPressed);
-//#endif
-
-                // Fire keydown event
-                ScreenView_KeyEvent(m_nKeyboardCharPressed, TRUE);
-            }
-            else
-            {
-                switch (keyscan)
-                {
-                case KEYEXTRA_LAT:
-                    break;
-                case KEYEXTRA_RUS:
-                    break;
-                case KEYEXTRA_RUSLAT:
-                    break;
-                case KEYEXTRA_CIF:
-                    break;
-                case KEYEXTRA_DOP:
-                    break;
-                case KEYEXTRA_TIMER:
-                    break;
-                }
-            }
-
+            // Fire keydown event and capture mouse
+            ScreenView_KeyEvent(keyscan, TRUE);
             ::SetCapture(g_hwndKeyboard);
 
             // Draw focus frame for the key pressed
@@ -272,8 +235,7 @@ LRESULT CALLBACK KeyboardViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
         if (m_nKeyboardKeyPressed != KEYSCAN_NONE)
         {
             // Fire keyup event and release mouse
-            if (m_nKeyboardKeyPressed < 128)
-                ScreenView_KeyEvent(m_nKeyboardCharPressed, FALSE);
+            ScreenView_KeyEvent(m_nKeyboardKeyPressed, FALSE);
             ::ReleaseCapture();
 
             // Draw focus frame for the released key
@@ -307,10 +269,10 @@ void KeyboardView_OnDraw(HDC hdc)
     HBRUSH hbrGray = ::CreateSolidBrush(COLOR_KEYBOARD_GRAY);
     HBRUSH hbrDark = ::CreateSolidBrush(COLOR_KEYBOARD_DARK);
     HBRUSH hbrRed = ::CreateSolidBrush(COLOR_KEYBOARD_RED);
-    m_nKeyboardBitmapLeft = (rc.right - 300) / 2;
+    m_nKeyboardBitmapLeft = 4; //(rc.right - 300) / 2;
     m_nKeyboardBitmapTop = (rc.bottom - 330) / 2;
     if (m_nKeyboardBitmapTop < 0) m_nKeyboardBitmapTop = 0;
-    if (m_nKeyboardBitmapTop > 16) m_nKeyboardBitmapTop = 16;
+    //if (m_nKeyboardBitmapTop > 16) m_nKeyboardBitmapTop = 16;
 
     HFONT hfont = CreateDialogFont();
     HGDIOBJ hOldFont = ::SelectObject(hdc, hfont);

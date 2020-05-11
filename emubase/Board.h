@@ -155,8 +155,6 @@ private:  // Ports: implementation
     uint16_t    m_LcdAddr;
     uint16_t    m_LcdConf;
     uint16_t    m_LcdIndex;
-    uint16_t    m_Port170006;       // Регистр данных клавиатуры (байт 170006) и регистр фиксации HALT-запросов (байт 170007)
-    uint16_t    m_Port170006wr;     // Регистр 170006 на запись
     uint16_t    m_Port170020;       // Регистр состояния таймера
     uint16_t    m_Port170022;       // Регистр частоты
     uint16_t    m_Port170024;       // Регистр длительности
@@ -167,6 +165,20 @@ private:  // Ports: implementation
     uint16_t    m_Port176506;       // Регистр данных передатчика последовательного порта
     uint16_t    m_Port177514;       // Регистр состояния ИРПР
     uint16_t    m_Port177516;       // Регистр данных ИРПР
+private:  // Implementation: external devices controller
+    uint8_t     m_ExtDeviceKeyboardScan;
+    uint8_t     m_ExtDeviceControl;
+    uint8_t     m_ExtDeviceShift;
+    bool        m_ExtDeviceSelect;
+    uint16_t    m_ExtDeviceIntStatus;
+    uint8_t     ExtDeviceReadData();
+    uint16_t    ExtDeviceReadIntStatus() { return m_ExtDeviceIntStatus; }
+    uint16_t    ExtDeviceReadStatus();
+    uint8_t     ExtDeviceReadCommand();
+    void        ExtDeviceWriteData(uint8_t byte);
+    void        ExtDeviceWriteClockRate(uint16_t word);
+    void        ExtDeviceWriteControl(uint8_t byte);
+    void        ExtDeviceWriteCommand(uint8_t byte);
 private:
     uint16_t    m_CPUbp;  // CPU breakpoint address
     uint32_t    m_dwTrace;  // Trace flags

@@ -69,8 +69,8 @@ void DebugLogFormat(LPCTSTR pszFormat, ...);
 // Processor register names
 const TCHAR* REGISTER_NAME[];
 
-const int MK90_SCREEN_WIDTH = 120 * 3;
-const int MK90_SCREEN_HEIGHT = 64 * 3;
+const int DEFAULT_SCREEN_WIDTH = 120 * 3;
+const int DEFAULT_SCREEN_HEIGHT = 64 * 3;
 
 
 HFONT CreateMonospacedFont();
