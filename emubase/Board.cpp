@@ -345,10 +345,33 @@ void CMotherboard::KeyboardEvent(uint8_t scancode, bool okPressed)
 #endif
         m_ExtDeviceKeyboardScan = scancode;
         //TODO: Interrupt??
+        m_pCPU->InterruptVIRQ(8, 0000310);
         return;
     }
 }
 
+void CMotherboard::ExtDeviceReadWrite()
+{
+    switch (m_ExtDeviceControl & 0x0f)
+    {
+    case 0:  // read SMP 0
+    case 1:  // read SMP 1
+        break;
+    case 2:  // read keyboard
+        if (m_ExtDeviceKeyboardScan != 0)
+        {
+            //DebugLogFormat(_T("ExtDeviceReadData Keyboard %03o\r\n"), (uint16_t)m_ExtDeviceKeyboardScan);
+            m_ExtDeviceShift = m_ExtDeviceKeyboardScan;
+            m_ExtDeviceKeyboardScan = 0;
+            if ((m_ExtDeviceControl & 0x20) == 0)
+                m_pCPU->InterruptVIRQ(7, 0000304);
+        }
+        break;
+    case 8:  // write SMP 0
+    case 9:  // write SMP 1
+        break;
+    }
+}
 uint8_t CMotherboard::ExtDeviceReadData()
 {
     uint8_t result = m_ExtDeviceShift;
@@ -356,11 +379,9 @@ uint8_t CMotherboard::ExtDeviceReadData()
     m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
     if (m_ExtDeviceSelect)
     {
-        if ((m_ExtDeviceControl & 0x20) == 0)
-            m_pCPU->InterruptVIRQ(7, 0000304);
+        ExtDeviceReadWrite();
         //TODO: Read
     }
-
     return result;
 }
 uint16_t CMotherboard::ExtDeviceReadStatus()
@@ -376,7 +397,6 @@ uint8_t CMotherboard::ExtDeviceReadCommand()
             m_pCPU->InterruptVIRQ(7, 0000304);
         return m_ExtDeviceShift;
     }
-
     return 0;
 }
 void CMotherboard::ExtDeviceWriteData(uint8_t byte)
@@ -385,8 +405,7 @@ void CMotherboard::ExtDeviceWriteData(uint8_t byte)
     m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
     if (m_ExtDeviceSelect)
     {
-        //if ((m_ExtDeviceControl & 0x20) == 0)
-        //    m_pCPU->InterruptVIRQ(7, 0000304);
+        ExtDeviceReadWrite();
         //TODO: Read/Write
     }
 }
@@ -399,8 +418,7 @@ void CMotherboard::ExtDeviceWriteControl(uint8_t byte)
     m_ExtDeviceControl = byte;
     if (m_ExtDeviceSelect)
     {
-        //if ((m_ExtDeviceControl & 0x20) == 0)
-        //    m_pCPU->InterruptVIRQ(7, 0000304);
+        ExtDeviceReadWrite();
         //TODO: Read
     }
 }
@@ -409,8 +427,7 @@ void CMotherboard::ExtDeviceWriteCommand(uint8_t byte)
     m_ExtDeviceSelect = true;
     m_ExtDeviceShift = byte;
     m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
-    //if ((m_ExtDeviceControl & 0x20) == 0)
-    //    m_pCPU->InterruptVIRQ(7, 0000304);
+    ExtDeviceReadWrite();
     //TODO: Read/Write
 }
 

@@ -119,20 +119,20 @@ m_arrKeyboardKeys[] =
     { 222, 212, 24, 20, KEYCLASSGRAY, _T("@"),      0327 }, // Þ @
     { 256, 212, 24, 20, KEYCLASSGRAY, _T("Q"),      0367 }, // ß Q
 
-    {  18, 250, 24, 20, KEYCLASSLITE, _T("?"),      0033 },
+    {  18, 250, 24, 20, KEYCLASSLITE, _T("ÑÓ"),     0033 },
     {  52, 250, 24, 20, KEYCLASSLITE, _T("\u2191"), 0073 }, // Up
-    {  86, 250, 24, 20, KEYCLASSLITE, _T("<-"),     0133 }, // Left
+    {  86, 250, 24, 20, KEYCLASSLITE, _T("\u2190"), 0133 }, // Left
     { 120, 250, 24, 20, KEYCLASSLITE, _T(","),      0173 }, // , <
     { 154, 250, 24, 20, KEYCLASSLITE, _T("."),      0233 }, // . >
-    { 188, 250, 24, 20, KEYCLASSLITE, _T("->"),     0273 }, // Right
+    { 188, 250, 24, 20, KEYCLASSLITE, _T("\u2192"), 0273 }, // Right
     { 222, 250, 24, 20, KEYCLASSLITE, _T("ÇÂ"),     0333 },
-    { 256, 250, 24, 20, KEYCLASSLITE, _T("ÂÊ"),     0373 }, // ÂÂÎÄ
+    { 256, 250, 24, 20, KEYCLASSLITE, _T("ÂÊ"),     0373 }, // ÂÊ Enter
 
     {  18, 288, 24, 20, KEYCLASSLITE, _T("Ð/Ë"),    0037 },
-    {  52, 288, 24, 20, KEYCLASSLITE, _T("?"),      0077 }, // Down
-    {  86, 288, 24, 20, KEYCLASSLITE, _T("?"),      0137 },
+    {  52, 288, 24, 20, KEYCLASSLITE, _T("\u2193"), 0077 }, // Down
+    {  86, 288, 24, 20, KEYCLASSLITE, _T("\u21a7"), 0137 }, // Down from bar
     { 120, 288, 58, 20, KEYCLASSLITE, NULL,         0177 }, // Space
-    { 188, 288, 24, 20, KEYCLASSLITE, _T("?"),      0277 },
+    { 188, 288, 24, 20, KEYCLASSLITE, _T("\u21a5"), 0277 },
     { 222, 288, 24, 20, KEYCLASSLITE, _T("ÔÊ"),     0337 },
     { 256, 288, 24, 20, KEYCLASSLITE, _T("Â/Í"),    0377 }, // Shift
 };

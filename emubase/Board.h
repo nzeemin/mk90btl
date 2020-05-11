@@ -175,6 +175,7 @@ private:  // Implementation: external devices controller
     uint16_t    ExtDeviceReadIntStatus() { return m_ExtDeviceIntStatus; }
     uint16_t    ExtDeviceReadStatus();
     uint8_t     ExtDeviceReadCommand();
+    void        ExtDeviceReadWrite();
     void        ExtDeviceWriteData(uint8_t byte);
     void        ExtDeviceWriteClockRate(uint16_t word);
     void        ExtDeviceWriteControl(uint8_t byte);
