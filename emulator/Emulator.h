@@ -47,8 +47,6 @@ void Emulator_Done();
 void Emulator_SetCPUBreakpoint(uint16_t address);
 bool Emulator_IsBreakpoint();
 void Emulator_SetSound(bool soundOnOff);
-bool Emulator_SetSerial(bool serialOnOff, LPCTSTR serialPort);
-void Emulator_SetParallel(bool parallelOnOff);
 void Emulator_Start();
 void Emulator_Stop();
 void Emulator_Reset();

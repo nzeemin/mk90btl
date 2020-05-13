@@ -68,6 +68,8 @@
 #define ID_EMULATOR_CONF                32803
 #define ID_CONF_BASIC10                 32813
 #define ID_CONF_BASIC20                 32814
+#define ID_EMULATOR_SMP0                32820
+#define ID_EMULATOR_SMP1                32821
 #define ID_EMULATOR_SERIAL              32826
 #define ID_EMULATOR_PARALLEL            32827
 #define ID_EMULATOR_SOUND               32831

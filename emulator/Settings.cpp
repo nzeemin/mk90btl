@@ -20,8 +20,6 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 const TCHAR m_Settings_IniAppName[] = _T("MK90");
 TCHAR m_Settings_IniPath[MAX_PATH];
 
-DCB  m_Settings_SerialConfig;
-DCB  m_Settings_NetComConfig;
 
 //////////////////////////////////////////////////////////////////////
 // Options
@@ -39,44 +37,6 @@ void Settings_Init()
     *pExt++ = _T('i');
     *pExt++ = _T('n');
     *pExt++ = _T('i');
-
-    // Set m_Settings_SerialConfig defaults
-    ::memset(&m_Settings_SerialConfig, 0, sizeof(DCB));
-    m_Settings_SerialConfig.DCBlength = sizeof(DCB);
-    m_Settings_SerialConfig.BaudRate = 9600;
-    m_Settings_SerialConfig.ByteSize = 8;
-    m_Settings_SerialConfig.fBinary = 1;
-    m_Settings_SerialConfig.fParity = 0;
-    m_Settings_SerialConfig.fOutxCtsFlow = m_Settings_SerialConfig.fOutxDsrFlow = 0;
-    m_Settings_SerialConfig.fDtrControl = DTR_CONTROL_ENABLE;
-    m_Settings_SerialConfig.fDsrSensitivity = 0;
-    m_Settings_SerialConfig.fTXContinueOnXoff = 0;
-    m_Settings_SerialConfig.fOutX = m_Settings_SerialConfig.fInX = 0;
-    m_Settings_SerialConfig.fErrorChar = 0;
-    m_Settings_SerialConfig.fNull = 0;
-    m_Settings_SerialConfig.fRtsControl = RTS_CONTROL_HANDSHAKE;
-    m_Settings_SerialConfig.fAbortOnError = 0;
-    m_Settings_SerialConfig.Parity = NOPARITY;
-    m_Settings_SerialConfig.StopBits = TWOSTOPBITS;
-
-    // Set m_Settings_NetComConfig defaults
-    ::memset(&m_Settings_NetComConfig, 0, sizeof(DCB));
-    m_Settings_NetComConfig.DCBlength = sizeof(DCB);
-    m_Settings_NetComConfig.BaudRate = 57600;
-    m_Settings_NetComConfig.ByteSize = 8;
-    m_Settings_NetComConfig.fBinary = 1;
-    m_Settings_NetComConfig.fParity = 1;
-    m_Settings_NetComConfig.fOutxCtsFlow = m_Settings_NetComConfig.fOutxDsrFlow = 0;
-    m_Settings_NetComConfig.fDtrControl = DTR_CONTROL_DISABLE;
-    m_Settings_NetComConfig.fDsrSensitivity = 0;
-    m_Settings_NetComConfig.fTXContinueOnXoff = 0;
-    m_Settings_NetComConfig.fOutX = m_Settings_NetComConfig.fInX = 0;
-    m_Settings_NetComConfig.fErrorChar = 0;
-    m_Settings_NetComConfig.fNull = 0;
-    m_Settings_NetComConfig.fRtsControl = RTS_CONTROL_DISABLE;
-    m_Settings_NetComConfig.fAbortOnError = 0;
-    m_Settings_NetComConfig.Parity = ODDPARITY;
-    m_Settings_NetComConfig.StopBits = TWOSTOPBITS;
 }
 void Settings_Done()
 {
@@ -239,16 +199,16 @@ SETTINGS_GETSET_DWORD(WindowFullscreen, _T("WindowFullscreen"), BOOL, FALSE);
 
 SETTINGS_GETSET_DWORD(Configuration, _T("Configuration"), int, 0);
 
-void Settings_GetCartridgeFilePath(int slot, LPTSTR buffer)
+void Settings_GetSmpFilePath(int slot, LPTSTR buffer)
 {
-    TCHAR bufValueName[] = _T("Cartridge0");
-    bufValueName[9] = _T('0') + (TCHAR)slot;
+    TCHAR bufValueName[] = _T("Smp0");
+    bufValueName[3] = _T('0') + (TCHAR)slot;
     Settings_LoadStringValue(bufValueName, buffer, MAX_PATH);
 }
-void Settings_SetCartridgeFilePath(int slot, LPCTSTR sFilePath)
+void Settings_SetSmpFilePath(int slot, LPCTSTR sFilePath)
 {
-    TCHAR bufValueName[] = _T("Cartridge0");
-    bufValueName[9] = _T('0') + (TCHAR)slot;
+    TCHAR bufValueName[] = _T("Smp0");
+    bufValueName[3] = _T('0') + (TCHAR)slot;
     Settings_SaveStringValue(bufValueName, sFilePath);
 }
 
@@ -287,84 +247,6 @@ SETTINGS_GETSET_DWORD(SoundVolume, _T("SoundVolume"), WORD, 0x3fff);
 SETTINGS_GETSET_DWORD(Keyboard, _T("Keyboard"), BOOL, TRUE);
 
 SETTINGS_GETSET_DWORD(MemoryMap, _T("MemoryMap"), BOOL, FALSE);
-
-SETTINGS_GETSET_DWORD(Serial, _T("Serial"), BOOL, FALSE);
-
-SETTINGS_GETSET_DWORD(Parallel, _T("Parallel"), BOOL, FALSE);
-
-void Settings_GetSerialPort(LPTSTR buffer)
-{
-    Settings_LoadStringValue(_T("SerialPort"), buffer, 10);
-}
-void Settings_SetSerialPort(LPCTSTR sValue)
-{
-    Settings_SaveStringValue(_T("SerialPort"), sValue);
-}
-
-BOOL m_Settings_SerialConfig_Valid = FALSE;
-void Settings_GetSerialConfig(DCB * pDcb)
-{
-    if (!m_Settings_SerialConfig_Valid)
-    {
-        DCB dcb;
-        if (Settings_LoadBinaryValue(_T("SerialConfig"), &dcb, sizeof(DCB)))
-        {
-            ::memcpy(&m_Settings_SerialConfig, &dcb, sizeof(DCB));
-        }
-        //NOTE: else -- use defaults from m_Settings_SerialConfig
-
-        m_Settings_SerialConfig_Valid = TRUE;
-    }
-    if (m_Settings_SerialConfig_Valid)
-    {
-        ::memcpy(pDcb, &m_Settings_SerialConfig, sizeof(DCB));
-    }
-}
-void Settings_SetSerialConfig(const DCB * pDcb)
-{
-    ::memcpy(&m_Settings_SerialConfig, pDcb, sizeof(DCB));
-    Settings_SaveBinaryValue(_T("SerialConfig"), (const void *)pDcb, sizeof(DCB));
-    m_Settings_SerialConfig_Valid = TRUE;
-}
-
-SETTINGS_GETSET_DWORD(Network, _T("Network"), BOOL, FALSE);
-
-SETTINGS_GETSET_DWORD(NetStation, _T("NetStation"), int, 0);
-
-void Settings_GetNetComPort(LPTSTR buffer)
-{
-    Settings_LoadStringValue(_T("NetComPort"), buffer, 10);
-}
-void Settings_SetNetComPort(LPCTSTR sValue)
-{
-    Settings_SaveStringValue(_T("NetComPort"), sValue);
-}
-
-BOOL m_Settings_NetComConfig_Valid = FALSE;
-void Settings_GetNetComConfig(DCB * pDcb)
-{
-    if (!m_Settings_NetComConfig_Valid)
-    {
-        DCB dcb;
-        if (Settings_LoadBinaryValue(_T("NetComConfig"), &dcb, sizeof(DCB)))
-        {
-            ::memcpy(&m_Settings_NetComConfig, &dcb, sizeof(DCB));
-        }
-        //NOTE: else -- use defaults from m_Settings_NetComConfig
-
-        m_Settings_NetComConfig_Valid = TRUE;
-    }
-    if (m_Settings_NetComConfig_Valid)
-    {
-        ::memcpy(pDcb, &m_Settings_NetComConfig, sizeof(DCB));
-    }
-}
-void Settings_SetNetComConfig(const DCB * pDcb)
-{
-    ::memcpy(&m_Settings_NetComConfig, pDcb, sizeof(DCB));
-    Settings_SaveBinaryValue(_T("NetComConfig"), (const void *)pDcb, sizeof(DCB));
-    m_Settings_NetComConfig_Valid = TRUE;
-}
 
 
 //////////////////////////////////////////////////////////////////////

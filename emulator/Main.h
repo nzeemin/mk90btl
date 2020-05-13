@@ -97,8 +97,8 @@ void Settings_SetWindowFullscreen(BOOL flag);
 BOOL Settings_GetWindowFullscreen();
 void Settings_SetConfiguration(int configuration);
 int  Settings_GetConfiguration();
-void Settings_SetCartridgeFilePath(int slot, LPCTSTR sFilePath);
-void Settings_GetCartridgeFilePath(int slot, LPTSTR buffer);
+void Settings_SetSmpFilePath(int slot, LPCTSTR sFilePath);
+void Settings_GetSmpFilePath(int slot, LPTSTR buffer);
 void Settings_SetScreenViewMode(int mode);
 int  Settings_GetScreenViewMode();
 void Settings_SetScreenPalette(int palette);
@@ -129,22 +129,6 @@ WORD Settings_GetSpriteAddress();
 void Settings_SetSpriteAddress(WORD value);
 WORD Settings_GetSpriteWidth();
 void Settings_SetSpriteWidth(WORD value);
-void Settings_SetSerial(BOOL flag);
-BOOL Settings_GetSerial();
-void Settings_GetSerialPort(LPTSTR buffer);
-void Settings_SetSerialPort(LPCTSTR sValue);
-void Settings_GetSerialConfig(DCB * pDcb);
-void Settings_SetSerialConfig(const DCB * pDcb);
-void Settings_SetParallel(BOOL flag);
-BOOL Settings_GetParallel();
-void Settings_SetNetwork(BOOL flag);
-BOOL Settings_GetNetwork();
-int  Settings_GetNetStation();
-void Settings_SetNetStation(int value);
-void Settings_GetNetComPort(LPTSTR buffer);
-void Settings_SetNetComPort(LPCTSTR sValue);
-void Settings_GetNetComConfig(DCB * pDcb);
-void Settings_SetNetComConfig(const DCB * pDcb);
 
 
 //////////////////////////////////////////////////////////////////////

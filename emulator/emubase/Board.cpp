@@ -26,12 +26,8 @@ CMotherboard::CMotherboard ()
 
     m_dwTrace = TRACE_NONE;
     m_SoundGenCallback = NULL;
-    m_SerialInCallback = NULL;
-    m_SerialOutCallback = NULL;
-    m_ParallelOutCallback = NULL;
     m_okTimer50OnOff = false;
     m_okSoundOnOff = false;
-    m_Timer1 = m_Timer1div = m_Timer2 = 0;
 
     // Allocate memory for RAM and ROM
     m_pRAM = (uint8_t*) ::calloc(64 * 1024, 1);
@@ -50,6 +46,21 @@ CMotherboard::~CMotherboard ()
     // Free memory
     ::free(m_pRAM);
     ::free(m_pROM);
+
+    // Free memory allocated for SMPs and close the files
+    for (int slot = 0; slot < 2; slot++)
+    {
+        if (m_Smp[slot].pData != nullptr)
+        {
+            ::free(m_Smp[slot].pData);
+            m_Smp[slot].pData = nullptr;
+        }
+        if (m_Smp[slot].fpFile != nullptr)
+        {
+            ::fclose(m_Smp[slot].fpFile);
+            m_Smp[slot].fpFile = nullptr;
+        }
+    }
 }
 
 void CMotherboard::SetConfiguration(uint16_t conf)
@@ -85,11 +96,7 @@ void CMotherboard::Reset()
 
     // Reset ports
     m_LcdAddr = 0;  m_LcdConf = 0x88c6;  m_LcdIndex = 0xffff;
-    m_Port177514 = 0377;
-    m_Port170020 = m_Port170022 = m_Port170024 = m_Port170030 = 0;
     m_okSoundOnOff = false;
-    //m_Timer1 = m_Timer1div = m_Timer2 = 0;
-    m_Port176500 = m_Port176502 = m_Port176504 = m_Port176506 = 0;
 
     // External devices controller
     m_ExtDeviceKeyboardScan = 0;
@@ -119,7 +126,72 @@ void CMotherboard::LoadRAM(int startbank, const uint8_t* pBuffer, int length)
 }
 
 
-// Работа с памятью //////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+bool CMotherboard::IsSmpImageAttached(int slot) const
+{
+    ASSERT(slot >= 0 && slot < 2);
+    return m_Smp[slot].fpFile != nullptr;
+}
+bool CMotherboard::AttachSmpImage(int slot, LPCTSTR sFileName)
+{
+    ASSERT(slot >= 0 && slot < 2);
+
+    // if image attached - detach one first
+    if (m_Smp[slot].fpFile != nullptr)
+        DetachSmpImage(slot);
+
+    // open the file
+    m_Smp[slot].fpFile = ::_tfopen(sFileName, _T("r+b"));
+    if (m_Smp[slot].fpFile == nullptr)
+        return false;
+
+    // get file size
+    ::fseek(m_Smp[slot].fpFile, 0, SEEK_END);
+    size_t size = ::ftell(m_Smp[slot].fpFile);
+    if (size > 10240)
+    {
+        DetachSmpImage(slot);
+        return false;
+    }
+
+    m_Smp[slot].size = size;
+    m_Smp[slot].mask = size < 65536 ? 0xffff : 0xffffff;
+
+    // allocate the memory
+    m_Smp[slot].pData = (uint8_t*)::calloc(1, m_Smp[slot].size);
+    //TODO: if null
+
+    // load the file data
+    ::fseek(m_Smp[slot].fpFile, 0, SEEK_SET);
+    size_t count = ::fread(m_Smp[slot].pData, 1, m_Smp[slot].size, m_Smp[slot].fpFile);
+    //TODO: if count != size
+
+    return true;
+}
+
+void CMotherboard::DetachSmpImage(int slot)
+{
+    ASSERT(slot >= 0 && slot < 2);
+
+    if (m_Smp[slot].fpFile == nullptr)
+        return;
+
+    // free the memory
+    if (m_Smp[slot].pData != nullptr)
+    {
+        ::free(m_Smp[slot].pData);
+        m_Smp[slot].pData = nullptr;
+    }
+
+    // close the file
+    ::fclose(m_Smp[slot].fpFile);
+    m_Smp[slot].fpFile = nullptr;
+    m_Smp[slot].size = 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////
 
 uint16_t CMotherboard::GetRAMWord(uint16_t offset)
 {
@@ -152,7 +224,6 @@ uint8_t CMotherboard::GetROMByte(uint16_t offset)
 
 //////////////////////////////////////////////////////////////////////
 
-
 void CMotherboard::ResetDevices()
 {
     //m_pCPU->DeassertHALT();//DEBUG
@@ -172,58 +243,12 @@ void CMotherboard::Tick50()  // 50 Hz timer
         m_pCPU->TickEVNT();
     }
 
-    if (m_Timer2 == 0)
-    {
-        // Если разряды 4 и 5 равны 1 1, то запуск второго счётчика происходит по тактовому входу С2
-        //if ((m_Port170020 & 060) == 060)
-        if (m_Port170024 != 0 && (m_Port170020 & 060) != 060)
-        {
-            m_Timer2 = m_Port170024;
-#if !defined(PRODUCT)
-            if (m_dwTrace & TRACE_TIMER) DebugLogFormat(_T("Tick50 Timer2 START %06o\r\n"), m_Timer2);
-#endif
-        }
-    }
-    else //if (m_Timer2 > 0)
-    {
-        m_Timer2--;
-        if (m_Timer2 == 0)
-        {
-            //m_okSoundOnOff = false;  // Судя по схеме, звук выключается по сигналу ЗПР2
-            m_Port170024 = 0;
-            //m_Timer2 = m_Port170024;
-#if !defined(PRODUCT)
-            if (m_dwTrace & TRACE_TIMER) DebugLog(_T("Tick50 Timer2 END\r\n"));
-#endif
-        }
-    }
+    //TODO
 }
 
 void CMotherboard::TimerTick() // Timer Tick, 8 MHz
 {
-    if (m_Timer1 == 0 || m_Timer1div == 0)
-    {
-        // Если разряды 2 и 3 равны 1 1, то запуск первого счётчика происходит по тактовому входу С1
-        if ((m_Port170020 & 014) == 014)
-        {
-            uint16_t octave = m_Port170030 & 7;  // Октава 1..7
-            m_Timer1div = (1 << octave);
-        }
-        return;
-    }
-
-    m_Timer1div--;
-    if (m_Timer1div == 0)
-    {
-        uint16_t octave = m_Port170030 & 7;  // Октава 1..7
-        m_Timer1div = (1 << octave);
-
-        m_Timer1--;
-        if (m_Timer1 == 0)
-        {
-            m_Timer1 = m_Port170022;
-        }
-    }
+    //TODO
 }
 
 void CMotherboard::DebugTicks()
@@ -249,8 +274,6 @@ bool CMotherboard::SystemFrame()
 {
     const int frameProcTicks = 16;
     const int audioticks = 20286 / (SOUNDSAMPLERATE / 25);
-    //const int serialOutTicks = 20000 / (9600 / 25);
-    int serialTxCount = 0;
 
     for (int frameticks = 0; frameticks < 20000; frameticks++)
     {
@@ -275,58 +298,6 @@ bool CMotherboard::SystemFrame()
 
         if (frameticks % audioticks == 0)  // AUDIO tick
             DoSound();
-
-        if (m_SerialInCallback != NULL && frameticks % 52 == 0)
-        {
-            uint8_t b;
-            if (m_SerialInCallback(&b))
-            {
-                if (m_Port176500 & 0200)  // Ready?
-                    m_Port176500 |= 010000;  // Set Overflow flag
-                else
-                {
-                    m_Port176502 = (uint16_t)b;
-                    m_Port176500 |= 0200;  // Set Ready flag
-                    if (m_Port176500 & 0100)  // Interrupt?
-                        m_pCPU->InterruptVIRQ(7, 0300);
-                }
-            }
-        }
-        if (m_SerialOutCallback != NULL && frameticks % 52 == 0)
-        {
-            if (serialTxCount > 0)
-            {
-                serialTxCount--;
-                if (serialTxCount == 0)  // Translation countdown finished - the byte translated
-                {
-                    (*m_SerialOutCallback)((uint8_t)(m_Port176506 & 0xff));
-                    m_Port176504 |= 0200;  // Set Ready flag
-                    if (m_Port176504 & 0100)  // Interrupt?
-                        m_pCPU->InterruptVIRQ(8, 0304);
-                }
-            }
-            else if ((m_Port176504 & 0200) == 0)  // Ready is 0?
-            {
-                serialTxCount = 8;  // Start translation countdown
-            }
-        }
-
-        if (m_ParallelOutCallback != NULL)
-        {
-            //if ((m_Port177514 & 0240) == 040)
-            //{
-            //    m_Port177514 |= 0200;  // Set TR flag
-            //    // Now printer waits for a next byte
-            //    if (m_Port177514 & 0100)
-            //        m_pCPU->InterruptVIRQ(5, 0200);
-            //}
-            //else if ((m_Port177514 & 0240) == 0)
-            //{
-            //    // Byte is ready, print it
-            //    (*m_ParallelOutCallback)((uint8_t)(m_Port177516 & 0xff));
-            //    m_Port177514 |= 040;  // Set Printer Acknowledge
-            //}
-        }
     }
 
     return true;
@@ -350,28 +321,6 @@ void CMotherboard::KeyboardEvent(uint8_t scancode, bool okPressed)
     }
 }
 
-void CMotherboard::ExtDeviceReadWrite()
-{
-    switch (m_ExtDeviceControl & 0x0f)
-    {
-    case 0:  // read SMP 0
-    case 1:  // read SMP 1
-        break;
-    case 2:  // read keyboard
-        if (m_ExtDeviceKeyboardScan != 0)
-        {
-            //DebugLogFormat(_T("ExtDeviceReadData Keyboard %03o\r\n"), (uint16_t)m_ExtDeviceKeyboardScan);
-            m_ExtDeviceShift = m_ExtDeviceKeyboardScan;
-            m_ExtDeviceKeyboardScan = 0;
-            if ((m_ExtDeviceControl & 0x20) == 0)
-                m_pCPU->InterruptVIRQ(7, 0000304);
-        }
-        break;
-    case 8:  // write SMP 0
-    case 9:  // write SMP 1
-        break;
-    }
-}
 uint8_t CMotherboard::ExtDeviceReadData()
 {
     uint8_t result = m_ExtDeviceShift;
@@ -379,8 +328,25 @@ uint8_t CMotherboard::ExtDeviceReadData()
     m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
     if (m_ExtDeviceSelect)
     {
-        ExtDeviceReadWrite();
-        //TODO: Read
+        switch (m_ExtDeviceControl & 0x0f)
+        {
+        case 0:  // read SMP 0
+        case 1:  // read SMP 1
+            m_ExtDeviceShift = SmpReadData(m_ExtDeviceControl & 1);
+            if ((m_ExtDeviceControl & 0x20) == 0)
+                m_pCPU->InterruptVIRQ(7, 0000304);
+            break;
+        case 2:  // read keyboard
+            if (m_ExtDeviceKeyboardScan != 0)
+            {
+                //DebugLogFormat(_T("ExtDeviceReadData Keyboard %03o\r\n"), (uint16_t)m_ExtDeviceKeyboardScan);
+                m_ExtDeviceShift = m_ExtDeviceKeyboardScan;
+                m_ExtDeviceKeyboardScan = 0;
+                if ((m_ExtDeviceControl & 0x20) == 0)
+                    m_pCPU->InterruptVIRQ(7, 0000304);
+            }
+            break;
+        }
     }
     return result;
 }
@@ -405,8 +371,31 @@ void CMotherboard::ExtDeviceWriteData(uint8_t byte)
     m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
     if (m_ExtDeviceSelect)
     {
-        ExtDeviceReadWrite();
-        //TODO: Read/Write
+        switch (m_ExtDeviceControl & 0x0f)
+        {
+        case 0:  // read SMP 0
+        case 1:  // read SMP 1
+            m_ExtDeviceShift = SmpReadData(m_ExtDeviceControl & 1);
+            if ((m_ExtDeviceControl & 0x20) == 0)
+                m_pCPU->InterruptVIRQ(7, 0000304);
+            break;
+        case 2:  // read keyboard
+            if (m_ExtDeviceKeyboardScan != 0)
+            {
+                //DebugLogFormat(_T("ExtDeviceReadData Keyboard %03o\r\n"), (uint16_t)m_ExtDeviceKeyboardScan);
+                m_ExtDeviceShift = m_ExtDeviceKeyboardScan;
+                m_ExtDeviceKeyboardScan = 0;
+                if ((m_ExtDeviceControl & 0x20) == 0)
+                    m_pCPU->InterruptVIRQ(7, 0000304);
+            }
+            break;
+        case 8:  // write SMP 0
+        case 9:  // write SMP 1
+            SmpWriteData(m_ExtDeviceControl & 1, m_ExtDeviceShift);
+            if ((m_ExtDeviceControl & 0x20) == 0)
+                m_pCPU->InterruptVIRQ(7, 0000304);
+            break;
+        }
     }
 }
 void CMotherboard::ExtDeviceWriteClockRate(uint16_t /*word*/)
@@ -418,8 +407,25 @@ void CMotherboard::ExtDeviceWriteControl(uint8_t byte)
     m_ExtDeviceControl = byte;
     if (m_ExtDeviceSelect)
     {
-        ExtDeviceReadWrite();
-        //TODO: Read
+        switch (m_ExtDeviceControl & 0x0f)
+        {
+        case 0:  // read SMP 0
+        case 1:  // read SMP 1
+            m_ExtDeviceShift = SmpReadData(m_ExtDeviceControl & 1);
+            if ((m_ExtDeviceControl & 0x20) == 0)
+                m_pCPU->InterruptVIRQ(7, 0000304);
+            break;
+        case 2:  // read keyboard
+            if (m_ExtDeviceKeyboardScan != 0)
+            {
+                //DebugLogFormat(_T("ExtDeviceReadData Keyboard %03o\r\n"), (uint16_t)m_ExtDeviceKeyboardScan);
+                m_ExtDeviceShift = m_ExtDeviceKeyboardScan;
+                m_ExtDeviceKeyboardScan = 0;
+                if ((m_ExtDeviceControl & 0x20) == 0)
+                    m_pCPU->InterruptVIRQ(7, 0000304);
+            }
+            break;
+        }
     }
 }
 void CMotherboard::ExtDeviceWriteCommand(uint8_t byte)
@@ -427,9 +433,88 @@ void CMotherboard::ExtDeviceWriteCommand(uint8_t byte)
     m_ExtDeviceSelect = true;
     m_ExtDeviceShift = byte;
     m_ExtDeviceIntStatus |= (1 << (m_ExtDeviceControl & 7));
-    ExtDeviceReadWrite();
-    //TODO: Read/Write
+
+    switch (m_ExtDeviceControl & 0x0f)
+    {
+    case 0:  // read SMP 0
+    case 1:  // read SMP 1
+        m_ExtDeviceShift = SmpReadCommand(m_ExtDeviceControl & 1);
+        if ((m_ExtDeviceControl & 0x20) == 0)
+            m_pCPU->InterruptVIRQ(7, 0000304);
+        break;
+    case 2:  // read keyboard
+        if (m_ExtDeviceKeyboardScan != 0)
+        {
+            //DebugLogFormat(_T("ExtDeviceReadData Keyboard %03o\r\n"), (uint16_t)m_ExtDeviceKeyboardScan);
+            m_ExtDeviceShift = m_ExtDeviceKeyboardScan;
+            m_ExtDeviceKeyboardScan = 0;
+            if ((m_ExtDeviceControl & 0x20) == 0)
+                m_pCPU->InterruptVIRQ(7, 0000304);
+        }
+        break;
+    case 8:  // write SMP 0
+    case 9:  // write SMP 1
+        SmpWriteCommand(m_ExtDeviceControl & 1, m_ExtDeviceShift);
+        if ((m_ExtDeviceControl & 0x20) == 0)
+            m_pCPU->InterruptVIRQ(7, 0000304);
+        break;
+    }
 }
+
+uint8_t CMotherboard::SmpReadCommand(int slot)
+{
+    ASSERT(slot >= 0 && slot < 2);
+
+    return 0; //STUB
+}
+void CMotherboard::SmpWriteCommand(int slot, uint8_t byte)
+{
+    ASSERT(slot >= 0 && slot < 2);
+
+    //DebugLogFormat(_T("SmpWriteCommand pos %04x cmd %02x\r\n"), m_Smp[slot].dataptr, (uint16_t)byte);
+    m_Smp[slot].cmd = byte;
+}
+uint8_t CMotherboard::SmpReadData(int slot)
+{
+    ASSERT(slot >= 0 && slot < 2);
+
+    switch ((m_Smp[slot].cmd & 0xf0) >> 4)
+    {
+    case 0:
+        return 0;
+    case 1:  // read data
+    case 13:
+        {
+            uint8_t result = 0xff;
+            if (m_Smp[slot].dataptr < m_Smp[slot].size)
+            {
+                result = *(m_Smp[slot].pData + m_Smp[slot].dataptr);
+            }
+            m_Smp[slot].dataptr = (m_Smp[slot].dataptr + ((m_Smp[slot].cmd & 0x80) ? 1 : -1)) & m_Smp[slot].mask;
+            //DebugLogFormat(_T("SmpReadData data %02x nextpos %06x\r\n"), (uint16_t)result, m_Smp[slot].dataptr);
+            return result;
+        }
+    default:
+        return 0xff;
+    }
+}
+void CMotherboard::SmpWriteData(int slot, uint8_t byte)
+{
+    ASSERT(slot >= 0 && slot < 2);
+
+    switch ((m_Smp[slot].cmd & 0xf0) >> 4)
+    {
+    case 10:  // write address
+        m_Smp[slot].dataptr = ((m_Smp[slot].dataptr << 8) | byte) & m_Smp[slot].mask;
+        break;
+    case 2:  // write data
+    case 12:
+    case 14:
+        //TODO
+        break;
+    }
+}
+
 
 
 //////////////////////////////////////////////////////////////////////
@@ -630,8 +715,9 @@ uint16_t CMotherboard::GetPortWord(uint16_t address)
         //TODO
 
     default:
-        if (address >= 0165000 && address <= 0165177)
+        if (address >= 0165000 && address <= 0165177)  // Real time clock
         {
+            DebugLogFormat(_T("READ PORT %06o PC=%06o\r\n"), address, m_pCPU->GetInstructionPC());
             //TODO
         }
         else
@@ -707,6 +793,7 @@ void CMotherboard::SetPortWord(uint16_t address, uint16_t word)
     case 0164032:  // RG1
     case 0164034:  // RG2
     case 0164036:
+        DebugLogFormat(_T("WRITE PORT %06o word=%06o PC=%06o\r\n"), address, word, m_pCPU->GetInstructionPC());
         break;  //STUB
 
     default:
@@ -746,15 +833,6 @@ void CMotherboard::SaveToImage(uint8_t* pImage)
     *pwImage++ = m_LcdAddr;
     *pwImage++ = m_LcdConf;
     *pwImage++ = m_LcdIndex;
-    *pwImage++ = m_Port177514;
-    *pwImage++ = m_Port177516;
-    *pwImage++ = m_Port170020;
-    *pwImage++ = m_Port170022;
-    *pwImage++ = m_Port170024;
-    *pwImage++ = m_Port170030;
-    *pwImage++ = m_Timer1;
-    *pwImage++ = m_Timer1div;
-    *pwImage++ = m_Timer2;
     *pwImage++ = (uint16_t)m_okSoundOnOff;
 
     // CPU status
@@ -776,14 +854,6 @@ void CMotherboard::LoadFromImage(const uint8_t* pImage)
     m_LcdAddr = *pwImage++;
     m_LcdConf = *pwImage++;
     m_LcdIndex = *pwImage++;
-    m_Port177516 = *pwImage++;
-    m_Port170020 = *pwImage++;
-    m_Port170022 = *pwImage++;
-    m_Port170024 = *pwImage++;
-    m_Port170030 = *pwImage++;
-    m_Timer1 = *pwImage++;
-    m_Timer1div = *pwImage++;
-    m_Timer2 = *pwImage++;
     m_okSoundOnOff = ((*pwImage++) != 0);
 
     // CPU status
@@ -806,18 +876,7 @@ void CMotherboard::DoSound(void)
     if (m_SoundGenCallback == NULL)
         return;
 
-    uint16_t volume = (m_Port170030 >> 3) & 3;  // Громкость 0..3
-    uint16_t octave = m_Port170030 & 7;  // Октава 1..7
-    if (!m_okSoundOnOff || volume == 0 || octave == 0)
-    {
-        (*m_SoundGenCallback)(0, 0);
-        return;
-    }
-    if (m_Timer1 > m_Port170022 / 2)
-    {
-        (*m_SoundGenCallback)(0, 0);
-        return;
-    }
+    uint16_t volume = 0;//TODO
 
     uint16_t sound = 0x1fff >> (3 - volume);
     (*m_SoundGenCallback)(sound, sound);
@@ -832,36 +891,6 @@ void CMotherboard::SetSoundGenCallback(SOUNDGENCALLBACK callback)
     else
     {
         m_SoundGenCallback = callback;
-    }
-}
-
-void CMotherboard::SetSerialCallbacks(SERIALINCALLBACK incallback, SERIALOUTCALLBACK outcallback)
-{
-    if (incallback == NULL || outcallback == NULL)  // Reset callbacks
-    {
-        m_SerialInCallback = NULL;
-        m_SerialOutCallback = NULL;
-        //TODO: Set port value to indicate we are not ready to translate
-    }
-    else
-    {
-        m_SerialInCallback = incallback;
-        m_SerialOutCallback = outcallback;
-        //TODO: Set port value to indicate we are ready to translate
-    }
-}
-
-void CMotherboard::SetParallelOutCallback(PARALLELOUTCALLBACK outcallback)
-{
-    if (outcallback == NULL)  // Reset callback
-    {
-        m_Port177514 |= 0100000;  // Set Error flag
-        m_ParallelOutCallback = NULL;
-    }
-    else
-    {
-        m_Port177514 &= ~0100000;  // Reset Error flag
-        m_ParallelOutCallback = outcallback;
     }
 }
 

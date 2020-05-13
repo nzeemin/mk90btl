@@ -45,30 +45,29 @@ class CProcessor;
 #define MK90IMAGE_HEADER2 0x21214147  // "BTL!"
 #define MK90IMAGE_VERSION 0x00010000  // 1.0
 
+
+//////////////////////////////////////////////////////////////////////
+
+struct CSmp
+{
+public:
+    FILE* fpFile;
+    size_t size;            // File size in bytes
+    uint8_t * pData;
+    uint32_t dataptr;       // Data offset
+    uint32_t mask;
+    uint8_t cmd;
+public:
+    CSmp() { fpFile = nullptr; pData = nullptr; size = 0; }
+    //void Reset();
+};
+
+
 //////////////////////////////////////////////////////////////////////
 
 // Sound generator callback function type
 typedef void (CALLBACK* SOUNDGENCALLBACK)(unsigned short L, unsigned short R);
 
-// Serial port callback for receiving
-// Output:
-//   pbyte      Byte received
-//   result     true means we have a new byte, false means not ready yet
-typedef bool (CALLBACK* SERIALINCALLBACK)(uint8_t* pbyte);
-
-// Serial port callback for translating
-// Input:
-//   byte       A byte to translate
-// Output:
-//   result     true means we translated the byte successfully, false means we have an error
-typedef bool (CALLBACK* SERIALOUTCALLBACK)(uint8_t byte);
-
-// Parallel port output callback
-// Input:
-//   byte       An output byte
-// Output:
-//   result     TRUE means OK, FALSE means we have an error
-typedef bool (CALLBACK* PARALLELOUTCALLBACK)(uint8_t byte);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -113,11 +112,12 @@ public:
     void        ExecuteCPU();  // Execute one CPU instruction
     bool        SystemFrame();  // Do one frame -- use for normal run
     void        KeyboardEvent(uint8_t scancode, bool okPressed);  // Key pressed or released
-    //uint16_t        GetPrinterOutPort() const { return m_Port177714out; }
+public:  // SMP
+    bool        AttachSmpImage(int slot, LPCTSTR sFileName);
+    void        DetachSmpImage(int slot);
+    bool        IsSmpImageAttached(int slot) const;
 public:  // Callbacks
     void		SetSoundGenCallback(SOUNDGENCALLBACK callback);
-    void        SetSerialCallbacks(SERIALINCALLBACK incallback, SERIALOUTCALLBACK outcallback);
-    void        SetParallelOutCallback(PARALLELOUTCALLBACK outcallback);
 public:  // Memory
     // Read command for execution
     uint16_t GetWordExec(uint16_t address, bool okHaltMode) { return GetWord(address, okHaltMode, TRUE); }
@@ -155,16 +155,6 @@ private:  // Ports: implementation
     uint16_t    m_LcdAddr;
     uint16_t    m_LcdConf;
     uint16_t    m_LcdIndex;
-    uint16_t    m_Port170020;       // Регистр состояния таймера
-    uint16_t    m_Port170022;       // Регистр частоты
-    uint16_t    m_Port170024;       // Регистр длительности
-    uint16_t    m_Port170030;       // Регистр октавы и громкости
-    uint16_t    m_Port176500;       // Регистр состояния приёмника последовательного порта
-    uint16_t    m_Port176502;       // Регистр данных приёмника последовательного порта
-    uint16_t    m_Port176504;       // Регистр состояния передатчика последовательного порта
-    uint16_t    m_Port176506;       // Регистр данных передатчика последовательного порта
-    uint16_t    m_Port177514;       // Регистр состояния ИРПР
-    uint16_t    m_Port177516;       // Регистр данных ИРПР
 private:  // Implementation: external devices controller
     uint8_t     m_ExtDeviceKeyboardScan;
     uint8_t     m_ExtDeviceControl;
@@ -175,24 +165,22 @@ private:  // Implementation: external devices controller
     uint16_t    ExtDeviceReadIntStatus() { return m_ExtDeviceIntStatus; }
     uint16_t    ExtDeviceReadStatus();
     uint8_t     ExtDeviceReadCommand();
-    void        ExtDeviceReadWrite();
     void        ExtDeviceWriteData(uint8_t byte);
     void        ExtDeviceWriteClockRate(uint16_t word);
     void        ExtDeviceWriteControl(uint8_t byte);
     void        ExtDeviceWriteCommand(uint8_t byte);
+private:  // Implementation: SMPs
+    CSmp        m_Smp[2];
+    uint8_t     SmpReadCommand(int slot);
+    void        SmpWriteCommand(int slot, uint8_t byte);
+    uint8_t     SmpReadData(int slot);
+    void        SmpWriteData(int slot, uint8_t byte);
 private:
     uint16_t    m_CPUbp;  // CPU breakpoint address
     uint32_t    m_dwTrace;  // Trace flags
-    uint16_t    m_Timer1div;        // Timer 1 subcounter, based on octave value
-    uint16_t    m_Timer1;           // Timer 1 counter, initial value copied from m_Port170022
-    uint16_t    m_Timer2;           // Timer 2 counter
     bool        m_okSoundOnOff;
 private:
     SOUNDGENCALLBACK    m_SoundGenCallback;
-    SERIALINCALLBACK    m_SerialInCallback;
-    SERIALOUTCALLBACK   m_SerialOutCallback;
-    PARALLELOUTCALLBACK m_ParallelOutCallback;
-
     void        DoSound();
 };
 

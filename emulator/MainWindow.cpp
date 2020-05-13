@@ -66,8 +66,7 @@ void MainWindow_DoEmulatorAutostart();
 void MainWindow_DoEmulatorReset();
 void MainWindow_DoEmulatorSpeed(WORD speed);
 void MainWindow_DoEmulatorSound();
-void MainWindow_DoEmulatorSerial();
-void MainWindow_DoEmulatorParallel();
+void MainWindow_DoEmulatorSmp(int slot);
 void MainWindow_DoFileSaveState();
 void MainWindow_DoFileLoadState();
 void MainWindow_DoFileScreenshot();
@@ -141,6 +140,7 @@ BOOL CreateMainWindow()
     MainWindow_ShowHideToolbar();
     MainWindow_ShowHideKeyboard();
     MainWindow_ShowHideDebug();
+    //MainWindow_ShowHideMemoryMap();
 
     MainWindow_RestorePositionAndShow();
 
@@ -174,7 +174,7 @@ BOOL MainWindow_InitToolbar()
     addbitmap.nID = IDB_TOOLBAR;
     SendMessage(m_hwndToolbar, TB_ADDBITMAP, 2, (LPARAM) &addbitmap);
 
-    TBBUTTON buttons[5];
+    TBBUTTON buttons[8];
     ZeroMemory(buttons, sizeof(buttons));
     for (int i = 0; i < sizeof(buttons) / sizeof(TBBUTTON); i++)
     {
@@ -190,13 +190,22 @@ BOOL MainWindow_InitToolbar()
     buttons[1].fsStyle = BTNS_BUTTON | BTNS_SHOWTEXT;
     buttons[1].iString = (int)SendMessage(m_hwndToolbar, TB_ADDSTRING, (WPARAM)0, (LPARAM)_T("Reset"));
     buttons[2].fsStyle = BTNS_SEP;
-    buttons[3].idCommand = ID_EMULATOR_SOUND;
-    buttons[3].iBitmap = ToolbarImageSoundOff;
+    buttons[3].idCommand = ID_EMULATOR_SMP0;
+    buttons[3].iBitmap = ToolbarImageCartSlot;
     buttons[3].fsStyle = BTNS_BUTTON | BTNS_SHOWTEXT;
-    buttons[3].iString = (int)SendMessage(m_hwndToolbar, TB_ADDSTRING, (WPARAM)0, (LPARAM)_T("Sound"));
-    buttons[4].idCommand = ID_FILE_SCREENSHOT;
-    buttons[4].iBitmap = ToolbarImageScreenshot;
-    buttons[4].fsStyle = BTNS_BUTTON;
+    buttons[3].iString = (int)SendMessage(m_hwndToolbar, TB_ADDSTRING, (WPARAM)0, (LPARAM)_T("0"));
+    buttons[4].idCommand = ID_EMULATOR_SMP1;
+    buttons[4].iBitmap = ToolbarImageCartSlot;
+    buttons[4].fsStyle = BTNS_BUTTON | BTNS_SHOWTEXT;
+    buttons[4].iString = (int)SendMessage(m_hwndToolbar, TB_ADDSTRING, (WPARAM)0, (LPARAM)_T("1"));
+    buttons[5].fsStyle = BTNS_SEP;
+    buttons[6].idCommand = ID_EMULATOR_SOUND;
+    buttons[6].iBitmap = ToolbarImageSoundOff;
+    buttons[6].fsStyle = BTNS_BUTTON | BTNS_SHOWTEXT;
+    buttons[6].iString = (int)SendMessage(m_hwndToolbar, TB_ADDSTRING, (WPARAM)0, (LPARAM)_T("Sound"));
+    buttons[7].idCommand = ID_FILE_SCREENSHOT;
+    buttons[7].iBitmap = ToolbarImageScreenshot;
+    buttons[7].fsStyle = BTNS_BUTTON;
     SendMessage(m_hwndToolbar, TB_ADDBUTTONS, (WPARAM) sizeof(buttons) / sizeof(TBBUTTON), (LPARAM) &buttons);
 
     if (Settings_GetToolbar())
@@ -228,26 +237,25 @@ BOOL MainWindow_InitStatusbar()
 
 void MainWindow_RestoreSettings()
 {
+    TCHAR buf[MAX_PATH];
+
+    // Reattach SMP images
+    for (int slot = 0; slot < 2; slot++)
+    {
+        buf[0] = _T('\0');
+        Settings_GetSmpFilePath(slot, buf);
+        if (buf[0] != _T('\0'))
+        {
+            if (! g_pBoard->AttachSmpImage(slot, buf))
+                Settings_SetSmpFilePath(slot, NULL);
+        }
+    }
+
     // Restore ScreenViewMode
     int scrmode = Settings_GetScreenViewMode();
     ScreenView_SetScreenMode(scrmode);
     int scrpalette = Settings_GetScreenPalette();
     ScreenView_SetScreenPalette(scrpalette);
-
-    // Restore Serial flag
-    if (Settings_GetSerial())
-    {
-        TCHAR portname[10];
-        Settings_GetSerialPort(portname);
-        if (!Emulator_SetSerial(TRUE, portname))
-            Settings_SetSerial(FALSE);
-    }
-
-    // Restore Parallel
-    if (Settings_GetParallel())
-    {
-        Emulator_SetParallel(TRUE);
-    }
 }
 
 void MainWindow_SavePosition()
@@ -690,9 +698,6 @@ void MainWindow_UpdateMenu()
     // Emulator menu options
     CheckMenuItem(hMenu, ID_EMULATOR_AUTOSTART, (Settings_GetAutostart() ? MF_CHECKED : MF_UNCHECKED));
     CheckMenuItem(hMenu, ID_EMULATOR_SOUND, (Settings_GetSound() ? MF_CHECKED : MF_UNCHECKED));
-    CheckMenuItem(hMenu, ID_EMULATOR_SERIAL, (Settings_GetSerial() ? MF_CHECKED : MF_UNCHECKED));
-    SendMessage(m_hwndToolbar, TB_CHECKBUTTON, ID_EMULATOR_SERIAL, (Settings_GetSerial() ? 1 : 0));
-    CheckMenuItem(hMenu, ID_EMULATOR_PARALLEL, (Settings_GetParallel() ? MF_CHECKED : MF_UNCHECKED));
 
     UINT speedcmd = 0;
     switch (Settings_GetRealSpeed())
@@ -715,6 +720,13 @@ void MainWindow_UpdateMenu()
     case EMU_CONF_BASIC20: configcmd = ID_CONF_BASIC20; break;
     }
     CheckMenuRadioItem(hMenu, ID_CONF_BASIC10, ID_CONF_BASIC20, configcmd, MF_BYCOMMAND);
+
+    CheckMenuItem(hMenu, ID_EMULATOR_SMP0, (g_pBoard->IsSmpImageAttached(0) ? MF_CHECKED : MF_UNCHECKED));
+    CheckMenuItem(hMenu, ID_EMULATOR_SMP1, (g_pBoard->IsSmpImageAttached(1) ? MF_CHECKED : MF_UNCHECKED));
+    MainWindow_SetToolbarImage(ID_EMULATOR_SMP0,
+            g_pBoard->IsSmpImageAttached(0) ? ToolbarImageCartridge : ToolbarImageCartSlot);
+    MainWindow_SetToolbarImage(ID_EMULATOR_SMP1,
+            g_pBoard->IsSmpImageAttached(1) ? ToolbarImageCartridge : ToolbarImageCartSlot);
 }
 
 // Process menu command
@@ -812,11 +824,11 @@ bool MainWindow_DoCommand(int commandId)
     case ID_EMULATOR_SOUND:
         MainWindow_DoEmulatorSound();
         break;
-    case ID_EMULATOR_SERIAL:
-        MainWindow_DoEmulatorSerial();
+    case ID_EMULATOR_SMP0:
+        MainWindow_DoEmulatorSmp(0);
         break;
-    case ID_EMULATOR_PARALLEL:
-        MainWindow_DoEmulatorParallel();
+    case ID_EMULATOR_SMP1:
+        MainWindow_DoEmulatorSmp(1);
         break;
     case ID_FILE_LOADSTATE:
         MainWindow_DoFileLoadState();
@@ -962,42 +974,6 @@ void MainWindow_DoEmulatorSound()
     MainWindow_UpdateMenu();
 }
 
-void MainWindow_DoEmulatorSerial()
-{
-    BOOL okSerial = Settings_GetSerial();
-    if (!okSerial)
-    {
-        TCHAR portname[10];
-        Settings_GetSerialPort(portname);
-        if (Emulator_SetSerial(TRUE, portname))
-            Settings_SetSerial(TRUE);
-    }
-    else
-    {
-        Emulator_SetSerial(FALSE, NULL);
-        Settings_SetSerial(FALSE);
-    }
-
-    MainWindow_UpdateMenu();
-}
-
-void MainWindow_DoEmulatorParallel()
-{
-    BOOL okParallel = Settings_GetParallel();
-    if (!okParallel)
-    {
-        Emulator_SetParallel(TRUE);
-        Settings_SetParallel(TRUE);
-    }
-    else
-    {
-        Emulator_SetParallel(FALSE);
-        Settings_SetParallel(FALSE);
-    }
-
-    MainWindow_UpdateMenu();
-}
-
 void MainWindow_DoFileLoadState()
 {
     TCHAR bufFileName[MAX_PATH];
@@ -1064,6 +1040,35 @@ void MainWindow_DoFileScreenshotSaveAs()
 void MainWindow_DoFileSettings()
 {
     ShowSettingsDialog();
+}
+
+void MainWindow_DoEmulatorSmp(int slot)
+{
+    BOOL okLoaded = g_pBoard->IsSmpImageAttached(slot);
+    if (okLoaded)
+    {
+        g_pBoard->DetachSmpImage(slot);
+        Settings_SetSmpFilePath(slot, NULL);
+    }
+    else
+    {
+        // File Open dialog
+        TCHAR bufFileName[MAX_PATH];
+        BOOL okResult = ShowOpenDialog(g_hwnd,
+                _T("Open SMP image to load"),
+                _T("MK-90 SMP images (*.bin)\0*.bin\0All Files (*.*)\0*.*\0\0"),
+                bufFileName);
+        if (!okResult) return;
+
+        if (!g_pBoard->AttachSmpImage(slot, bufFileName))
+        {
+            AlertWarning(_T("Failed to attach the SMP image."));
+            return;
+        }
+
+        Settings_SetSmpFilePath(slot, bufFileName);
+    }
+    MainWindow_UpdateMenu();
 }
 
 void MainWindow_OnToolbarGetInfoTip(LPNMTBGETINFOTIP /*lpnm*/)

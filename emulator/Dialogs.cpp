@@ -240,19 +240,6 @@ INT_PTR CALLBACK SettingsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
             HWND hDebugFont = GetDlgItem(hDlg, IDC_DEBUGFONT);
             FillDebugFontCombo(hDebugFont);
 
-            TCHAR buffer[10];
-
-            Settings_GetSerialPort(buffer);
-            SetDlgItemText(hDlg, IDC_SERIALPORT, buffer);
-
-            SetDlgItemInt(hDlg, IDC_NETWORKSTATION, Settings_GetNetStation(), FALSE);
-
-            Settings_GetNetComPort(buffer);
-            SetDlgItemText(hDlg, IDC_NETWORKPORT, buffer);
-
-            Settings_GetSerialConfig(&m_DialogSettings_SerialConfig);
-            Settings_GetNetComConfig(&m_DialogSettings_NetComConfig);
-
             return (INT_PTR)FALSE;
         }
     case WM_COMMAND:
@@ -265,18 +252,6 @@ INT_PTR CALLBACK SettingsProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
                 Settings_SetSoundVolume((WORD)volume);
 
                 TCHAR buffer[32];
-
-                GetDlgItemText(hDlg, IDC_SERIALPORT, buffer, 10);
-                Settings_SetSerialPort(buffer);
-
-                int netStation = GetDlgItemInt(hDlg, IDC_NETWORKSTATION, 0, FALSE);
-                Settings_SetNetStation(netStation);
-
-                GetDlgItemText(hDlg, IDC_NETWORKPORT, buffer, 10);
-                Settings_SetNetComPort(buffer);
-
-                Settings_SetSerialConfig(&m_DialogSettings_SerialConfig);
-                Settings_SetNetComConfig(&m_DialogSettings_NetComConfig);
 
                 GetDlgItemText(hDlg, IDC_DEBUGFONT, buffer, 32);
                 Settings_SetDebugFontName(buffer);
