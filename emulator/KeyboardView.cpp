@@ -34,6 +34,7 @@ HWND g_hwndKeyboard = (HWND) INVALID_HANDLE_VALUE;  // Keyboard View window hand
 
 int m_nKeyboardBitmapLeft = 0;
 int m_nKeyboardBitmapTop = 0;
+int m_nKeyboardViewScale = 3;
 BYTE m_nKeyboardKeyPressed = KEYSCAN_NONE;  // Scan-code for the key pressed, or KEYSCAN_NONE
 
 void KeyboardView_OnDraw(HDC hdc);
@@ -43,98 +44,83 @@ void Keyboard_DrawKey(HDC hdc, BYTE keyscan);
 
 //////////////////////////////////////////////////////////////////////
 
-#define KEYEXTRA_CIF    0201
-#define KEYEXTRA_DOP    0202
-#define KEYEXTRA_SHIFT  0203
-#define KEYEXTRA_RUS    0204
-#define KEYEXTRA_LAT    0205
-#define KEYEXTRA_RUSLAT 0206
-#define KEYEXTRA_UPR    0207
-#define KEYEXTRA_FPB    0210
-
-#define KEYEXTRA_START  0220
-#define KEYEXTRA_STOP   0221
-#define KEYEXTRA_TIMER  0222
-
 struct KeyboardKeys
 {
     int x, y, w, h;
-    int keyclass;
-    LPCTSTR text;
     BYTE scan;
 }
 m_arrKeyboardKeys[] =
 {
-    {  18,  23, 22, 18, KEYCLASSLITE, _T("?"),      0000 }, // Power
-    {  52,  22, 24, 23, KEYCLASSGRAY, _T("1"),      0043 }, // 1 !
-    {  86,  22, 24, 23, KEYCLASSGRAY, _T("2"),      0103 }, // 2 "
-    { 120,  22, 24, 23, KEYCLASSGRAY, _T("3"),      0143 }, // 3 #
-    { 154,  22, 24, 23, KEYCLASSGRAY, _T("4"),      0203 }, // 4
-    { 188,  22, 24, 23, KEYCLASSGRAY, _T("5"),      0243 }, // 5 %
-    { 222,  22, 24, 23, KEYCLASSGRAY, _T(":"),      0303 }, // :
-    { 256,  22, 24, 23, KEYCLASSGRAY, _T(";"),      0343 }, // ;
+    {  28,  45, 38, 26, 0000 }, // Power
+    {  75,  43, 39, 30, 0043 }, // 1 !
+    { 123,  43, 39, 30, 0103 }, // 2 "
+    { 170,  43, 39, 30, 0143 }, // 3 #
+    { 218,  43, 39, 30, 0203 }, // 4
+    { 266,  43, 39, 30, 0243 }, // 5 %
+    { 313,  43, 39, 30, 0303 }, // :
+    { 361,  43, 39, 30, 0343 }, // ;
 
-    {  18,  61, 22, 18, KEYCLASSLITE, _T("?"),      0000 }, // Reset
-    {  52,  60, 24, 23, KEYCLASSGRAY, _T("6"),      0047 }, // 6 &
-    {  86,  60, 24, 23, KEYCLASSGRAY, _T("7"),      0107 }, // 7 '
-    { 120,  60, 24, 23, KEYCLASSGRAY, _T("8"),      0147 }, // 8 (
-    { 154,  60, 24, 23, KEYCLASSGRAY, _T("9"),      0207 }, // 9 )
-    { 188,  60, 24, 23, KEYCLASSGRAY, _T("0"),      0247 }, // 0
-    { 222,  60, 24, 23, KEYCLASSGRAY, _T("/"),      0307 }, // /
-    { 256,  60, 24, 23, KEYCLASSGRAY, _T("-"),      0347 }, // ~
+    {  28,  90, 38, 26, 0000 }, // Reset
+    {  75,  88, 39, 30, 0047 }, // 6 &
+    { 123,  88, 39, 30, 0107 }, // 7 '
+    { 170,  88, 39, 30, 0147 }, // 8 (
+    { 218,  88, 39, 30, 0207 }, // 9 )
+    { 266,  88, 39, 30, 0247 }, // 0
+    { 313,  88, 39, 30, 0307 }, // /
+    { 361,  88, 39, 30, 0347 }, // ~
 
-    {  18,  98, 24, 20, KEYCLASSGRAY, _T("A"),      0013 }, // À A
-    {  52,  98, 24, 20, KEYCLASSGRAY, _T("B"),      0053 }, // Á B
-    {  86,  98, 24, 20, KEYCLASSGRAY, _T("W"),      0113 }, // Â W
-    { 120,  98, 24, 20, KEYCLASSGRAY, _T("G"),      0153 }, // Ã G
-    { 154,  98, 24, 20, KEYCLASSGRAY, _T("D"),      0213 }, // Ä D
-    { 188,  98, 24, 20, KEYCLASSGRAY, _T("E"),      0253 }, // Å E
-    { 222,  98, 24, 20, KEYCLASSGRAY, _T("V"),      0313 }, // Æ V
-    { 256,  98, 24, 20, KEYCLASSGRAY, _T("Z"),      0353 }, // Ç Z
+    {  28, 136, 38, 27, 0013 }, // À A
+    {  75, 136, 38, 27, 0053 }, // Á B
+    { 123, 136, 38, 27, 0113 }, // Â W
+    { 170, 136, 38, 27, 0153 }, // Ã G
+    { 218, 136, 38, 27, 0213 }, // Ä D
+    { 266, 136, 38, 27, 0253 }, // Å E
+    { 313, 136, 38, 27, 0313 }, // Æ V
+    { 361, 136, 38, 27, 0353 }, // Ç Z
 
-    {  18, 136, 24, 20, KEYCLASSGRAY, _T("I"),      0017 }, // È I
-    {  52, 136, 24, 20, KEYCLASSGRAY, _T("J"),      0057 }, // É J
-    {  86, 136, 24, 20, KEYCLASSGRAY, _T("K"),      0117 }, // Ê K
-    { 120, 136, 24, 20, KEYCLASSGRAY, _T("L"),      0157 }, // Ë L
-    { 154, 136, 24, 20, KEYCLASSGRAY, _T("M"),      0217 }, // Ì M
-    { 188, 136, 24, 20, KEYCLASSGRAY, _T("N"),      0257 }, // Í N
-    { 222, 136, 24, 20, KEYCLASSGRAY, _T("O"),      0317 }, // Î O
-    { 256, 136, 24, 20, KEYCLASSGRAY, _T("P"),      0357 }, // Ï P
+    {  28, 178, 38, 27, 0017 }, // È I
+    {  75, 178, 38, 27, 0057 }, // É J
+    { 123, 178, 38, 27, 0117 }, // Ê K
+    { 170, 178, 38, 27, 0157 }, // Ë L
+    { 218, 178, 38, 27, 0217 }, // Ì M
+    { 266, 178, 38, 27, 0257 }, // Í N
+    { 313, 178, 38, 27, 0317 }, // Î O
+    { 361, 178, 38, 27, 0357 }, // Ï P
 
-    {  18, 174, 24, 20, KEYCLASSGRAY, _T("R"),      0023 }, // Ð R
-    {  52, 174, 24, 20, KEYCLASSGRAY, _T("S"),      0063 }, // Ñ S
-    {  86, 174, 24, 20, KEYCLASSGRAY, _T("T"),      0123 }, // Ò T
-    { 120, 174, 24, 20, KEYCLASSGRAY, _T("U"),      0163 }, // Ó U
-    { 154, 174, 24, 20, KEYCLASSGRAY, _T("F"),      0223 }, // Ô F
-    { 188, 174, 24, 20, KEYCLASSGRAY, _T("H"),      0263 }, // Õ H
-    { 222, 174, 24, 20, KEYCLASSGRAY, _T("C"),      0323 }, // Ö C
-    { 256, 174, 24, 20, KEYCLASSGRAY, _T("\u00ac"), 0363 }, // × ^
+    {  28, 220, 38, 27, 0023 }, // Ð R
+    {  75, 220, 38, 27, 0063 }, // Ñ S
+    { 123, 220, 38, 27, 0123 }, // Ò T
+    { 170, 220, 38, 27, 0163 }, // Ó U
+    { 218, 220, 38, 27, 0223 }, // Ô F
+    { 266, 220, 38, 27, 0263 }, // Õ H
+    { 313, 220, 38, 27, 0323 }, // Ö C
+    { 361, 220, 38, 27, 0363 }, // × ^
 
-    {  18, 212, 24, 20, KEYCLASSGRAY, _T("["),      0027 }, // Ø [
-    {  52, 212, 24, 20, KEYCLASSGRAY, _T("]"),      0067 }, // Ù ]
-    {  86, 212, 24, 20, KEYCLASSGRAY, _T("X"),      0127 }, // Ü X
-    { 120, 212, 24, 20, KEYCLASSGRAY, _T("Y"),      0167 }, // Û Y
-    { 154, 212, 24, 20, KEYCLASSGRAY, _T("-"),      0227 }, // Ú }
-    { 188, 212, 24, 20, KEYCLASSGRAY, _T("\\"),     0267 }, // Ý backslash
-    { 222, 212, 24, 20, KEYCLASSGRAY, _T("@"),      0327 }, // Þ @
-    { 256, 212, 24, 20, KEYCLASSGRAY, _T("Q"),      0367 }, // ß Q
+    {  28, 262, 38, 27, 0027 }, // Ø [
+    {  75, 262, 38, 27, 0067 }, // Ù ]
+    { 123, 262, 38, 27, 0127 }, // Ü X
+    { 170, 262, 38, 27, 0167 }, // Û Y
+    { 218, 262, 38, 27, 0227 }, // Ú }
+    { 266, 262, 38, 27, 0267 }, // Ý backslash
+    { 313, 262, 38, 27, 0327 }, // Þ @
+    { 361, 262, 38, 27, 0367 }, // ß Q
 
-    {  18, 250, 24, 20, KEYCLASSLITE, _T("ÑÓ"),     0033 },
-    {  52, 250, 24, 20, KEYCLASSLITE, _T("\u2191"), 0073 }, // Up
-    {  86, 250, 24, 20, KEYCLASSLITE, _T("\u2190"), 0133 }, // Left
-    { 120, 250, 24, 20, KEYCLASSLITE, _T(","),      0173 }, // , <
-    { 154, 250, 24, 20, KEYCLASSLITE, _T("."),      0233 }, // . >
-    { 188, 250, 24, 20, KEYCLASSLITE, _T("\u2192"), 0273 }, // Right
-    { 222, 250, 24, 20, KEYCLASSLITE, _T("ÇÂ"),     0333 },
-    { 256, 250, 24, 20, KEYCLASSLITE, _T("ÂÊ"),     0373 }, // ÂÊ Enter
+    {  28, 304, 38, 27, 0033 },
+    {  75, 304, 38, 27, 0073 }, // Up
+    { 123, 304, 38, 27, 0133 }, // Left
+    { 170, 304, 38, 27, 0173 }, // , <
+    { 218, 304, 38, 27, 0233 }, // . >
+    { 266, 304, 38, 27, 0273 }, // Right
+    { 313, 304, 38, 27, 0333 },
+    { 361, 304, 38, 27, 0373 }, // ÂÊ Enter
 
-    {  18, 288, 24, 20, KEYCLASSLITE, _T("Ð/Ë"),    0037 },
-    {  52, 288, 24, 20, KEYCLASSLITE, _T("\u2193"), 0077 }, // Down
-    {  86, 288, 24, 20, KEYCLASSLITE, _T("\u21a7"), 0137 }, // Down from bar
-    { 120, 288, 58, 20, KEYCLASSLITE, NULL,         0177 }, // Space
-    { 188, 288, 24, 20, KEYCLASSLITE, _T("\u21a5"), 0277 },
-    { 222, 288, 24, 20, KEYCLASSLITE, _T("ÔÊ"),     0337 },
-    { 256, 288, 24, 20, KEYCLASSLITE, _T("Â/Í"),    0377 }, // Shift
+    {  28, 346, 38, 27, 0037 },
+    {  75, 346, 38, 27, 0077 }, // Down
+    { 123, 346, 38, 27, 0137 }, // Down from bar
+    { 170, 346, 86, 27, 0177 }, // Space
+    { 266, 346, 38, 27, 0277 },
+    { 313, 346, 38, 27, 0337 },
+    { 361, 346, 38, 27, 0377 }, // Shift
 };
 
 const int m_nKeyboardKeysCount = sizeof(m_arrKeyboardKeys) / sizeof(KeyboardKeys);
@@ -254,72 +240,65 @@ LRESULT CALLBACK KeyboardViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 
 void KeyboardView_OnDraw(HDC hdc)
 {
+    m_nKeyboardViewScale = Emulator_GetScreenScale(ScreenView_GetScreenMode());
+    UINT nKeyboardResource = IDB_KEYBOARD3;
+    switch (m_nKeyboardViewScale)
+    {
+    case 3: nKeyboardResource = IDB_KEYBOARD3; break;
+    case 4: nKeyboardResource = IDB_KEYBOARD4; break;
+    case 5: nKeyboardResource = IDB_KEYBOARD5; break;
+    case 6: nKeyboardResource = IDB_KEYBOARD6; break;
+    case 8: nKeyboardResource = IDB_KEYBOARD8; break;
+    }
+
+    HBITMAP hBmp = ::LoadBitmap(g_hInst, MAKEINTRESOURCE(nKeyboardResource));
+
+    HDC hdcMem = ::CreateCompatibleDC(hdc);
+    HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
+
     RECT rc;  ::GetClientRect(g_hwndKeyboard, &rc);
 
+    BITMAP bitmap;
+    VERIFY(::GetObject(hBmp, sizeof(BITMAP), &bitmap));
+    int cxBitmap = (int)bitmap.bmWidth;
+    int cyBitmap = (int)bitmap.bmHeight;
+    m_nKeyboardBitmapLeft = -m_nKeyboardViewScale * 160; //(rc.right - 300) / 2;
+    m_nKeyboardBitmapTop = (rc.bottom - cyBitmap) / 2;
+    if (m_nKeyboardBitmapTop < 0) m_nKeyboardBitmapTop = 0;
+    //if (m_nKeyboardBitmapTop > 16) m_nKeyboardBitmapTop = 16;
+
+    ::BitBlt(hdc, m_nKeyboardBitmapLeft, m_nKeyboardBitmapTop, cxBitmap, cyBitmap, hdcMem, 0, 0, SRCCOPY);
+
+    ::SelectObject(hdcMem, hOldBitmap);
+    ::DeleteDC(hdcMem);
+    ::DeleteObject(hBmp);
+
     // Keyboard background
-    HBRUSH hBkBrush = ::CreateSolidBrush(COLOR_KEYBOARD_BACKGROUND);
-    HGDIOBJ hOldBrush = ::SelectObject(hdc, hBkBrush);
-    ::PatBlt(hdc, 0, 0, rc.right, rc.bottom, PATCOPY);
-    ::SelectObject(hdc, hOldBrush);
+    //HBRUSH hBkBrush = ::CreateSolidBrush(COLOR_KEYBOARD_BACKGROUND);
+    //HGDIOBJ hOldBrush = ::SelectObject(hdc, hBkBrush);
+    //::PatBlt(hdc, 0, 0, rc.right, rc.bottom, PATCOPY);
+    //::SelectObject(hdc, hOldBrush);
+    //::DeleteObject(hBkBrush);
 
     if (m_nKeyboardKeyPressed != KEYSCAN_NONE)
         Keyboard_DrawKey(hdc, m_nKeyboardKeyPressed);
 
-    HBRUSH hbrLite = ::CreateSolidBrush(COLOR_KEYBOARD_LITE);
-    HBRUSH hbrGray = ::CreateSolidBrush(COLOR_KEYBOARD_GRAY);
-    HBRUSH hbrDark = ::CreateSolidBrush(COLOR_KEYBOARD_DARK);
-    HBRUSH hbrRed = ::CreateSolidBrush(COLOR_KEYBOARD_RED);
-    m_nKeyboardBitmapLeft = 4; //(rc.right - 300) / 2;
-    m_nKeyboardBitmapTop = (rc.bottom - 330) / 2;
-    if (m_nKeyboardBitmapTop < 0) m_nKeyboardBitmapTop = 0;
-    //if (m_nKeyboardBitmapTop > 16) m_nKeyboardBitmapTop = 16;
-
-    HFONT hfont = CreateDialogFont();
-    HGDIOBJ hOldFont = ::SelectObject(hdc, hfont);
-    ::SetBkMode(hdc, TRANSPARENT);
-
-    // Draw keys
-    for (int i = 0; i < m_nKeyboardKeysCount; i++)
-    {
-        RECT rcKey;
-        rcKey.left = m_nKeyboardBitmapLeft + m_arrKeyboardKeys[i].x;
-        rcKey.top = m_nKeyboardBitmapTop + m_arrKeyboardKeys[i].y;
-        rcKey.right = rcKey.left + m_arrKeyboardKeys[i].w;
-        rcKey.bottom = rcKey.top + m_arrKeyboardKeys[i].h;
-
-        HBRUSH hbr = hBkBrush;
-        COLORREF textcolor = COLOR_KEYBOARD_DARK;
-        switch (m_arrKeyboardKeys[i].keyclass)
-        {
-        case KEYCLASSLITE: hbr = hbrLite; break;
-        case KEYCLASSGRAY: hbr = hbrGray; break;
-        case KEYCLASSDARK: hbr = hbrDark;  textcolor = COLOR_KEYBOARD_LITE; break;
-        }
-        HGDIOBJ hOldBrush = ::SelectObject(hdc, hbr);
-        //rcKey.left++; rcKey.top++; rcKey.right--; rc.bottom--;
-        ::PatBlt(hdc, rcKey.left, rcKey.top, rcKey.right - rcKey.left, rcKey.bottom - rcKey.top, PATCOPY);
-        ::SelectObject(hdc, hOldBrush);
-
-        //TCHAR text[10];
-        //wsprintf(text, _T("%02x"), (int)m_arrKeyboardKeys[i].scan);
-        LPCTSTR text = m_arrKeyboardKeys[i].text;
-        if (text != NULL)
-        {
-            ::SetTextColor(hdc, textcolor);
-            ::DrawText(hdc, text, wcslen(text), &rcKey, DT_NOPREFIX | DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-        }
-
-        ::DrawEdge(hdc, &rcKey, BDR_RAISEDOUTER, BF_RECT);
-    }
-
-    ::SelectObject(hdc, hOldFont);
-    ::DeleteObject(hfont);
-
-    ::DeleteObject(hbrLite);
-    ::DeleteObject(hbrGray);
-    ::DeleteObject(hbrDark);
-    ::DeleteObject(hbrRed);
-    ::DeleteObject(hBkBrush);
+    //// Draw keys
+    //HPEN hpenRed = ::CreatePen(PS_SOLID, 1, COLOR_KEYBOARD_RED);
+    //HGDIOBJ hOldPen = ::SelectObject(hdc, hpenRed);
+    //HBRUSH hbrushOld = static_cast<HBRUSH>(::SelectObject(hdc, ::GetStockObject(NULL_BRUSH)));
+    //for (int i = 0; i < m_nKeyboardKeysCount; i++)
+    //{
+    //    RECT rcKey;
+    //    rcKey.left = /*m_nKeyboardBitmapLeft +*/ m_arrKeyboardKeys[i].x * m_nKeyboardViewScale / 4;
+    //    rcKey.top = m_nKeyboardBitmapTop + m_arrKeyboardKeys[i].y * m_nKeyboardViewScale / 4;
+    //    rcKey.right = rcKey.left + m_arrKeyboardKeys[i].w * m_nKeyboardViewScale / 4;
+    //    rcKey.bottom = rcKey.top + m_arrKeyboardKeys[i].h * m_nKeyboardViewScale / 4;
+    //    ::Rectangle(hdc, rcKey.left, rcKey.top, rcKey.right, rcKey.bottom);
+    //}
+    //::SelectObject(hdc, hbrushOld);
+    //::SelectObject(hdc, hOldPen);
+    //::DeleteObject(hpenRed);
 }
 
 // Returns: index of key under the cursor position, or -1 if not found
@@ -328,10 +307,10 @@ int KeyboardView_GetKeyByPoint(int x, int y)
     for (int i = 0; i < m_nKeyboardKeysCount; i++)
     {
         RECT rcKey;
-        rcKey.left = m_nKeyboardBitmapLeft + m_arrKeyboardKeys[i].x;
-        rcKey.top = m_nKeyboardBitmapTop + m_arrKeyboardKeys[i].y;
-        rcKey.right = rcKey.left + m_arrKeyboardKeys[i].w;
-        rcKey.bottom = rcKey.top + m_arrKeyboardKeys[i].h;
+        rcKey.left = /*m_nKeyboardBitmapLeft +*/ m_arrKeyboardKeys[i].x * m_nKeyboardViewScale / 4;
+        rcKey.top = m_nKeyboardBitmapTop + m_arrKeyboardKeys[i].y * m_nKeyboardViewScale / 4;
+        rcKey.right = rcKey.left + m_arrKeyboardKeys[i].w * m_nKeyboardViewScale / 4;
+        rcKey.bottom = rcKey.top + m_arrKeyboardKeys[i].h * m_nKeyboardViewScale / 4;
 
         if (x >= rcKey.left && x < rcKey.right && y >= rcKey.top && y < rcKey.bottom)
         {
@@ -347,10 +326,10 @@ void Keyboard_DrawKey(HDC hdc, BYTE keyscan)
         if (keyscan == m_arrKeyboardKeys[i].scan)
         {
             RECT rcKey;
-            rcKey.left = m_nKeyboardBitmapLeft + m_arrKeyboardKeys[i].x;
-            rcKey.top = m_nKeyboardBitmapTop + m_arrKeyboardKeys[i].y;
-            rcKey.right = rcKey.left + m_arrKeyboardKeys[i].w;
-            rcKey.bottom = rcKey.top + m_arrKeyboardKeys[i].h;
+            rcKey.left = /*m_nKeyboardBitmapLeft +*/ m_arrKeyboardKeys[i].x * m_nKeyboardViewScale / 4;
+            rcKey.top = m_nKeyboardBitmapTop + m_arrKeyboardKeys[i].y * m_nKeyboardViewScale / 4;
+            rcKey.right = rcKey.left + m_arrKeyboardKeys[i].w * m_nKeyboardViewScale / 4;
+            rcKey.bottom = rcKey.top + m_arrKeyboardKeys[i].h * m_nKeyboardViewScale / 4;
             ::DrawFocusRect(hdc, &rcKey);
         }
 }

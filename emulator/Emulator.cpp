@@ -65,14 +65,15 @@ struct ScreenModeStruct
     int width;
     int height;
     PREPARE_SCREEN_CALLBACK callback;
+    int scale;
 }
 static ScreenModeReference[] =
 {
-    { 360, 192, Emulator_PrepareScreen360x192 },  // x3
-    { 480, 256, Emulator_PrepareScreen480x256 },  // x4
-    { 600, 320, Emulator_PrepareScreen600x320 },  // x5
-    { 720, 384, Emulator_PrepareScreen720x384 },  // x6
-    { 960, 512, Emulator_PrepareScreen960x512 },  // x8
+    { 360, 192, Emulator_PrepareScreen360x192, 3 },
+    { 480, 256, Emulator_PrepareScreen480x256, 4 },
+    { 600, 320, Emulator_PrepareScreen600x320, 5 },
+    { 720, 384, Emulator_PrepareScreen720x384, 6 },
+    { 960, 512, Emulator_PrepareScreen960x512, 8 },
 };
 
 // Palette colors:
@@ -391,6 +392,14 @@ void Emulator_OnUpdate()
 uint16_t Emulator_GetChangeRamStatus(uint16_t address)
 {
     return *((uint16_t*)(g_pEmulatorChangedRam + address));
+}
+
+int Emulator_GetScreenScale(int scrmode)
+{
+    if (scrmode < 0 || scrmode >= sizeof(ScreenModeReference) / sizeof(ScreenModeStruct))
+        return 3;
+    ScreenModeStruct* pinfo = ScreenModeReference + scrmode;
+    return pinfo->scale;
 }
 
 void Emulator_GetScreenSize(int scrmode, int* pwid, int* phei)

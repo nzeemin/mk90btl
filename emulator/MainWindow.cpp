@@ -485,7 +485,7 @@ void MainWindow_AdjustWindowLayout()
 
         if (Settings_GetKeyboard())
         {
-            cxKeyboard = 300;
+            cxKeyboard = 318;
             int cyKeyboard = 330;
             int xKeyboard = cxScreen;
             SetWindowPos(g_hwndKeyboard, NULL, xKeyboard, yKeyboard, cxKeyboard, cyKeyboard, SWP_NOZORDER);

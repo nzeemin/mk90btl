@@ -72,6 +72,11 @@
   <ItemGroup>
     <Image Include="res\MK90BTL.ico" />
     <Image Include="res\small.ico" />
+    <Image Include="res\drawing3.bmp" />
+    <Image Include="res\drawing4.bmp" />
+    <Image Include="res\drawing5.bmp" />
+    <Image Include="res\drawing6.bmp" />
+    <Image Include="res\drawing8.bmp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="res\MK90BTL.rc" />

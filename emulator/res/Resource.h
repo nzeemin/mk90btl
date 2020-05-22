@@ -13,7 +13,6 @@
 #define IDC_MK90BTL			109
 #define IDR_MAINFRAME                   128
 #define IDD_INPUTBOX                    129
-#define IDB_KEYBOARD                    142
 #define IDB_TOOLBAR                     143
 #define IDD_LOADBIN                     145
 #define IDD_SETTINGS                    146
@@ -21,6 +20,11 @@
 #define IDD_DCB_EDITOR                  148
 #define IDR_MK90_ROM_BASIC10            149
 #define IDR_MK90_ROM_BASIC20            150
+#define IDB_KEYBOARD3                   153
+#define IDB_KEYBOARD4                   154
+#define IDB_KEYBOARD5                   155
+#define IDB_KEYBOARD6                   156
+#define IDB_KEYBOARD8                   158
 #define IDC_EDIT1                       1000
 #define IDC_BUILDDATE                   1001
 #define IDC_EDITADDR                    1001
