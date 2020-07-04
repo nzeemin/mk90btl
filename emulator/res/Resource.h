@@ -28,6 +28,7 @@
 #define IDC_EDIT1                       1000
 #define IDC_BUILDDATE                   1001
 #define IDC_EDITADDR                    1001
+#define IDC_EDIT2                       1002
 #define IDC_EDITSIZE                    1002
 #define IDC_EDITNAME                    1003
 #define IDC_EDITSTACK                   1003

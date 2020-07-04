@@ -716,9 +716,16 @@ void DisasmView_RegisterHintPC(const CProcessor * pProc,
     //TODO: else if (regmod == 2)
     if (regmod == 3)
     {
-        //TODO: if (byteword)
         srcval2 = g_pBoard->GetWordView(value, pProc->IsHaltMode(), false, &addrtype);
-        _sntprintf(hint1, 20, _T("(%06o)=%06o"), value, srcval2);  // "(NNNNNN)=XXXXXX"
+        if (byteword)
+        {
+            srcval2 = (value & 1) ? (srcval2 >> 8) : (srcval2 & 0xff);
+            _sntprintf(hint1, 20, _T("(%06o)=%03o"), value, srcval2);  // "(NNNNNN)=XXX"
+        }
+        else
+        {
+            _sntprintf(hint1, 20, _T("(%06o)=%06o"), value, srcval2);  // "(NNNNNN)=XXXXXX"
+        }
     }
     else if (regmod == 6)
     {
@@ -867,8 +874,9 @@ int DisasmView_GetInstructionHint(const WORD* memory, const CProcessor * pProc,
                 (psw & PSW_C) ? '1' : '0', (psw & PSW_V) ? '1' : '0', (psw & PSW_Z) ? '1' : '0', (psw & PSW_N) ? '1' : '0');
     }
 
-    if ((instr & ~(uint16_t)0777) == PI_JSR && (instr & 077) != 067 ||
-        (instr & ~(uint16_t)077) == PI_JMP && (instr & 077) != 067)
+    // JSR, JMP -- show non-trivial cases only
+    if ((instr & ~(uint16_t)0777) == PI_JSR && (instr & 077) != 067 && (instr & 077) != 037 ||
+        (instr & ~(uint16_t)077) == PI_JMP && (instr & 077) != 067 && (instr & 077) != 037)
     {
         int dstreg = instr & 7;
         int dstmod = (instr >> 3) & 7;

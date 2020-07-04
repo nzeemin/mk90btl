@@ -476,7 +476,7 @@ void MainWindow_AdjustWindowLayout()
     if (Settings_GetDebug())  // Debug views shown -- keyboard/tape snapped to top
     {
         cxScreen = 480/*MK90_SCREEN_WIDTH*/ + 16;
-        cyScreen = 330;
+        cyScreen = 312;
 
         int yKeyboard = yScreen;
         int yTape = yKeyboard;
@@ -486,7 +486,7 @@ void MainWindow_AdjustWindowLayout()
         if (Settings_GetKeyboard())
         {
             cxKeyboard = 318;
-            int cyKeyboard = 330;
+            int cyKeyboard = cyScreen;
             int xKeyboard = cxScreen;
             SetWindowPos(g_hwndKeyboard, NULL, xKeyboard, yKeyboard, cxKeyboard, cyKeyboard, SWP_NOZORDER);
             yTape += cyKeyboard + 4;
@@ -876,7 +876,7 @@ void MainWindow_DoViewKeyboard()
 
 void MainWindow_DoViewScreenMode(int newMode)
 {
-    if (Settings_GetDebug() && newMode != 0) return;  // Deny switching to other mode in Debug mode
+    if (Settings_GetDebug() && newMode != 1) return;  // Deny switching to other mode in Debug mode
 
     ScreenView_SetScreenMode(newMode);
 
@@ -885,6 +885,8 @@ void MainWindow_DoViewScreenMode(int newMode)
     MainWindow_UpdateMenu();
 
     Settings_SetScreenViewMode(newMode);
+
+    KeyboardView_RedrawKeyboard();  // Scale change affects keyboard view
 }
 
 void MainWindow_DoViewScreenPalette(int newPalette)

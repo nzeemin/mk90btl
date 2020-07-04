@@ -238,9 +238,17 @@ LRESULT CALLBACK KeyboardViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
     return (LRESULT)FALSE;
 }
 
+void KeyboardView_RedrawKeyboard()
+{
+    InvalidateRect(g_hwndKeyboard, NULL, TRUE);
+}
+
 void KeyboardView_OnDraw(HDC hdc)
 {
-    m_nKeyboardViewScale = Emulator_GetScreenScale(ScreenView_GetScreenMode());
+    if (Settings_GetDebug())
+        m_nKeyboardViewScale = 3;  // In Debug mode, we're using keyboard for scale 3, but screen scale 4
+    else
+        m_nKeyboardViewScale = Emulator_GetScreenScale(ScreenView_GetScreenMode());
     UINT nKeyboardResource = IDB_KEYBOARD3;
     switch (m_nKeyboardViewScale)
     {

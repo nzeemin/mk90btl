@@ -227,6 +227,7 @@ void ScreenView_OnDraw(HDC hdc)
     HGDIOBJ hOldBrush = ::SelectObject(hdc, hBrush);
 
     RECT rc;  ::GetClientRect(g_hwndScreen, &rc);
+
     m_xScreenOffset = 0;
     m_yScreenOffset = 0;
     if (rc.right > m_cxScreenWidth)
