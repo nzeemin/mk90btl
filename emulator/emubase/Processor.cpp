@@ -268,67 +268,51 @@ void CProcessor::Execute()
     }
     else  // Processing interrupts
     {
+        m_TBITrq = (m_psw & 020);  // T-bit
+
         for (;;)
         {
-            m_TBITrq = (m_psw & 020);  // T-bit
-
             // Calculate interrupt vector and mode accoding to priority
             uint16_t intrVector = 0;
-            //bool currMode = m_haltmode;  // Current processor mode: true = HALT mode, false = USER mode
             bool intrMode = false;  // true = HALT mode interrupt, false = USER mode interrupt
             if (m_HALTrq)  // HALT command
             {
-                intrVector = 0002;  intrMode = true;
-                m_HALTrq = false;
+                m_HALTrq = false;  intrVector = 0000004;  intrMode = true;
             }
             else if (m_BPT_rq)  // BPT command
             {
-                intrVector = 0000014;  intrMode = false;
-                m_BPT_rq = false;
+                m_BPT_rq = false;  intrVector = 0000014;
             }
             else if (m_IOT_rq)  // IOT command
             {
-                intrVector = 0000020;  intrMode = false;
-                m_IOT_rq = false;
+                m_IOT_rq = false;  intrVector = 0000020;
             }
             else if (m_EMT_rq)  // EMT command
             {
-                intrVector = 0000030;  intrMode = false;
-                m_EMT_rq = false;
+                m_EMT_rq = false;  intrVector = 0000030;
             }
             else if (m_TRAPrq)  // TRAP command
             {
-                intrVector = 0000034;  intrMode = false;
-                m_TRAPrq = false;
+                m_TRAPrq = false;  intrVector = 0000034;
             }
             else if (m_RPLYrq)  // Зависание
             {
-                intrVector = 0000004;  intrMode = false;
-                m_RPLYrq = false;
+                m_RPLYrq = false;  intrVector = 0000004;
             }
-            //else if (m_RPL2rq)  // Двойное зависание, priority 1
-            //{
-            //    intrVector = 0174;  intrMode = true;
-            //    m_RPL2rq = false;
-            //}
-            else if (m_RSVDrq)  // Reserved command, priority 2
+            else if (m_RSVDrq)  // Reserved command
             {
-                intrVector = 000010;  intrMode = false;
-                m_RSVDrq = false;
+                m_RSVDrq = false;  intrVector = 0000010;
             }
             else if (m_TBITrq && (!m_waitmode))  // T-bit
             {
-                intrVector = 000014;  intrMode = false;
-                m_TBITrq = false;
+                m_TBITrq = false;  intrVector = 0000014;
             }
             else if (m_EVNTrq && (m_psw & 0200) != 0200)  // EVNT signal
             {
-                intrVector = 0000100;  intrMode = false;
-                m_EVNTrq = false;
+                m_EVNTrq = false;  intrVector = 0000100;
             }
             else if (m_virqrq > 0 && (m_psw & 0200) != 0200)  // VIRQ, priority 7
             {
-                intrMode = false;
                 for (int irq = 0; irq <= 15; irq++)
                 {
                     if (m_virq[irq] != 0)
@@ -347,68 +331,29 @@ void CProcessor::Execute()
 
             m_waitmode = false;
 
-            if (intrMode)  // HALT mode interrupt
-            {
-                uint16_t selVector = 0160000;
-                intrVector |= selVector;
+            //if (intrMode) intrVector |= 0000000; // selVector;
 
-                uint16_t oldpsw = m_psw;
-                m_haltmode = true;
+            uint16_t oldpsw = m_psw;
+            m_haltmode = intrMode;
 
-                // Save PC/PSW to stack
-                SetSP(GetSP() - 2);
-                SetWord(GetSP(), oldpsw);
-                SetSP(GetSP() - 2);
-                SetWord(GetSP(), GetPC());
+            // Save PC/PSW to stack
+            SetSP(GetSP() - 2);
+            SetWord(GetSP(), oldpsw);
+            SetSP(GetSP() - 2);
+            SetWord(GetSP(), GetPC());
 
-                SetPC(GetWord(intrVector));
-                m_psw = GetWord(intrVector + 2) & 0377;
-#if !defined(PRODUCT)
-                if (intrVector == 0160002)  // HALT
-                {
-                    uint16_t port170006 = m_pBoard->GetPortView(0170006);
-                    if (port170006 & 002000)  // keyboard
-                    {
-                        uint8_t keybyte = (uint8_t)(port170006 & 255);
-                        DebugLogFormat(_T("CPU HALT interrupt vector=%06o PC=%06o PSW=%06o 170006=%06o %C\r\n"), intrVector, GetPC(), GetPSW(), port170006, keybyte >= 32 && keybyte < 128 ? (char)keybyte : ' ');
-                    }
-                }
-                //if (m_pBoard->GetTrace() & TRACE_CPUINT)
-                //{
-                //    if (intrVector == 0160002)  // HALT
-                //    {
-                //        uint16_t port170006 = m_pBoard->GetPortView(0170006);
-                //        uint8_t keybyte = (uint8_t)(port170006 & 255);
-                //        DebugLogFormat(_T("CPU HALT interrupt vector=%06o PC=%06o PSW=%06o 170006=%06o %C\r\n"), intrVector, GetPC(), GetPSW(), port170006, keybyte >= 32 && keybyte < 128 ? (char)keybyte : ' ');
-                //    }
-                //    else
-                //    {
-                //        DebugLogFormat(_T("CPU interrupt vector=%06o PC=%06o PSW=%06o\r\n"), intrVector, GetPC(), GetPSW());
-                //    }
-                //}
-#endif
-            }
-            else  // USER mode interrupt
-            {
-                uint16_t oldpsw = m_psw;
-                m_haltmode = false;
-
-                // Save PC/PSW to stack
-                SetSP(GetSP() - 2);
-                SetWord(GetSP(), oldpsw);
-                SetSP(GetSP() - 2);
-                SetWord(GetSP(), GetPC());
-
-                SetPC(GetWord(intrVector));
-                m_psw = GetWord(intrVector + 2) & 0377;
+            SetPC(GetWord(intrVector) & 0xfffe);
+            m_psw = GetWord(intrVector + 2) & 0377;
+            if (intrMode) m_psw |= 0400;
 //#if !defined(PRODUCT)
-//                if (m_pBoard->GetTrace() & TRACE_CPUINT)
-//                {
-//                    if (intrVector != 000020 && intrVector != 000030 && intrVector != 000034)  // skip IOT/EMT/TRAP
-//                        DebugLogFormat(_T("CPU interrupt vector=%06o PC=%06o PSW=%06o\r\n"), intrVector, GetPC(), GetPSW());
-//                }
+//            if (m_pBoard->GetTrace() & TRACE_CPUINT)
+//            {
+            if (intrVector == 0000004)  // HALT
+                DebugLogFormat(_T("CPU HALT interrupt vector=%06o PC=%06o PSW=%06o\r\n"), intrVector, GetPC(), GetPSW());
+            else if (intrVector != 000020 && intrVector != 000030 && intrVector != 000034)  // skip IOT/EMT/TRAP
+                DebugLogFormat(_T("CPU interrupt vector=%06o PC=%06o PSW=%06o\r\n"), intrVector, GetPC(), GetPSW());
+//            }
 //#endif
-            }
         }  // end while
     }
 }

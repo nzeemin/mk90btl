@@ -24,8 +24,6 @@ class CProcessor  // KM1801VM1 processor
 {
 public:  // Constructor / initialization
     CProcessor(CMotherboard* pBoard);
-    void        FireHALT() { m_HALTrq = true; }  // Fire HALT interrupt request, same as HALT command
-    void        SetHaltMode(bool halt) { m_haltmode = halt; }
     void        MemoryError();
     int	        GetInternalTick() const { return m_internalTick; }
     void        SetInternalTick (uint16_t tick) { m_internalTick = tick; }
