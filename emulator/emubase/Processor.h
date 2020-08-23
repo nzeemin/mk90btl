@@ -26,7 +26,7 @@ public:  // Constructor / initialization
     CProcessor(CMotherboard* pBoard);
     void        MemoryError();
     int	        GetInternalTick() const { return m_internalTick; }
-    void        SetInternalTick (uint16_t tick) { m_internalTick = tick; }
+    void        ClearInternalTick() { m_internalTick = 0; }
 
 public:
     static void Init();  // Initialize static tables
@@ -67,6 +67,7 @@ protected:  // Interrupt processing
     bool        m_TRAPrq;           // TRAP command interrupt pending
     int         m_virqrq;           // VIRQ pending
     uint16_t    m_virq[16];         // VIRQ vector
+
 protected:
     CMotherboard* m_pBoard;
 
@@ -117,8 +118,8 @@ protected:  // Implementation
     void        FetchInstruction();      // Read next instruction
     void        TranslateInstruction();  // Execute the instruction
 protected:  // Implementation - instruction processing
-    uint16_t    CalculateOperAddr (int meth, int reg);
-    uint16_t    CalculateOperAddrSrc (int meth, int reg);
+    uint16_t    CalculateOperAddr(int meth, int reg);
+    uint16_t    CalculateOperAddrSrc(int meth, int reg);
     uint8_t     GetByteSrc();
     uint8_t     GetByteDest();
     void        SetByteDest(uint8_t);

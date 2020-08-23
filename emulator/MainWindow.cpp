@@ -129,6 +129,7 @@ BOOL CreateMainWindow()
         return FALSE;
 
     DebugView_Init();
+    DisasmView_Init();
     ScreenView_Init();
     KeyboardView_Init();
 
@@ -292,6 +293,14 @@ void MainWindow_RestorePositionAndShow()
     ShowWindow(g_hwnd, Settings_GetWindowMaximized() ? SW_SHOWMAXIMIZED : SW_SHOW);
 }
 
+void MainWindow_UpdateWindowTitle()
+{
+    LPCTSTR emustate = g_okEmulatorRunning ? _T("run") : _T("stop");
+    TCHAR buffer[100];
+    wsprintf(buffer, _T("%s [%s]"), g_szTitle, emustate);
+    SetWindowText(g_hwnd, buffer);
+}
+
 // Processes messages for the main window
 LRESULT CALLBACK MainWindow_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -302,7 +311,7 @@ LRESULT CALLBACK MainWindow_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
         break;
     case WM_COMMAND:
         {
-            int wmId    = LOWORD(wParam);
+            int wmId = LOWORD(wParam);
             //int wmEvent = HIWORD(wParam);
             bool okProcessed = MainWindow_DoCommand(wmId);
             if (!okProcessed)

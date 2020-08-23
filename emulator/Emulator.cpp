@@ -23,11 +23,13 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 //////////////////////////////////////////////////////////////////////
 
 
-CMotherboard* g_pBoard = NULL;
+CMotherboard* g_pBoard = nullptr;
 int g_nEmulatorConfiguration;  // Current configuration
 bool g_okEmulatorRunning = false;
 
-uint16_t m_wEmulatorCPUBreakpoint = 0177777;
+int m_wEmulatorCPUBpsCount = 0;
+uint16_t m_EmulatorCPUBps[MAX_BREAKPOINTCOUNT + 1];
+uint16_t m_wEmulatorTempCPUBreakpoint = 0177777;
 
 bool m_okEmulatorSound = false;
 uint16_t m_wEmulatorSoundSpeed = 100;
@@ -38,8 +40,8 @@ uint32_t m_dwTickCount = 0;
 uint32_t m_dwEmulatorUptime = 0;  // Machine uptime, seconds, from turn on or reset, increments every 25 frames
 long m_nUptimeFrameCount = 0;
 
-uint8_t* g_pEmulatorRam;  // RAM values - for change tracking
-uint8_t* g_pEmulatorChangedRam;  // RAM change flags
+uint8_t* g_pEmulatorRam = nullptr;  // RAM values - for change tracking
+uint8_t* g_pEmulatorChangedRam = nullptr;  // RAM change flags
 uint16_t g_wEmulatorCpuPC = 0177777;      // Current PC value
 uint16_t g_wEmulatorPrevCpuPC = 0177777;  // Previous PC value
 
@@ -102,7 +104,7 @@ const LPCTSTR FILENAME_ROM_BASIC20 = _T("basic20.rom");
 bool Emulator_LoadRomFile(LPCTSTR strFileName, uint8_t* buffer, uint32_t fileOffset, uint32_t bytesToRead)
 {
     FILE* fpRomFile = ::_tfsopen(strFileName, _T("rb"), _SH_DENYWR);
-    if (fpRomFile == NULL)
+    if (fpRomFile == nullptr)
         return false;
 
     ::memset(buffer, 0, bytesToRead);
@@ -126,9 +128,15 @@ bool Emulator_LoadRomFile(LPCTSTR strFileName, uint8_t* buffer, uint32_t fileOff
 
 bool Emulator_Init()
 {
-    ASSERT(g_pBoard == NULL);
+    ASSERT(g_pBoard == nullptr);
 
     CProcessor::Init();
+
+    m_wEmulatorCPUBpsCount = 0;
+    for (int i = 0; i <= MAX_BREAKPOINTCOUNT; i++)
+    {
+        m_EmulatorCPUBps[i] = 0177777;
+    }
 
     g_pBoard = new CMotherboard();
 
@@ -149,15 +157,15 @@ bool Emulator_Init()
 
 void Emulator_Done()
 {
-    ASSERT(g_pBoard != NULL);
+    ASSERT(g_pBoard != nullptr);
 
     CProcessor::Done();
 
-    g_pBoard->SetSoundGenCallback(NULL);
+    g_pBoard->SetSoundGenCallback(nullptr);
     SoundGen_Finalize();
 
     delete g_pBoard;
-    g_pBoard = NULL;
+    g_pBoard = nullptr;
 
     // Free memory used for old RAM values
     ::free(g_pEmulatorRam);
@@ -168,7 +176,7 @@ bool Emulator_InitConfiguration(uint16_t configuration)
 {
     g_pBoard->SetConfiguration(configuration);
 
-    LPCTSTR szRomFileName = NULL;
+    LPCTSTR szRomFileName = nullptr;
     uint16_t nRomResourceId;
     switch (configuration)
     {
@@ -223,29 +231,37 @@ void Emulator_Start()
     g_okEmulatorRunning = true;
 
     // Set title bar text
-    SetWindowText(g_hwnd, _T("MK-90 Back to Life [run]"));
+    MainWindow_UpdateWindowTitle();
     MainWindow_UpdateMenu();
 
     m_nFrameCount = 0;
     m_dwTickCount = GetTickCount();
+
+    // For proper breakpoint processing
+    if (m_wEmulatorCPUBpsCount != 0)
+    {
+        g_pBoard->GetCPU()->ClearInternalTick();
+    }
 }
 void Emulator_Stop()
 {
     g_okEmulatorRunning = false;
-    m_wEmulatorCPUBreakpoint = 0177777;
+
+    Emulator_SetTempCPUBreakpoint(0177777);
 
     // Reset title bar message
-    SetWindowText(g_hwnd, _T("MK-90 Back to Life [stop]"));
+    MainWindow_UpdateWindowTitle();
     MainWindow_UpdateMenu();
+
     // Reset FPS indicator
-    MainWindow_SetStatusbarText(StatusbarPartFPS, _T(""));
+    MainWindow_SetStatusbarText(StatusbarPartFPS, nullptr);
 
     MainWindow_UpdateAllViews();
 }
 
 void Emulator_Reset()
 {
-    ASSERT(g_pBoard != NULL);
+    ASSERT(g_pBoard != nullptr);
 
     g_pBoard->Reset();
 
@@ -255,17 +271,94 @@ void Emulator_Reset()
     MainWindow_UpdateAllViews();
 }
 
-void Emulator_SetCPUBreakpoint(uint16_t address)
+bool Emulator_AddCPUBreakpoint(uint16_t address)
 {
-    m_wEmulatorCPUBreakpoint = address;
+    if (m_wEmulatorCPUBpsCount == MAX_BREAKPOINTCOUNT - 1 || address == 0177777)
+        return false;
+    for (int i = 0; i < m_wEmulatorCPUBpsCount; i++)  // Check if the BP exists
+    {
+        if (m_EmulatorCPUBps[i] == address)
+            return false;  // Already in the list
+    }
+    for (int i = 0; i < MAX_BREAKPOINTCOUNT; i++)  // Put in the first empty cell
+    {
+        if (m_EmulatorCPUBps[i] == 0177777)
+        {
+            m_EmulatorCPUBps[i] = address;
+            break;
+        }
+    }
+    m_wEmulatorCPUBpsCount++;
+    return true;
 }
-
+bool Emulator_RemoveCPUBreakpoint(uint16_t address)
+{
+    if (m_wEmulatorCPUBpsCount == 0 || address == 0177777)
+        return false;
+    for (int i = 0; i < MAX_BREAKPOINTCOUNT; i++)
+    {
+        if (m_EmulatorCPUBps[i] == address)
+        {
+            m_EmulatorCPUBps[i] = 0177777;
+            m_wEmulatorCPUBpsCount--;
+            if (m_wEmulatorCPUBpsCount > i)  // fill the hole
+            {
+                m_EmulatorCPUBps[i] = m_EmulatorCPUBps[m_wEmulatorCPUBpsCount];
+                m_EmulatorCPUBps[m_wEmulatorCPUBpsCount] = 0177777;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+void Emulator_SetTempCPUBreakpoint(uint16_t address)
+{
+    if (m_wEmulatorTempCPUBreakpoint != 0177777)
+        Emulator_RemoveCPUBreakpoint(m_wEmulatorTempCPUBreakpoint);
+    if (address == 0177777)
+    {
+        m_wEmulatorTempCPUBreakpoint = 0177777;
+        return;
+    }
+    for (int i = 0; i < MAX_BREAKPOINTCOUNT; i++)
+    {
+        if (m_EmulatorCPUBps[i] == address)
+            return;  // We have regular breakpoint with the same address
+    }
+    m_wEmulatorTempCPUBreakpoint = address;
+    m_EmulatorCPUBps[m_wEmulatorCPUBpsCount] = address;
+    m_wEmulatorCPUBpsCount++;
+}
+const uint16_t* Emulator_GetCPUBreakpointList() { return m_EmulatorCPUBps; }
 bool Emulator_IsBreakpoint()
 {
-    uint16_t wCPUAddr = g_pBoard->GetCPU()->GetPC();
-    if (wCPUAddr == m_wEmulatorCPUBreakpoint)
-        return true;
+    uint16_t address = g_pBoard->GetCPU()->GetPC();
+    if (m_wEmulatorCPUBpsCount > 0)
+    {
+        for (int i = 0; i < m_wEmulatorCPUBpsCount; i++)
+        {
+            if (address == m_EmulatorCPUBps[i])
+                return true;
+        }
+    }
     return false;
+}
+bool Emulator_IsBreakpoint(uint16_t address)
+{
+    if (m_wEmulatorCPUBpsCount == 0)
+        return false;
+    for (int i = 0; i < m_wEmulatorCPUBpsCount; i++)
+    {
+        if (address == m_EmulatorCPUBps[i])
+            return true;
+    }
+    return false;
+}
+void Emulator_RemoveAllBreakpoints()
+{
+    for (int i = 0; i < MAX_BREAKPOINTCOUNT; i++)
+        m_EmulatorCPUBps[i] = 0177777;
+    m_wEmulatorCPUBpsCount = 0;
 }
 
 void Emulator_SetSpeed(uint16_t realspeed)
@@ -298,7 +391,7 @@ void Emulator_SetSound(bool soundOnOff)
         }
         else
         {
-            g_pBoard->SetSoundGenCallback(NULL);
+            g_pBoard->SetSoundGenCallback(nullptr);
             SoundGen_Finalize();
         }
     }
@@ -308,7 +401,7 @@ void Emulator_SetSound(bool soundOnOff)
 
 int Emulator_SystemFrame()
 {
-    g_pBoard->SetCPUBreakpoint(m_wEmulatorCPUBreakpoint);
+    g_pBoard->SetCPUBreakpoints(m_wEmulatorCPUBpsCount > 0 ? m_EmulatorCPUBps : nullptr);
 
     ScreenView_ScanKeyboard();
     ScreenView_ProcessKeyboard();
@@ -413,10 +506,10 @@ void Emulator_GetScreenSize(int scrmode, int* pwid, int* phei)
 
 void Emulator_PrepareScreenRGB32(void* pImageBits, int screenMode, int palette)
 {
-    if (pImageBits == NULL) return;
+    if (pImageBits == nullptr) return;
 
     const uint8_t* pVideoBuffer = g_pBoard->GetVideoBuffer();
-    ASSERT(pVideoBuffer != NULL);
+    ASSERT(pVideoBuffer != nullptr);
 
     const uint32_t * pPalette = Emulator_GetPalette(palette);
 
@@ -635,6 +728,10 @@ bool Emulator_LoadImage(LPCTSTR sFilePath)
     // Free memory, close file
     ::free(pImage);
     ::fclose(fpFile);
+
+    g_okEmulatorRunning = false;
+
+    MainWindow_UpdateAllViews();
 
     return true;
 }
