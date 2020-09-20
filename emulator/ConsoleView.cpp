@@ -56,17 +56,17 @@ void ConsoleView_RegisterClass()
     WNDCLASSEX wcex;
     wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style			= CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc	= ConsoleViewWndProc;
-    wcex.cbClsExtra		= 0;
-    wcex.cbWndExtra		= 0;
-    wcex.hInstance		= g_hInst;
-    wcex.hIcon			= NULL;
-    wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground	= (HBRUSH)(COLOR_BTNFACE + 1);
-    wcex.lpszMenuName	= NULL;
-    wcex.lpszClassName	= CLASSNAME_CONSOLEVIEW;
-    wcex.hIconSm		= NULL;
+    wcex.style          = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc    = ConsoleViewWndProc;
+    wcex.cbClsExtra     = 0;
+    wcex.cbWndExtra     = 0;
+    wcex.hInstance      = g_hInst;
+    wcex.hIcon          = NULL;
+    wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_BTNFACE + 1);
+    wcex.lpszMenuName   = NULL;
+    wcex.lpszClassName  = CLASSNAME_CONSOLEVIEW;
+    wcex.hIconSm        = NULL;
 
     RegisterClassEx(&wcex);
 }
@@ -489,6 +489,7 @@ void ConsoleView_RunToAddress(WORD address)
     Emulator_SetTempCPUBreakpoint(address);
     Emulator_Start();
 }
+
 void ConsoleView_ShowBreakpoints()
 {
     const uint16_t* pbps = Emulator_GetCPUBreakpointList();
@@ -508,6 +509,7 @@ void ConsoleView_ShowBreakpoints()
 void ConsoleView_RemoveAllBreakpoints()
 {
     Emulator_RemoveAllBreakpoints();
+    DebugView_Redraw();
     DisasmView_Redraw();
 }
 void ConsoleView_AddBreakpoint(WORD address)
@@ -515,6 +517,7 @@ void ConsoleView_AddBreakpoint(WORD address)
     bool result = Emulator_AddCPUBreakpoint(address);
     if (!result)
         ConsoleView_Print(_T("  Failed to add breakpoint.\r\n"));
+    DebugView_Redraw();
     DisasmView_Redraw();
 }
 void ConsoleView_RemoveBreakpoint(WORD address)
@@ -522,6 +525,7 @@ void ConsoleView_RemoveBreakpoint(WORD address)
     bool result = Emulator_RemoveCPUBreakpoint(address);
     if (!result)
         ConsoleView_Print(_T("  Failed to remove breakpoint.\r\n"));
+    DebugView_Redraw();
     DisasmView_Redraw();
 }
 

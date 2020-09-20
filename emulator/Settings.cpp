@@ -17,7 +17,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 //////////////////////////////////////////////////////////////////////
 
 
-const TCHAR m_Settings_IniAppName[] = _T("MK90");
+const TCHAR m_Settings_IniAppName[] = _T("MK90BTL");
 TCHAR m_Settings_IniPath[MAX_PATH];
 
 

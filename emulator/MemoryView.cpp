@@ -22,12 +22,6 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 //////////////////////////////////////////////////////////////////////
 
-// Colors
-#define COLOR_RED       RGB(255,0,0)
-#define COLOR_BLUE      RGB(0,0,255)
-#define COLOR_GREEN     RGB(128,192,128)
-#define COLOR_NA        RGB(128,128,128)
-
 
 HWND g_hwndMemory = (HWND) INVALID_HANDLE_VALUE;  // Memory view window handler
 WNDPROC m_wndprocMemoryToolWindow = NULL;  // Old window proc address of the ToolWindow
@@ -47,7 +41,6 @@ void MemoryView_Scroll(int nDeltaLines);
 void MemoryView_UpdateScrollPos();
 void MemoryView_UpdateWindowText();
 LPCTSTR MemoryView_GetMemoryModeName();
-void MemoryView_AdjustWindowLayout();
 
 //enum MemoryViewMode {
 //    MEMMODE_RAM0 = 0,  // RAM plane 0
@@ -214,11 +207,14 @@ void MemoryView_OnDraw(HDC hdc)
 {
     ASSERT(g_pBoard != NULL);
 
-    // Create and select font
     HFONT hFont = CreateMonospacedFont();
     HGDIOBJ hOldFont = SelectObject(hdc, hFont);
     int cxChar, cyLine;  GetFontWidthAndHeight(hdc, &cxChar, &cyLine);
-    COLORREF colorText = GetSysColor(COLOR_WINDOWTEXT);
+    COLORREF colorText = Settings_GetColor(ColorDebugText);
+    COLORREF colorChanged = Settings_GetColor(ColorDebugValueChanged);
+    COLORREF colorMemoryRom = Settings_GetColor(ColorDebugMemoryRom);
+    COLORREF colorMemoryIO = Settings_GetColor(ColorDebugMemoryIO);
+    COLORREF colorMemoryNA = Settings_GetColor(ColorDebugMemoryNA);
     COLORREF colorOld = SetTextColor(hdc, colorText);
     COLORREF colorBkOld = SetBkColor(hdc, GetSysColor(COLOR_WINDOW));
 
@@ -254,9 +250,9 @@ void MemoryView_OnDraw(HDC hdc)
             if (okValid)
             {
                 if (addrtype == ADDRTYPE_ROM)
-                    ::SetTextColor(hdc, COLOR_BLUE);
+                    ::SetTextColor(hdc, colorMemoryRom);
                 else
-                    ::SetTextColor(hdc, (wChanged != 0) ? COLOR_RED : colorText);
+                    ::SetTextColor(hdc, (wChanged != 0) ? colorChanged : colorText);
                 if (m_okMemoryByteMode)
                 {
                     PrintOctalValue(buffer, (word & 0xff));
@@ -271,12 +267,12 @@ void MemoryView_OnDraw(HDC hdc)
             {
                 if (addrtype == ADDRTYPE_IO)
                 {
-                    ::SetTextColor(hdc, COLOR_GREEN);
+                    ::SetTextColor(hdc, colorMemoryIO);
                     TextOut(hdc, x, y, _T("  IO"), 4);
                 }
                 else
                 {
-                    ::SetTextColor(hdc, COLOR_NA);
+                    ::SetTextColor(hdc, colorMemoryNA);
                     TextOut(hdc, x, y, _T("  NA"), 4);
                 }
             }
