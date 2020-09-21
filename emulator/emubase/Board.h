@@ -105,7 +105,7 @@ public:  // System control
     void        SetTimer50OnOff(bool okOnOff) { m_okTimer50OnOff = okOnOff; }
     bool        IsTimer50OnOff() const { return m_okTimer50OnOff; }
     void        Tick50();           // Tick 50 Hz - goes to CPU EVNT line
-    void		TimerTick();		// Timer Tick, 31250 Hz, 32uS -- dividers are within timer routine
+    void        TimerTick();        // Timer Tick, 31250 Hz, 32uS -- dividers are within timer routine
     void        ResetDevices();     // INIT signal
     void        ResetHALT();//DEBUG
 public:
@@ -117,7 +117,7 @@ public:  // SMP
     void        DetachSmpImage(int slot);
     bool        IsSmpImageAttached(int slot) const;
 public:  // Callbacks
-    void		SetSoundGenCallback(SOUNDGENCALLBACK callback);
+    void        SetSoundGenCallback(SOUNDGENCALLBACK callback);
 public:  // Memory
     // Read command for execution
     uint16_t GetWordExec(uint16_t address, bool okHaltMode) { return GetWord(address, okHaltMode, TRUE); }

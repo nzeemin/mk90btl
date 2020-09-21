@@ -44,13 +44,13 @@ const int TIMING_DS[8]  = { 0, 32, 32, 40, 32, 40, 40, 48 };
 
 uint16_t ASH_TIMING[8] =
 {
-    0x0029,	0x003D, 0x003D, 0x0049, 0x0041, 0x004D, 0x0055, 0x0062
+    0x0029, 0x003D, 0x003D, 0x0049, 0x0041, 0x004D, 0x0055, 0x0062
 };
 uint16_t ASH_S_TIMING = 0x0008;
 
 uint16_t ASHC_TIMING[8] =
 {
-    0x0039, 0x004E, 0x004D, 0x005A, 0x0051, 0x005D, 0x0066,	0x0072
+    0x0039, 0x004E, 0x004D, 0x005A, 0x0051, 0x005D, 0x0066, 0x0072
 };
 uint16_t ASHC_S_TIMING = 0x0008;
 
@@ -61,7 +61,7 @@ uint16_t MUL_TIMING[8] =
 
 uint16_t DIV_TIMING[8] =
 {
-    0x0020, 0x0088, 0x0087, 0x0094, 0x008B, 0x0098,	0x00A0,	0x00AD
+    0x0020, 0x0088, 0x0087, 0x0094, 0x008B, 0x0098, 0x00A0, 0x00AD
 };
 
 
@@ -71,10 +71,10 @@ uint16_t DIV_TIMING[8] =
 CProcessor::ExecuteMethodRef* CProcessor::m_pExecuteMethodMap = NULL;
 
 #define RegisterMethodRef(/*uint16_t*/ opstart, /*uint16_t*/ opend, /*CProcessor::ExecuteMethodRef*/ methodref) \
-	{ \
-		for (uint32_t opcode = (opstart); opcode <= (opend); opcode++) \
-			m_pExecuteMethodMap[opcode] = (methodref); \
-	}
+    { \
+        for (uint32_t opcode = (opstart); opcode <= (opend); opcode++) \
+            m_pExecuteMethodMap[opcode] = (methodref); \
+    }
 
 void CProcessor::Init()
 {
@@ -400,7 +400,7 @@ uint16_t CProcessor::CalculateOperAddrSrc (int meth, int reg)
         return GetReg(reg);
     case 2:  // (R0)+,  #012345
         //if(reg==7) // is it immediate?
-        //	arg = GetWord(GetReg(reg));
+        //    arg = GetWord(GetReg(reg));
         //else
         arg = GetReg(reg);
         if ((m_instruction & 0100000) && (reg < 6))
@@ -410,12 +410,12 @@ uint16_t CProcessor::CalculateOperAddrSrc (int meth, int reg)
         return arg;
     case 3:  // @(R0)+, @#012345
         //if(reg==7) //abs index
-        //	arg =  GetWord(GetWord(GetReg(reg))) ;
+        //    arg =  GetWord(GetWord(GetReg(reg))) ;
         //else
         arg =  GetWord(GetReg(reg)) ;
         //if ((m_instruction & 0100000)&&(reg!=7))
-        //		SetReg(reg, GetReg(reg) + 1);
-        //		else
+        //    SetReg(reg, GetReg(reg) + 1);
+        //else
         SetReg(reg, GetReg(reg) + 2);
         return arg;
     case 4:  // -(R0),  -(PC)
@@ -425,16 +425,16 @@ uint16_t CProcessor::CalculateOperAddrSrc (int meth, int reg)
             SetReg(reg, GetReg(reg) - 2);
         return GetReg(reg);
     case 5:  // @-(R0), @-(PC)
-        //		if (m_instruction & 0100000)
-        //			SetReg(reg, GetReg(reg) - 1);
-        //		else
+        //      if (m_instruction & 0100000)
+        //          SetReg(reg, GetReg(reg) - 1);
+        //      else
         SetReg(reg, GetReg(reg) - 2);
         return  GetWord(GetReg(reg));
-    case 6:    // 345(R0),  345
+    case 6:  // 345(R0),  345
         {
             uint16_t pc = 0;
             //if(reg==7) //relative direct
-            //	pc = GetWord(GetWordExec( GetPC() ));
+            //    pc = GetWord(GetWordExec( GetPC() ));
             //else
             pc = (GetWordExec( GetPC() ));
 
@@ -442,11 +442,11 @@ uint16_t CProcessor::CalculateOperAddrSrc (int meth, int reg)
             arg = (uint16_t)(pc + GetReg(reg));
             return arg;
         }
-    case 7:    // @345(R0),@345
+    case 7:  // @345(R0),@345
         {
             uint16_t pc;
             //if(reg==7) //relative direct
-            //	pc = GetWord(GetWordExec( GetPC() ));
+            //    pc = GetWord(GetWordExec( GetPC() ));
             //else
             pc = GetWordExec( GetPC() );
             SetPC( GetPC() + 2 );
@@ -469,7 +469,7 @@ uint16_t CProcessor::CalculateOperAddr (int meth, int reg)
         return GetReg(reg);
     case 2:  // (R0)+,  #012345
         //if(reg==7) // is it immediate?
-        //	arg = GetWord(GetReg(reg));
+        //    arg = GetWord(GetReg(reg));
         //else
         arg = GetReg(reg);
         if ((m_instruction & 0100000) && (reg < 6))
@@ -479,11 +479,11 @@ uint16_t CProcessor::CalculateOperAddr (int meth, int reg)
         return arg;
     case 3:  // @(R0)+, @#012345
         //if(reg==7) //abs index
-        //arg =  GetWord(GetWord(GetReg(reg))) ;
+        //    arg = GetWord(GetWord(GetReg(reg))) ;
         //else
         arg =  GetWord(GetReg(reg)) ;
         //if ((m_instruction & 0100000)&&(reg!=7))
-        //	SetReg(reg, GetReg(reg) + 1);
+        //    SetReg(reg, GetReg(reg) + 1);
         //else
         SetReg(reg, GetReg(reg) + 2);
         return arg;
@@ -495,11 +495,11 @@ uint16_t CProcessor::CalculateOperAddr (int meth, int reg)
         return GetReg(reg);
     case 5:  // @-(R0), @-(PC)
         //if (m_instruction & 0100000)
-        //	SetReg(reg, GetReg(reg) - 1);
+        //    SetReg(reg, GetReg(reg) - 1);
         //else
         SetReg(reg, GetReg(reg) - 2);
         return  GetWord(GetReg(reg));
-    case 6:    // 345(R0),  345
+    case 6:  // 345(R0),  345
         {
             uint16_t pc = 0;
             //if(reg==7) //relative direct
@@ -511,11 +511,11 @@ uint16_t CProcessor::CalculateOperAddr (int meth, int reg)
             arg = (uint16_t)(pc + GetReg(reg));
             return arg;
         }
-    case 7:    // @345(R0),@345
+    case 7:  // @345(R0),@345
         {
             uint16_t pc = 0;
             //if(reg==7)
-            //	pc = GetWord(GetWordExec( GetPC() ));
+            //    pc = GetWord(GetWordExec( GetPC() ));
             //else
             pc = GetWordExec( GetPC() );
             SetPC( GetPC() + 2 );

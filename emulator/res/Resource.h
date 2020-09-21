@@ -3,14 +3,14 @@
 // Used by MK90BTL.rc
 //
 
-#define IDS_APP_TITLE			103
-#define IDD_MK90BTL_DIALOG		102
-#define IDD_ABOUTBOX			103
-#define IDM_ABOUT			104
-#define IDM_EXIT			105
-#define IDI_MK90BTL			107
-#define IDI_SMALL			108
-#define IDC_MK90BTL			109
+#define IDS_APP_TITLE                   103
+#define IDD_MK90BTL_DIALOG              102
+#define IDD_ABOUTBOX                    103
+#define IDM_ABOUT                       104
+#define IDM_EXIT                        105
+#define IDI_MK90BTL                     107
+#define IDI_SMALL                       108
+#define IDC_MK90BTL                     109
 #define IDR_MAINFRAME                   128
 #define IDD_INPUTBOX                    129
 #define IDB_TOOLBAR                     143
@@ -96,7 +96,7 @@
 #define ID_VIEW_MEMORYMAP               32887
 #define ID_DEBUG_MEMORY_WORDBYTE        32894
 #define ID_DEBUG_MEMORY_GOTO            32895
-#define IDC_STATIC				-1
+#define IDC_STATIC                      -1
 
 // Next default values for new objects
 //
@@ -106,6 +106,6 @@
 #define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32896
 #define _APS_NEXT_CONTROL_VALUE         1031
-#define _APS_NEXT_SYMED_VALUE		110
+#define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
