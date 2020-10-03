@@ -19,7 +19,6 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "emubase\Emubase.h"
 #include "SoundGen.h"
 
-
 //////////////////////////////////////////////////////////////////////
 
 

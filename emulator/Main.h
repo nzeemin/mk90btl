@@ -12,7 +12,6 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "res\\resource.h"
 
-
 //////////////////////////////////////////////////////////////////////
 
 
@@ -164,5 +163,6 @@ void Settings_SetColor(ColorIndices colorIndex, COLORREF color);
 // Options
 
 extern BOOL Option_AutoBoot;
+
 
 //////////////////////////////////////////////////////////////////////

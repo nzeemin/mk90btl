@@ -9,7 +9,6 @@ See the GNU Lesser General Public License for more details.
 MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 // MK90BTL.cpp : Defines the entry point for the application.
-//
 
 #include "stdafx.h"
 #include <commdlg.h>
@@ -23,7 +22,6 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "Emulator.h"
 #include "Dialogs.h"
 #include "Views.h"
-
 
 //////////////////////////////////////////////////////////////////////
 // Global Variables

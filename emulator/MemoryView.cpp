@@ -19,7 +19,6 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "Emulator.h"
 #include "emubase\Emubase.h"
 
-
 //////////////////////////////////////////////////////////////////////
 
 
@@ -465,5 +464,6 @@ void MemoryView_UpdateScrollPos()
     si.nMax = 0x10000 / 16 - 1;
     SetScrollInfo(m_hwndMemoryViewer, SB_VERT, &si, TRUE);
 }
+
 
 //////////////////////////////////////////////////////////////////////

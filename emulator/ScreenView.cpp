@@ -18,8 +18,8 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "Emulator.h"
 #include "util/BitmapFile.h"
 
-
 //////////////////////////////////////////////////////////////////////
+
 
 #define COLOR_BK_BACKGROUND RGB(190,188,190)
 

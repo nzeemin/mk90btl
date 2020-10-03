@@ -13,7 +13,6 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "stdafx.h"
 #include "Main.h"
 
-
 //////////////////////////////////////////////////////////////////////
 
 

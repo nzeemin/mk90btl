@@ -15,8 +15,8 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "Views.h"
 #include "Emulator.h"
 
-
 //////////////////////////////////////////////////////////////////////
+
 
 #define COLOR_KEYBOARD_BACKGROUND   RGB(190,188,190)
 #define COLOR_KEYBOARD_LITE         RGB(228,228,228)
