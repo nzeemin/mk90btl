@@ -15,9 +15,9 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 //////////////////////////////////////////////////////////////////////
 
 #ifdef _DEBUG
-#define MK90BTL_VERSION_STRING "DEBUG"
+#define APP_VERSION_STRING "DEBUG"
 #elif !defined(PRODUCT)
-#define MK90BTL_VERSION_STRING "RELEASE"
+#define APP_VERSION_STRING "RELEASE"
 #else
 #include "Version.h"
 #endif

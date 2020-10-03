@@ -345,7 +345,7 @@ void CProcessor::Execute()
             SetPC(GetWord(intrVector) & 0xfffe);
             m_psw = GetWord(intrVector + 2) & 0377;
             if (intrMode) m_psw |= 0400;
-//#if !defined(PRODUCT)
+#if !defined(PRODUCT)
 //            if (m_pBoard->GetTrace() & TRACE_CPUINT)
 //            {
             if (intrVector == 0000004)  // HALT
@@ -353,7 +353,7 @@ void CProcessor::Execute()
             else if (intrVector != 000020 && intrVector != 000030 && intrVector != 000034)  // skip IOT/EMT/TRAP
                 DebugLogFormat(_T("CPU interrupt vector=%06o PC=%06o PSW=%06o\r\n"), intrVector, GetPC(), GetPSW());
 //            }
-//#endif
+#endif
         }  // end while
     }
 }

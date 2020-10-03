@@ -721,7 +721,9 @@ uint16_t CMotherboard::GetPortWord(uint16_t address)
     default:
         if (address >= 0165000 && address <= 0165177)  // Real time clock
         {
+#if !defined(PRODUCT)
             DebugLogFormat(_T("READ PORT %06o PC=%06o\r\n"), address, m_pCPU->GetInstructionPC());
+#endif
             //TODO
         }
         else
@@ -797,7 +799,9 @@ void CMotherboard::SetPortWord(uint16_t address, uint16_t word)
     case 0164032:  // RG1
     case 0164034:  // RG2
     case 0164036:
+#if !defined(PRODUCT)
         DebugLogFormat(_T("WRITE PORT %06o word=%06o PC=%06o\r\n"), address, word, m_pCPU->GetInstructionPC());
+#endif
         break;  //STUB
 
     default:

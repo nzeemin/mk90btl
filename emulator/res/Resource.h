@@ -4,13 +4,12 @@
 //
 
 #define IDS_APP_TITLE                   103
-#define IDD_MK90BTL_DIALOG              102
 #define IDD_ABOUTBOX                    103
 #define IDM_ABOUT                       104
 #define IDM_EXIT                        105
-#define IDI_MK90BTL                     107
+#define IDI_APPICON                     107
 #define IDI_SMALL                       108
-#define IDC_MK90BTL                     109
+#define IDC_APPLICATION                 109
 #define IDR_MAINFRAME                   128
 #define IDD_INPUTBOX                    129
 #define IDB_TOOLBAR                     143
@@ -105,7 +104,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32896
-#define _APS_NEXT_CONTROL_VALUE         1031
+#define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
