@@ -312,12 +312,11 @@ void CMotherboard::KeyboardEvent(uint8_t scancode, bool okPressed)
 {
     if (okPressed)  // Key released
     {
-#if !defined(PRODUCT)
         //if (m_dwTrace & TRACE_KEYBOARD)
         {
             DebugLogFormat(_T("Keyboard %03o %d\r\n"), (uint16_t)scancode, (int)okPressed);
         }
-#endif
+
         m_ExtDeviceKeyboardScan = scancode;
         //TODO: Interrupt??
         m_pCPU->InterruptVIRQ(8, 0000310);
@@ -579,10 +578,8 @@ uint8_t CMotherboard::GetByte(uint16_t address, bool okHaltMode)
     switch (addrtype & ADDRTYPE_MASK)
     {
     case ADDRTYPE_RAM:
-#if !defined(PRODUCT)
         if (address == 0177562)
             DebugLogFormat(_T("GetByte %06o %03o\r\n"), address, (uint16_t)GetRAMByte(offset));
-#endif
         return GetRAMByte(offset);
     case ADDRTYPE_ROM:
         return GetROMByte(offset);
@@ -721,16 +718,13 @@ uint16_t CMotherboard::GetPortWord(uint16_t address)
     default:
         if (address >= 0165000 && address <= 0165177)  // Real time clock
         {
-#if !defined(PRODUCT)
             DebugLogFormat(_T("READ PORT %06o PC=%06o\r\n"), address, m_pCPU->GetInstructionPC());
-#endif
             //TODO
         }
         else
         {
-#if !defined(PRODUCT)
             DebugLogFormat(_T("READ UNKNOWN PORT %06o PC=%06o\r\n"), address, m_pCPU->GetInstructionPC());
-#endif
+
             m_pCPU->MemoryError();
         }
         return 0;
@@ -799,9 +793,7 @@ void CMotherboard::SetPortWord(uint16_t address, uint16_t word)
     case 0164032:  // RG1
     case 0164034:  // RG2
     case 0164036:
-#if !defined(PRODUCT)
         DebugLogFormat(_T("WRITE PORT %06o word=%06o PC=%06o\r\n"), address, word, m_pCPU->GetInstructionPC());
-#endif
         break;  //STUB
 
     default:
@@ -811,9 +803,8 @@ void CMotherboard::SetPortWord(uint16_t address, uint16_t word)
         }
         else
         {
-#if !defined(PRODUCT)
             DebugLogFormat(_T("WRITE UNKNOWN PORT %06o word=%06o PC=%06o\r\n"), address, word, m_pCPU->GetInstructionPC());
-#endif
+
             m_pCPU->MemoryError();
         }
         break;

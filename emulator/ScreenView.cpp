@@ -360,10 +360,10 @@ void ScreenView_ScanKeyboard()
             BYTE key = arrPcScan2Mk90Char[scan];
             if (okCtrl && key >= 'A' && key <= 'X')
                 key -= 0x40;
-#if !defined(PRODUCT)
+
             if ((newstate & 128) != 0 && scan > 4)
                 DebugPrintFormat(_T("Screen key: 0x%02x %d %03o\r\n"), scan, okCtrl, (uint16_t)key);
-#endif
+
             if (key == 0)
                 continue;
 
@@ -387,9 +387,7 @@ void ScreenView_ProcessKeyboard()
         //bool ctrl = ((keyevent & 0x4000) != 0);
         BYTE bkscan = LOBYTE(keyevent);
 
-//#if !defined(PRODUCT)
 //        DebugPrintFormat(_T("KeyEvent: 0x%0x %d %d\r\n"), bkscan, pressed, ctrl);
-//#endif
 
         g_pBoard->KeyboardEvent(bkscan, pressed);
     }
