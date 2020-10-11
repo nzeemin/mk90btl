@@ -673,9 +673,9 @@ void MainWindow_UpdateMenu()
     CheckMenuItem(hMenu, ID_EMULATOR_RUN, (g_okEmulatorRunning ? MF_CHECKED : MF_UNCHECKED));
     SendMessage(m_hwndToolbar, TB_CHECKBUTTON, ID_EMULATOR_RUN, (g_okEmulatorRunning ? 1 : 0));
     //MainWindow_SetToolbarImage(ID_EMULATOR_RUN, g_okEmulatorRunning ? ToolbarImageRun : ToolbarImagePause);
-    // View|Debug check
+
+    // View menu
     CheckMenuItem(hMenu, ID_VIEW_TOOLBAR, (Settings_GetToolbar() ? MF_CHECKED : MF_UNCHECKED));
-    CheckMenuItem(hMenu, ID_VIEW_DEBUG, (Settings_GetDebug() ? MF_CHECKED : MF_UNCHECKED));
     CheckMenuItem(hMenu, ID_VIEW_KEYBOARD, (Settings_GetKeyboard() ? MF_CHECKED : MF_UNCHECKED));
     //// View|Color Screen
     //MainWindow_SetToolbarImage(ID_VIEW_RGBSCREEN,
@@ -734,6 +734,14 @@ void MainWindow_UpdateMenu()
             g_pBoard->IsSmpImageAttached(0) ? ToolbarImageCartridge : ToolbarImageCartSlot);
     MainWindow_SetToolbarImage(ID_EMULATOR_SMP1,
             g_pBoard->IsSmpImageAttached(1) ? ToolbarImageCartridge : ToolbarImageCartSlot);
+
+    // Debug menu
+    BOOL okDebug = Settings_GetDebug();
+    CheckMenuItem(hMenu, ID_VIEW_DEBUG, (okDebug ? MF_CHECKED : MF_UNCHECKED));
+    EnableMenuItem(hMenu, ID_DEBUG_STEPINTO, (okDebug ? MF_ENABLED : MF_DISABLED));
+    EnableMenuItem(hMenu, ID_DEBUG_STEPOVER, (okDebug ? MF_ENABLED : MF_DISABLED));
+    EnableMenuItem(hMenu, ID_DEBUG_CLEARCONSOLE, (okDebug ? MF_ENABLED : MF_DISABLED));
+    EnableMenuItem(hMenu, ID_DEBUG_DELETEALLBREAKPTS, (okDebug ? MF_ENABLED : MF_DISABLED));
 }
 
 // Process menu command
@@ -803,6 +811,14 @@ bool MainWindow_DoCommand(int commandId)
     case ID_DEBUG_STEPOVER:
         if (!g_okEmulatorRunning && Settings_GetDebug())
             ConsoleView_StepOver();
+        break;
+    case ID_DEBUG_CLEARCONSOLE:
+        if (Settings_GetDebug())
+            ConsoleView_ClearConsole();
+        break;
+    case ID_DEBUG_DELETEALLBREAKPTS:
+        if (Settings_GetDebug())
+            ConsoleView_DeleteAllBreakpoints();
         break;
     case ID_DEBUG_MEMORY_WORDBYTE:
         MemoryView_SwitchWordByte();
