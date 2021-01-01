@@ -58,7 +58,7 @@ public:
     uint32_t mask;
     uint8_t cmd;
 public:
-    CSmp() { fpFile = nullptr; pData = nullptr; size = 0; }
+    CSmp() { fpFile = nullptr; pData = nullptr; size = 0; dataptr = mask = 0; cmd = 0; }
     //void Reset();
 };
 
