@@ -105,7 +105,7 @@ void MemoryMapView_Create(HWND hwndParent, int x, int y)
 void MemoryMapView_InitBitmap()
 {
     m_hMemoryMapDrawDib = DrawDibOpen();
-    HDC hdc = GetDC( g_hwnd );
+    HDC hdc = ::GetDC(g_hwnd);
 
     m_bmpinfoMemoryMap.bmiHeader.biSize = sizeof( BITMAPINFOHEADER );
     m_bmpinfoMemoryMap.bmiHeader.biWidth = 256;
@@ -121,14 +121,15 @@ void MemoryMapView_InitBitmap()
 
     m_hMemoryMapBitmap = CreateDIBSection( hdc, &m_bmpinfoMemoryMap, DIB_RGB_COLORS, (void **) &m_pMemoryMap_bits, NULL, 0 );
 
-    ReleaseDC( g_hwnd, hdc );
+    VERIFY(::ReleaseDC(g_hwnd, hdc));
 }
 
 void MemoryMapView_DoneBitmap()
 {
     if (m_hMemoryMapBitmap != NULL)
     {
-        DeleteObject(m_hMemoryMapBitmap);  m_hMemoryMapBitmap = NULL;
+        VERIFY(::DeleteObject(m_hMemoryMapBitmap));
+        m_hMemoryMapBitmap = NULL;
     }
 
     DrawDibClose( m_hMemoryMapDrawDib );
@@ -338,7 +339,7 @@ void MemoryMapView_RedrawMap()
 
     HDC hdc = GetDC(g_hwndMemoryMap);
     MemoryMapView_OnDraw(hdc);
-    ::ReleaseDC(g_hwndMemoryMap, hdc);
+    VERIFY(::ReleaseDC(g_hwndMemoryMap, hdc));
 }
 
 void MemoryMapView_UpdateScrollPos()

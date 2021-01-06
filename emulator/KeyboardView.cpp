@@ -211,7 +211,7 @@ LRESULT CALLBACK KeyboardViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
             // Draw focus frame for the key pressed
             HDC hdc = ::GetDC(g_hwndKeyboard);
             Keyboard_DrawKey(hdc, keyscan);
-            ::ReleaseDC(g_hwndKeyboard, hdc);
+            VERIFY(::ReleaseDC(g_hwndKeyboard, hdc));
 
             // Remember key pressed
             m_nKeyboardKeyPressed = keyscan;
@@ -227,7 +227,7 @@ LRESULT CALLBACK KeyboardViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
             // Draw focus frame for the released key
             HDC hdc = ::GetDC(g_hwndKeyboard);
             Keyboard_DrawKey(hdc, m_nKeyboardKeyPressed);
-            ::ReleaseDC(g_hwndKeyboard, hdc);
+            VERIFY(::ReleaseDC(g_hwndKeyboard, hdc));
 
             m_nKeyboardKeyPressed = KEYSCAN_NONE;
         }
@@ -278,15 +278,15 @@ void KeyboardView_OnDraw(HDC hdc)
     ::BitBlt(hdc, m_nKeyboardBitmapLeft, m_nKeyboardBitmapTop, cxBitmap, cyBitmap, hdcMem, 0, 0, SRCCOPY);
 
     ::SelectObject(hdcMem, hOldBitmap);
-    ::DeleteDC(hdcMem);
-    ::DeleteObject(hBmp);
+    VERIFY(::DeleteDC(hdcMem));
+    VERIFY(::DeleteObject(hBmp));
 
     // Keyboard background
     //HBRUSH hBkBrush = ::CreateSolidBrush(COLOR_KEYBOARD_BACKGROUND);
     //HGDIOBJ hOldBrush = ::SelectObject(hdc, hBkBrush);
     //::PatBlt(hdc, 0, 0, rc.right, rc.bottom, PATCOPY);
     //::SelectObject(hdc, hOldBrush);
-    //::DeleteObject(hBkBrush);
+    //VERIFY(::DeleteObject(hBkBrush));
 
     if (m_nKeyboardKeyPressed != KEYSCAN_NONE)
         Keyboard_DrawKey(hdc, m_nKeyboardKeyPressed);
@@ -306,7 +306,7 @@ void KeyboardView_OnDraw(HDC hdc)
     //}
     //::SelectObject(hdc, hbrushOld);
     //::SelectObject(hdc, hOldPen);
-    //::DeleteObject(hpenRed);
+    //VERIFY(::DeleteObject(hpenRed));
 }
 
 // Returns: index of key under the cursor position, or -1 if not found
