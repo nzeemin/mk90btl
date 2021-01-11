@@ -12,18 +12,19 @@
 #define IDC_APPLICATION                 109
 #define IDR_MAINFRAME                   128
 #define IDD_INPUTBOX                    129
-#define IDB_TOOLBAR                     143
-#define IDD_LOADBIN                     145
-#define IDD_SETTINGS                    146
+#define IDB_TOOLBAR                     142
+#define IDD_LOADBIN                     144
+#define IDD_SETTINGS                    145
+#define IDD_SETTINGS_COLORS             146
 #define IDR_MK90_KEYB                   147
 #define IDD_DCB_EDITOR                  148
 #define IDR_MK90_ROM_BASIC10            149
 #define IDR_MK90_ROM_BASIC20            150
-#define IDB_KEYBOARD3                   153
-#define IDB_KEYBOARD4                   154
-#define IDB_KEYBOARD5                   155
-#define IDB_KEYBOARD6                   156
-#define IDB_KEYBOARD8                   158
+#define IDB_KEYBOARD3                   163
+#define IDB_KEYBOARD4                   164
+#define IDB_KEYBOARD5                   165
+#define IDB_KEYBOARD6                   166
+#define IDB_KEYBOARD8                   168
 #define IDC_EDIT1                       1000
 #define IDC_BUILDDATE                   1001
 #define IDC_EDITADDR                    1001
@@ -47,13 +48,17 @@
 #define IDC_DSRSENSITIVITY              1024
 #define IDC_BUTTON1                     1025
 #define IDC_BUTTON2                     1026
+#define IDC_LIST1                       1029
 #define IDC_DEBUGFONT                   1030
+#define IDC_SYSLINK1                    1032
+#define IDC_VERSION                     1033
 #define ID_FILE                         32771
 #define ID_FILE_SAVESTATE               32772
 #define ID_FILE_LOADSTATE               32773
 #define ID_FILE_SCREENSHOT              32774
 #define ID_FILE_SAVESCREENSHOTAS        32775
 #define ID_FILE_SETTINGS                32779
+#define ID_FILE_SETTINGS_COLORS         32780
 #define ID_VIEW                         32781
 #define ID_VIEW_MEMORY                  32782
 #define ID_VIEW_KEYBOARD                32783
@@ -104,7 +109,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        152
+#define _APS_NEXT_RESOURCE_VALUE        169
 #define _APS_NEXT_COMMAND_VALUE         32898
 #define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           110
