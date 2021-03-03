@@ -68,6 +68,7 @@ void MainWindow_DoEmulatorSmp(int slot);
 void MainWindow_DoFileSaveState();
 void MainWindow_DoFileLoadState();
 void MainWindow_DoFileScreenshot();
+void MainWindow_DoFileScreenshotToClipboard();
 void MainWindow_DoFileScreenshotSaveAs();
 void MainWindow_DoFileSettings();
 void MainWindow_DoFileSettingsColors();
@@ -863,6 +864,9 @@ bool MainWindow_DoCommand(int commandId)
     case ID_FILE_SCREENSHOT:
         MainWindow_DoFileScreenshot();
         break;
+    case ID_FILE_SCREENSHOTTOCLIPBOARD:
+        MainWindow_DoFileScreenshotToClipboard();
+        break;
     case ID_FILE_SAVESCREENSHOTAS:
         MainWindow_DoFileScreenshotSaveAs();
         break;
@@ -1047,6 +1051,18 @@ void MainWindow_DoFileScreenshot()
     if (!ScreenView_SaveScreenshot(bufFileName))
     {
         AlertWarning(_T("Failed to save screenshot bitmap."));
+    }
+}
+
+void MainWindow_DoFileScreenshotToClipboard()
+{
+    HGLOBAL hDIB = ScreenView_GetScreenshotAsDIB();
+    if (hDIB != NULL)
+    {
+        ::OpenClipboard(g_hwnd);
+        ::EmptyClipboard();
+        ::SetClipboardData(CF_DIB, hDIB);
+        ::CloseClipboard();
     }
 }
 

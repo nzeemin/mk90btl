@@ -57,7 +57,7 @@ INT_PTR CALLBACK AboutBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     case WM_INITDIALOG:
         {
             TCHAR buf[64];
-            wsprintf(buf, _T("%S %S"), __DATE__, __TIME__);
+            _sntprintf(buf, sizeof(buf) / sizeof(TCHAR), _T("%S %S"), __DATE__, __TIME__);
             ::SetWindowText(::GetDlgItem(hDlg, IDC_BUILDDATE), buf);
             return (INT_PTR)TRUE;
         }

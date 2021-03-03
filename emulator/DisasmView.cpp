@@ -213,6 +213,9 @@ LRESULT CALLBACK DisasmViewViewerWndProc(HWND hWnd, UINT message, WPARAM wParam,
     case WM_LBUTTONDOWN:
         DisasmView_OnLButtonDown(wParam, lParam);
         break;
+    case WM_RBUTTONDOWN:
+        ::SetFocus(hWnd);
+        break;
     case WM_KEYDOWN:
         return (LRESULT) DisasmView_OnKeyDown(wParam, lParam);
     case WM_SETFOCUS:
@@ -1052,7 +1055,6 @@ void DisasmView_DoDraw(HDC hdc)
     int cxChar, cyLine;  GetFontWidthAndHeight(hdc, &cxChar, &cyLine);
     COLORREF colorOld = SetTextColor(hdc, GetSysColor(COLOR_WINDOWTEXT));
     SetBkMode(hdc, TRANSPARENT);
-    //COLORREF colorBkOld = SetBkColor(hdc, GetSysColor(COLOR_WINDOW));
 
     CProcessor* pDisasmPU = g_pBoard->GetCPU();
 
@@ -1061,7 +1063,6 @@ void DisasmView_DoDraw(HDC hdc)
     int yFocus = DisasmView_DrawDisassemble(hdc, pDisasmPU, m_wDisasmBaseAddr, prevPC, 0, 2 + 0 * cyLine);
 
     SetTextColor(hdc, colorOld);
-    //SetBkColor(hdc, colorBkOld);
     SelectObject(hdc, hOldFont);
     VERIFY(::DeleteObject(hFont));
 

@@ -57,6 +57,7 @@
 #define ID_FILE_LOADSTATE               32773
 #define ID_FILE_SCREENSHOT              32774
 #define ID_FILE_SAVESCREENSHOTAS        32775
+#define ID_FILE_SCREENSHOTTOCLIPBOARD   32776
 #define ID_FILE_SETTINGS                32779
 #define ID_FILE_SETTINGS_COLORS         32780
 #define ID_VIEW                         32781
@@ -102,6 +103,8 @@
 #define ID_DEBUG_MEMORY_GOTO            32895
 #define ID_DEBUG_CLEARCONSOLE           32896
 #define ID_DEBUG_DELETEALLBREAKPTS      32897
+#define ID_DISASM_COPY_ADDRESS          32898
+#define ID_DISASM_COPY_VALUE            32899
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -110,7 +113,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        169
-#define _APS_NEXT_COMMAND_VALUE         32898
+#define _APS_NEXT_COMMAND_VALUE         32999
 #define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
