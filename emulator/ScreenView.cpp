@@ -11,6 +11,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 // ScreenView.cpp
 
 #include "stdafx.h"
+#include <windowsx.h>
 #include <mmintrin.h>
 #include <vfw.h>
 #include "Main.h"
@@ -41,6 +42,7 @@ int m_ScreenPalette = 0;
 void ScreenView_CreateDisplay();
 void ScreenView_OnDraw(HDC hdc);
 //BOOL ScreenView_OnKeyEvent(WPARAM vkey, BOOL okExtKey, BOOL okPressed);
+void ScreenView_OnRButtonDown(int mousex, int mousey);
 
 const int KEYEVENT_QUEUE_SIZE = 32;
 WORD m_ScreenKeyQueue[KEYEVENT_QUEUE_SIZE];
@@ -150,6 +152,9 @@ LRESULT CALLBACK ScreenViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
     UNREFERENCED_PARAMETER(lParam);
     switch (message)
     {
+    case WM_COMMAND:
+        ::PostMessage(g_hwnd, WM_COMMAND, wParam, lParam);
+        break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -163,6 +168,9 @@ LRESULT CALLBACK ScreenViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         break;
     case WM_LBUTTONDOWN:
         SetFocus(hWnd);
+        break;
+    case WM_RBUTTONDOWN:
+        ScreenView_OnRButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         break;
         //case WM_KEYDOWN:
         //    //if ((lParam & (1 << 30)) != 0)  // Auto-repeats should be ignored
@@ -184,6 +192,21 @@ LRESULT CALLBACK ScreenViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return (LRESULT)FALSE;
+}
+
+void ScreenView_OnRButtonDown(int mousex, int mousey)
+{
+    ::SetFocus(g_hwndScreen);
+
+    HMENU hMenu = ::CreatePopupMenu();
+    ::AppendMenu(hMenu, 0, ID_FILE_SCREENSHOT, _T("Screenshot"));
+    ::AppendMenu(hMenu, 0, ID_FILE_SCREENSHOTTOCLIPBOARD, _T("Screenshot to Clipboard"));
+
+    POINT pt = { mousex, mousey };
+    ::ClientToScreen(g_hwndScreen, &pt);
+    ::TrackPopupMenu(hMenu, 0, pt.x, pt.y, 0, g_hwndScreen, NULL);
+
+    VERIFY(::DestroyMenu(hMenu));
 }
 
 int ScreenView_GetScreenMode()
