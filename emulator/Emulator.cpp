@@ -453,7 +453,7 @@ void Emulator_SetSound(bool soundOnOff)
     m_okEmulatorSound = soundOnOff;
 }
 
-int Emulator_SystemFrame()
+bool Emulator_SystemFrame()
 {
     g_pBoard->SetCPUBreakpoints(m_wEmulatorCPUBpsCount > 0 ? m_EmulatorCPUBps : nullptr);
 
