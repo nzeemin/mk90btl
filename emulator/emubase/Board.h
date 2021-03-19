@@ -112,7 +112,7 @@ public:
     void        ExecuteCPU();  // Execute one CPU instruction
     bool        SystemFrame();  // Do one frame -- use for normal run
     void        KeyboardEvent(uint8_t scancode, bool okPressed);  // Key pressed or released
-public:  // SMP
+public:  // SMPs
     bool        AttachSmpImage(int slot, LPCTSTR sFileName);
     void        DetachSmpImage(int slot);
     bool        IsSmpImageAttached(int slot) const;
@@ -176,12 +176,12 @@ private:  // Implementation: SMPs
     uint8_t     SmpReadData(int slot);
     void        SmpWriteData(int slot, uint8_t byte);
 private:
-    const uint16_t* m_CPUbps;  // CPU breakpoint list, ends with 177777 value
-    uint32_t    m_dwTrace;  // Trace flags
     bool        m_okSoundOnOff;
-private:
     SOUNDGENCALLBACK m_SoundGenCallback;
     void        DoSound();
+private:
+    const uint16_t* m_CPUbps;  // CPU breakpoint list, ends with 177777 value
+    uint32_t    m_dwTrace;  // Trace flags
 };
 
 

@@ -28,6 +28,7 @@ CMotherboard::CMotherboard ()
     m_SoundGenCallback = NULL;
     m_okTimer50OnOff = false;
     m_okSoundOnOff = false;
+    m_CPUbps = nullptr;
 
     // Allocate memory for RAM and ROM
     m_pRAM = (uint8_t*) ::calloc(64 * 1024, 1);
@@ -212,12 +213,10 @@ void CMotherboard::SetRAMByte(uint16_t offset, uint8_t byte)
 
 uint16_t CMotherboard::GetROMWord(uint16_t offset)
 {
-    ASSERT(offset < 1024 * 64);
     return *((uint16_t*)(m_pROM + offset));
 }
 uint8_t CMotherboard::GetROMByte(uint16_t offset)
 {
-    ASSERT(offset < 1024 * 64);
     return m_pROM[offset];
 }
 
@@ -919,8 +918,8 @@ void TraceInstruction(CProcessor* pProc, CMotherboard* pBoard, uint16_t address,
     TCHAR args[32];
     DisassembleInstruction(memory, address, instr, args);
     TCHAR buffer[64];
-    wsprintf(buffer, _T("%s: %s\t%s\r\n"), bufaddr, instr, args);
-    //wsprintf(buffer, _T("%s %s: %s\t%s\r\n"), pProc->IsHaltMode() ? _T("HALT") : _T("USER"), bufaddr, instr, args);
+    _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("%s: %s\t%s\r\n"), bufaddr, instr, args);
+    //_sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("%s %s: %s\t%s\r\n"), pProc->IsHaltMode() ? _T("HALT") : _T("USER"), bufaddr, instr, args);
 
     DebugLog(buffer);
 }

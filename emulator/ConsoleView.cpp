@@ -217,10 +217,11 @@ CProcessor* ConsoleView_GetCurrentProcessor()
 void ConsoleView_PrintFormat(LPCTSTR pszFormat, ...)
 {
     TCHAR buffer[512];
+    const size_t buffersize = sizeof(buffer) / sizeof(TCHAR);
 
     va_list ptr;
     va_start(ptr, pszFormat);
-    _vsntprintf_s(buffer, 512, 512 - 1, pszFormat, ptr);
+    _vsntprintf_s(buffer, buffersize, buffersize - 1, pszFormat, ptr);
     va_end(ptr);
 
     ConsoleView_Print(buffer);
@@ -250,7 +251,7 @@ void ConsoleView_PrintConsolePrompt()
     TCHAR bufferAddr[7];
     PrintOctalValue(bufferAddr, pProc->GetPC());
     TCHAR buffer[14];
-    wsprintf(buffer, _T("%s> "), bufferAddr);
+    _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("%s> "), bufferAddr);
     ::SetWindowText(m_hwndConsolePrompt, buffer);
 }
 
@@ -313,7 +314,7 @@ void ConsoleView_PrintMemoryDump(CProcessor* pProc, WORD address, int lines = 8)
         WORD dump[8];
         int addrtype;
         for (int i = 0; i < 8; i++)
-            dump[i] = g_pBoard->GetWordView(WORD(address + i * 2), okHaltMode, false, &addrtype);
+            dump[i] = g_pBoard->GetWordView((uint16_t)(address + i * 2), okHaltMode, false, &addrtype);
 
         TCHAR buffer[2 + 6 + 2 + 7 * 8 + 1 + 16 + 1 + 2];
         TCHAR* pBuf = buffer;
@@ -359,7 +360,7 @@ int ConsoleView_PrintDisassemble(CProcessor* pProc, WORD address, BOOL okOneInst
     WORD memory[nWindowSize + 2];
     int addrtype;
     for (int i = 0; i < nWindowSize + 2; i++)
-        memory[i] = g_pBoard->GetWordView(WORD(address + i * 2), okHaltMode, TRUE, &addrtype);
+        memory[i] = g_pBoard->GetWordView((uint16_t)(address + i * 2), okHaltMode, TRUE, &addrtype);
 
     TCHAR bufaddr[7];
     TCHAR bufvalue[7];
@@ -377,7 +378,7 @@ int ConsoleView_PrintDisassemble(CProcessor* pProc, WORD address, BOOL okOneInst
         {
             if (!okShort)
             {
-                wsprintf(buffer, _T("  %s  %s\r\n"), bufaddr, bufvalue);
+                _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("  %s  %s\r\n"), bufaddr, bufvalue);
                 ConsoleView_Print(buffer);
             }
         }
@@ -392,9 +393,9 @@ int ConsoleView_PrintDisassemble(CProcessor* pProc, WORD address, BOOL okOneInst
             if (index + length > nWindowSize)
                 break;
             if (okShort)
-                wsprintf(buffer, _T("%s: %-7s\t%s\r\n"), bufaddr, instr, args);
+                _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("%s: %-7s\t%s\r\n"), bufaddr, instr, args);
             else
-                wsprintf(buffer, _T("  %s  %s  %-7s %s\r\n"), bufaddr, bufvalue, instr, args);
+                _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("  %s  %s  %-7s %s\r\n"), bufaddr, bufvalue, instr, args);
             ConsoleView_Print(buffer);
         }
         length--;
@@ -446,6 +447,10 @@ void ConsoleView_ShowHelp()
             _T("  bXXXXXX    Set breakpoint at address XXXXXX\r\n")
             _T("  bcXXXXXX   Remove breakpoint at address XXXXXX\r\n")
             _T("  bc         Remove all breakpoints\r\n")
+            _T("  w          List all watchpoints\r\n")
+            _T("  wXXXXXX    Set watchpoint at address XXXXXX\r\n")
+            _T("  wcXXXXXX   Remove watchpoint at address XXXXXX\r\n")
+            _T("  wc         Remove all watchpoints\r\n")
             _T("  u          Save memory dump to file memdump.bin\r\n")
 #if !defined(PRODUCT)
             _T("  t          Tracing on/off to trace.log file\r\n")
@@ -536,6 +541,48 @@ void ConsoleView_RemoveBreakpoint(WORD address)
     DisasmView_Redraw();
 }
 
+void ConsoleView_ShowWatchpoints()
+{
+    CProcessor* pProc = ConsoleView_GetCurrentProcessor();
+    BOOL okHaltMode = pProc->IsHaltMode();
+
+    const uint16_t* pws = Emulator_GetWatchpointList();
+    if (pws == nullptr || *pws == 0177777)
+    {
+        ConsoleView_Print(_T("  No watchpoints.\r\n"));
+    }
+    else
+    {
+        while (*pws != 0177777)
+        {
+            uint16_t address = *pws;
+            int addrtype;
+            uint16_t value = g_pBoard->GetWordView(address, okHaltMode, false, &addrtype);
+            ConsoleView_PrintFormat(_T("  %06ho %06ho\r\n"), address, value);
+            pws++;
+        }
+    }
+}
+void ConsoleView_AddWatchpoint(WORD address)
+{
+    bool result = Emulator_AddWatchpoint(address);
+    if (!result)
+        ConsoleView_Print(_T("  Failed to add watchpoint.\r\n"));
+    DebugView_Redraw();
+}
+void ConsoleView_RemoveWatchpoint(WORD address)
+{
+    bool result = Emulator_RemoveWatchpoint(address);
+    if (!result)
+        ConsoleView_Print(_T("  Failed to remove watchpoint.\r\n"));
+    DebugView_Redraw();
+}
+void ConsoleView_RemoveAllWatchpoints()
+{
+    Emulator_RemoveAllWatchpoints();
+    DebugView_Redraw();
+}
+
 #if !defined(PRODUCT)
 void ConsoleView_ClearTraceLog()
 {
@@ -573,7 +620,7 @@ void ConsoleView_DoConsoleCommand()
     TCHAR buffer[36];
     ::GetWindowText(m_hwndConsolePrompt, buffer, 14);
     ConsoleView_Print(buffer);
-    wsprintf(buffer, _T(" %s\r\n"), command);
+    _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T(" %s\r\n"), command);
     ConsoleView_Print(buffer);
 
     BOOL okUpdateAllViews = FALSE;  // Flag - need to update all debug views
@@ -753,6 +800,37 @@ void ConsoleView_DoConsoleCommand()
             WORD value;
             if (ParseOctalValue(command + 1, &value))
                 ConsoleView_AddBreakpoint(value);
+            else
+                ConsoleView_Print(MESSAGE_WRONG_VALUE);
+        }
+        else
+            ConsoleView_Print(MESSAGE_UNKNOWN_COMMAND);
+        break;
+    case _T('w'):
+        if (command[1] == 0)  // w - list watchpoints
+        {
+            ConsoleView_ShowWatchpoints();
+        }
+        else if (command[1] == _T('c'))
+        {
+            if (command[2] == 0)  // wc - remove all watchpoints
+            {
+                ConsoleView_RemoveAllWatchpoints();
+            }
+            else  // wcXXXXXX - remove watchpoint XXXXXX
+            {
+                WORD value;
+                if (ParseOctalValue(command + 2, &value))
+                    ConsoleView_RemoveWatchpoint(value);
+                else
+                    ConsoleView_Print(MESSAGE_WRONG_VALUE);
+            }
+        }
+        else if (command[1] >= _T('0') && command[1] <= _T('7'))  // "wXXXXXX" - add watchpoint XXXXXX
+        {
+            WORD value;
+            if (ParseOctalValue(command + 1, &value))
+                ConsoleView_AddWatchpoint(value);
             else
                 ConsoleView_Print(MESSAGE_WRONG_VALUE);
         }
