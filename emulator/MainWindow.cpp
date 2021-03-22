@@ -1002,7 +1002,7 @@ void MainWindow_DoEmulatorSound()
 {
     Settings_SetSound(!Settings_GetSound());
 
-    Emulator_SetSound(Settings_GetSound());
+    Emulator_SetSound(Settings_GetSound() != 0);
 
     MainWindow_UpdateMenu();
 }
@@ -1012,7 +1012,7 @@ void MainWindow_DoFileLoadState()
     TCHAR bufFileName[MAX_PATH];
     BOOL okResult = ShowOpenDialog(g_hwnd,
             _T("Open state image to load"),
-            _T("MK90 state images (*.nmst)\0*.nmst\0All Files (*.*)\0*.*\0\0"),
+            _T("MK90 state images (*.mk90st)\0*.nmst\0All Files (*.*)\0*.*\0\0"),
             bufFileName);
     if (!okResult) return;
 
@@ -1029,8 +1029,8 @@ void MainWindow_DoFileSaveState()
     TCHAR bufFileName[MAX_PATH];
     BOOL okResult = ShowSaveDialog(g_hwnd,
             _T("Save state image as"),
-            _T("MK90 state images (*.nmst)\0*.nmst\0All Files (*.*)\0*.*\0\0"),
-            _T("nmst"),
+            _T("MK90 state images (*.mk90st)\0*.nmst\0All Files (*.*)\0*.*\0\0"),
+            _T("mk90st"),
             bufFileName);
     if (! okResult) return;
 
