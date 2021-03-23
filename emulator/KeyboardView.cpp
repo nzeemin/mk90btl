@@ -245,6 +245,8 @@ void KeyboardView_RedrawKeyboard()
 
 void KeyboardView_OnDraw(HDC hdc)
 {
+    RECT rc;  ::GetClientRect(g_hwndKeyboard, &rc);
+
     if (Settings_GetDebug())
         m_nKeyboardViewScale = 3;  // In Debug mode, we're using keyboard for scale 3, but screen scale 4
     else
@@ -259,19 +261,25 @@ void KeyboardView_OnDraw(HDC hdc)
     case 8: nKeyboardResource = IDB_KEYBOARD8; break;
     }
 
-    HBITMAP hBmp = ::LoadBitmap(g_hInst, MAKEINTRESOURCE(nKeyboardResource));
+    int cxScreenWidth, cyScreenHeight;
+    Emulator_GetScreenSize(ScreenView_GetScreenMode(), &cxScreenWidth, &cyScreenHeight);
 
+    // This part repeats calculations from ScreenView to get the same yBitmapTop
+    int cyScreenHeader = m_nKeyboardViewScale * 19 - m_nKeyboardViewScale / 2;
+    int yScreenOffset = (rc.bottom - cyScreenHeight) / 2;
+    if (yScreenOffset < cyScreenHeader) yScreenOffset = cyScreenHeader;
+    int yBitmapTop = yScreenOffset - cyScreenHeader;
+
+    HBITMAP hBmp = ::LoadBitmap(g_hInst, MAKEINTRESOURCE(nKeyboardResource));
     HDC hdcMem = ::CreateCompatibleDC(hdc);
     HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
-
-    RECT rc;  ::GetClientRect(g_hwndKeyboard, &rc);
 
     BITMAP bitmap;
     VERIFY(::GetObject(hBmp, sizeof(BITMAP), &bitmap));
     int cxBitmap = (int)bitmap.bmWidth;
     int cyBitmap = (int)bitmap.bmHeight;
     m_nKeyboardBitmapLeft = -m_nKeyboardViewScale * 160; //(rc.right - 300) / 2;
-    m_nKeyboardBitmapTop = (rc.bottom - cyBitmap) / 2;
+    m_nKeyboardBitmapTop = yBitmapTop;  //(rc.bottom - cyBitmap) / 2;
     if (m_nKeyboardBitmapTop < 0) m_nKeyboardBitmapTop = 0;
     //if (m_nKeyboardBitmapTop > 16) m_nKeyboardBitmapTop = 16;
 

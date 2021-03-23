@@ -246,35 +246,62 @@ void ScreenView_OnDraw(HDC hdc)
 {
     if (m_bits == NULL) return;
 
-    HBRUSH hBrush = ::CreateSolidBrush(COLOR_BK_BACKGROUND);
-    HGDIOBJ hOldBrush = ::SelectObject(hdc, hBrush);
-
     RECT rc;  ::GetClientRect(g_hwndScreen, &rc);
+
+    int scale = Emulator_GetScreenScale(ScreenView_GetScreenMode());
+    int cyScreenHeader = scale * 19 - scale / 2;
 
     m_xScreenOffset = 0;
     m_yScreenOffset = 0;
     if (rc.right > m_cxScreenWidth)
-    {
         m_xScreenOffset = (rc.right - m_cxScreenWidth) / 2;
-        ::PatBlt(hdc, 0, 0, m_xScreenOffset, rc.bottom, PATCOPY);
-        ::PatBlt(hdc, rc.right, 0, m_cxScreenWidth + m_xScreenOffset - rc.right, rc.bottom, PATCOPY);
-    }
     if (rc.bottom > m_cyScreenHeight)
-    {
         m_yScreenOffset = (rc.bottom - m_cyScreenHeight) / 2;
-        ::PatBlt(hdc, m_xScreenOffset, 0, m_cxScreenWidth, m_yScreenOffset, PATCOPY);
-        int frombottom = rc.bottom - m_yScreenOffset - m_cyScreenHeight;
-        ::PatBlt(hdc, m_xScreenOffset, rc.bottom, m_cxScreenWidth, -frombottom, PATCOPY);
+    if (m_yScreenOffset < cyScreenHeader) m_yScreenOffset = cyScreenHeader;
+
+    UINT nKeyboardResource = IDB_KEYBOARD3;
+    switch (scale)
+    {
+    case 3: nKeyboardResource = IDB_KEYBOARD3; break;
+    case 4: nKeyboardResource = IDB_KEYBOARD4; break;
+    case 5: nKeyboardResource = IDB_KEYBOARD5; break;
+    case 6: nKeyboardResource = IDB_KEYBOARD6; break;
+    case 8: nKeyboardResource = IDB_KEYBOARD8; break;
     }
 
-    ::SelectObject(hdc, hOldBrush);
-    VERIFY(::DeleteObject(hBrush));
+    HBITMAP hBmp = ::LoadBitmap(g_hInst, MAKEINTRESOURCE(nKeyboardResource));
+    HDC hdcMem = ::CreateCompatibleDC(hdc);
+    HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
+
+    BITMAP bitmap;
+    VERIFY(::GetObject(hBmp, sizeof(BITMAP), &bitmap));
+    int cxBitmap = (int)bitmap.bmWidth;
+    int cyBitmap = (int)bitmap.bmHeight;
+    int xBitmapLeft = m_xScreenOffset - scale * 22 - scale / 2;
+    int yBitmapTop = m_yScreenOffset - cyScreenHeader;
+
+    ::BitBlt(hdc, xBitmapLeft, yBitmapTop, cxBitmap, cyBitmap, hdcMem, 0, 0, SRCCOPY);
+
+    ::SelectObject(hdcMem, hOldBitmap);
+    VERIFY(::DeleteDC(hdcMem));
+    VERIFY(::DeleteObject(hBmp));
 
     DrawDibDraw(m_hdd, hdc,
             m_xScreenOffset, m_yScreenOffset, -1, -1,
             &m_bmpinfo.bmiHeader, m_bits, 0, 0,
             m_cxScreenWidth, m_cyScreenHeight,
             0);
+
+    HBRUSH hBrush = ::GetSysColorBrush(COLOR_BTNFACE); //::CreateSolidBrush(COLOR_BK_BACKGROUND);
+    HGDIOBJ hOldBrush = ::SelectObject(hdc, hBrush);
+
+    if (yBitmapTop > 0)
+        ::PatBlt(hdc, 0, 0, rc.right, yBitmapTop, PATCOPY);
+    if (yBitmapTop + cyBitmap < rc.bottom)
+        ::PatBlt(hdc, 0, yBitmapTop + cyBitmap, rc.right, rc.bottom - yBitmapTop - cyBitmap, PATCOPY);
+
+    ::SelectObject(hdc, hOldBrush);
+    VERIFY(::DeleteObject(hBrush));
 }
 
 void ScreenView_RedrawScreen()
