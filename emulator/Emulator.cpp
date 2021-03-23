@@ -90,6 +90,8 @@ const uint32_t ScreenView_Palette[][4] =
     { 0xB0B0B0, 0x000000, 0x000000, 0xC0C0C0 },  // Gray, no pixel edges
     { 0xFFFFFF, 0x000000, 0xA0A0A0, 0xFFFFFF },  // High contrast black & white with pixel edges
     { 0xFFFFFF, 0x000000, 0x000000, 0xFFFFFF },  // High contrast black & white, no pixel edges
+    { 0xA9C5A0, 0x7D9484, 0xA0A0A0, 0xAAC59B },  // Green with pixel edges
+    { 0xA9C5A0, 0x7D9484, 0x7D9484, 0xAAC59B },  // Green, no pixel edges
 };
 
 

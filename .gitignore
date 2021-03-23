@@ -11,7 +11,7 @@ Release
 ipch
 *.bin
 trace.log
-Version.h
+/emulator/Version.h
 MK90BTL.APS
 trace.log
 *.dsk

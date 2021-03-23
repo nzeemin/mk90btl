@@ -701,8 +701,10 @@ void MainWindow_UpdateMenu()
     case 1: scrpalcmd = ID_VIEW_PALETTE1; break;
     case 2: scrpalcmd = ID_VIEW_PALETTE2; break;
     case 3: scrpalcmd = ID_VIEW_PALETTE3; break;
+    case 4: scrpalcmd = ID_VIEW_PALETTE4; break;
+    case 5: scrpalcmd = ID_VIEW_PALETTE5; break;
     }
-    CheckMenuRadioItem(hMenu, ID_VIEW_PALETTE0, ID_VIEW_PALETTE3, scrpalcmd, MF_BYCOMMAND);
+    CheckMenuRadioItem(hMenu, ID_VIEW_PALETTE0, ID_VIEW_PALETTE5, scrpalcmd, MF_BYCOMMAND);
 
     // Emulator menu options
     CheckMenuItem(hMenu, ID_EMULATOR_AUTOSTART, (Settings_GetAutostart() ? MF_CHECKED : MF_UNCHECKED));
@@ -774,31 +776,19 @@ bool MainWindow_DoCommand(int commandId)
         MainWindow_DoViewFullscreen();
         break;
     case ID_VIEW_SCREENMODE0:
-        MainWindow_DoViewScreenMode(0);
-        break;
     case ID_VIEW_SCREENMODE1:
-        MainWindow_DoViewScreenMode(1);
-        break;
     case ID_VIEW_SCREENMODE2:
-        MainWindow_DoViewScreenMode(2);
-        break;
     case ID_VIEW_SCREENMODE3:
-        MainWindow_DoViewScreenMode(3);
-        break;
     case ID_VIEW_SCREENMODE4:
-        MainWindow_DoViewScreenMode(4);
+        MainWindow_DoViewScreenMode(commandId - ID_VIEW_SCREENMODE0);
         break;
     case ID_VIEW_PALETTE0:
-        MainWindow_DoViewScreenPalette(0);
-        break;
     case ID_VIEW_PALETTE1:
-        MainWindow_DoViewScreenPalette(1);
-        break;
     case ID_VIEW_PALETTE2:
-        MainWindow_DoViewScreenPalette(2);
-        break;
     case ID_VIEW_PALETTE3:
-        MainWindow_DoViewScreenPalette(3);
+    case ID_VIEW_PALETTE4:
+    case ID_VIEW_PALETTE5:
+        MainWindow_DoViewScreenPalette(commandId - ID_VIEW_PALETTE0);
         break;
     case ID_EMULATOR_RUN:
         MainWindow_DoEmulatorRun();
