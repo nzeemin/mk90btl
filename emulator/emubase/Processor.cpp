@@ -1,4 +1,4 @@
-/*  This file is part of MK90BTL.
+ï»¿/*  This file is part of MK90BTL.
     MK90BTL is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software Foundation,
 either version 3 of the License, or (at your option) any later version.
@@ -16,7 +16,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 
 // Timings ///////////////////////////////////////////////////////////
-// Òàáëèöû òàéìèíãîâ îñíîâàíû íà ñòàòüå Þ. À. Çàëüöìàíà, æóðíàë "Ïåðñîíàëüíûé êîìïüþòåð ÁÊ" ¹1 1995.
+// Ð¢Ð°Ð±Ð»Ð¸Ñ†Ñ‹ Ñ‚Ð°Ð¹Ð¼Ð¸Ð½Ð³Ð¾Ð² Ð¾ÑÐ½Ð¾Ð²Ð°Ð½Ñ‹ Ð½Ð° ÑÑ‚Ð°Ñ‚ÑŒÐµ Ð®. Ð. Ð—Ð°Ð»ÑŒÑ†Ð¼Ð°Ð½Ð°, Ð¶ÑƒÑ€Ð½Ð°Ð» "ÐŸÐµÑ€ÑÐ¾Ð½Ð°Ð»ÑŒÐ½Ñ‹Ð¹ ÐºÐ¾Ð¼Ð¿ÑŒÑŽÑ‚ÐµÑ€ Ð‘Ðš" â„–1 1995.
 
 const int TIMING_BRANCH =   16;  // 5.4 us - BR, BEQ etc.
 const int TIMING_ILLEGAL = 144;
@@ -81,7 +81,7 @@ void CProcessor::Init()
     ASSERT(m_pExecuteMethodMap == NULL);
     m_pExecuteMethodMap = (CProcessor::ExecuteMethodRef*) ::calloc(65536, sizeof(CProcessor::ExecuteMethodRef));
 
-    // Ñíà÷àëà çàïîëíÿåì òàáëèöó ññûëêàìè íà ìåòîä ExecuteUNKNOWN
+    // Ð¡Ð½Ð°Ñ‡Ð°Ð»Ð° Ð·Ð°Ð¿Ð¾Ð»Ð½ÑÐµÐ¼ Ñ‚Ð°Ð±Ð»Ð¸Ñ†Ñƒ ÑÑÑ‹Ð»ÐºÐ°Ð¼Ð¸ Ð½Ð° Ð¼ÐµÑ‚Ð¾Ð´ ExecuteUNKNOWN
     RegisterMethodRef( 0000000, 0177777, &CProcessor::ExecuteUNKNOWN );
 
     RegisterMethodRef( 0000000, 0000000, &CProcessor::ExecuteHALT );
@@ -221,7 +221,7 @@ void CProcessor::Start ()
     SetPC(pc);
     uint16_t ps = 0000340;
     SetPSW(ps);
-    m_internalTick = 1000000;  // Êîëè÷åñòâî òàêòîâ íà âêëþ÷åíèå ïðîöåññîðà (çíà÷åíèå ñ ïîòîëêà)
+    m_internalTick = 1000000;  // ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ñ‚Ð°ÐºÑ‚Ð¾Ð² Ð½Ð° Ð²ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ð¿Ñ€Ð¾Ñ†ÐµÑÑÐ¾Ñ€Ð° (Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ Ñ Ð¿Ð¾Ñ‚Ð¾Ð»ÐºÐ°)
 }
 void CProcessor::Stop ()
 {
@@ -295,7 +295,7 @@ void CProcessor::Execute()
             {
                 m_TRAPrq = false;  intrVector = 0000034;
             }
-            else if (m_RPLYrq)  // Çàâèñàíèå
+            else if (m_RPLYrq)  // Ð—Ð°Ð²Ð¸ÑÐ°Ð½Ð¸Ðµ
             {
                 m_RPLYrq = false;  intrVector = 0000004;
             }
@@ -385,9 +385,9 @@ void CProcessor::MemoryError()
 //////////////////////////////////////////////////////////////////////
 
 
-// Âû÷èñëåíèå àäðåñà îïåðàíäà, â çàâèñèìîñòè îò ìåòîäà àäðåñàöèè
-//   meth - ìåòîä àäðåñàöèè
-//   reg  - íîìåð ðåãèñòðà
+// Ð’Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð¸Ðµ Ð°Ð´Ñ€ÐµÑÐ° Ð¾Ð¿ÐµÑ€Ð°Ð½Ð´Ð°, Ð² Ð·Ð°Ð²Ð¸ÑÐ¸Ð¼Ð¾ÑÑ‚Ð¸ Ð¾Ñ‚ Ð¼ÐµÑ‚Ð¾Ð´Ð° Ð°Ð´Ñ€ÐµÑÐ°Ñ†Ð¸Ð¸
+//   meth - Ð¼ÐµÑ‚Ð¾Ð´ Ð°Ð´Ñ€ÐµÑÐ°Ñ†Ð¸Ð¸
+//   reg  - Ð½Ð¾Ð¼ÐµÑ€ Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°
 uint16_t CProcessor::CalculateOperAddrSrc (int meth, int reg)
 {
     uint16_t arg;
@@ -631,7 +631,7 @@ uint16_t CProcessor::GetDstWordArgAsBranch ()
 static bool TraceStarted = true;//DEBUG
 void CProcessor::FetchInstruction()
 {
-    // Ñ÷èòûâàåì î÷åðåäíóþ èíñòðóêöèþ
+    // Ð¡Ñ‡Ð¸Ñ‚Ñ‹Ð²Ð°ÐµÐ¼ Ð¾Ñ‡ÐµÑ€ÐµÐ´Ð½ÑƒÑŽ Ð¸Ð½ÑÑ‚Ñ€ÑƒÐºÑ†Ð¸ÑŽ
     uint16_t pc = GetPC();
     pc = pc & ~1;
 
@@ -668,7 +668,7 @@ void CProcessor::TranslateInstruction ()
     (this->*methodref)();  // Call command implementation method
 }
 
-void CProcessor::ExecuteUNKNOWN ()  // Íåò òàêîé èíñòðóêöèè - ïðîñòî âûçûâàåòñÿ TRAP 10
+void CProcessor::ExecuteUNKNOWN ()  // ÐÐµÑ‚ Ñ‚Ð°ÐºÐ¾Ð¹ Ð¸Ð½ÑÑ‚Ñ€ÑƒÐºÑ†Ð¸Ð¸ - Ð¿Ñ€Ð¾ÑÑ‚Ð¾ Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ TRAP 10
 {
     DebugLogFormat(_T(">>Invalid OPCODE = %06o at %06o\r\n"), m_instruction, m_instructionpc);
 
@@ -685,12 +685,12 @@ void CProcessor::ExecuteWAIT ()  // WAIT - Wait for an interrupt
     m_internalTick = TIMING_WAIT;
 }
 
-void CProcessor::ExecuteHALT ()  // HALT - Îñòàíîâ
+void CProcessor::ExecuteHALT ()  // HALT - ÐžÑÑ‚Ð°Ð½Ð¾Ð²
 {
     m_HALTrq = true;
 }
 
-void CProcessor::ExecuteRTI ()  // RTI - Âîçâðàò èç ïðåðûâàíèÿ
+void CProcessor::ExecuteRTI ()  // RTI - Ð’Ð¾Ð·Ð²Ñ€Ð°Ñ‚ Ð¸Ð· Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸Ñ
 {
     uint16_t new_psw;
     SetReg(7, GetWord( GetSP() ) );  // Pop PC
@@ -735,7 +735,7 @@ void CProcessor::ExecuteRTT ()  // RTT - return from trace trap
     m_internalTick = TIMING_RTI;
 }
 
-void CProcessor::ExecuteRTS ()  // RTS - return from subroutine - Âîçâðàò èç ïðîöåäóðû
+void CProcessor::ExecuteRTS ()  // RTS - return from subroutine - Ð’Ð¾Ð·Ð²Ñ€Ð°Ñ‚ Ð¸Ð· Ð¿Ñ€Ð¾Ñ†ÐµÐ´ÑƒÑ€Ñ‹
 {
     SetPC(GetReg(m_regdest));
     SetReg(m_regdest, GetWord(GetSP()));
@@ -744,7 +744,7 @@ void CProcessor::ExecuteRTS ()  // RTS - return from subroutine - Âîçâðàò èç ïðî
     m_internalTick = TIMING_RTS;
 }
 
-void CProcessor::ExecuteNOP ()  // NOP - Íåò îïåðàöèè
+void CProcessor::ExecuteNOP ()  // NOP - ÐÐµÑ‚ Ð¾Ð¿ÐµÑ€Ð°Ñ†Ð¸Ð¸
 {
     m_internalTick = TIMING_NOP;
 }
@@ -767,7 +767,7 @@ void CProcessor::ExecuteSCC ()
 
 void CProcessor::ExecuteJMP ()  // JMP - jump: PC = &d (a-mode > 0)
 {
-    if (m_methdest == 0)  // Íåïðàâèëüíûé ìåòîä àäðåñàöèè
+    if (m_methdest == 0)  // ÐÐµÐ¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÑ‚Ð¾Ð´ Ð°Ð´Ñ€ÐµÑÐ°Ñ†Ð¸Ð¸
     {
         m_RPLYrq = true;
 
@@ -879,7 +879,7 @@ void CProcessor::ExecuteCOM ()  // COM
     }
 }
 
-void CProcessor::ExecuteINC ()  // INC - Èíêðåìåíò
+void CProcessor::ExecuteINC ()  // INC - Ð˜Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚
 {
     uint16_t ea = 0;
     if (m_instruction & 0100000)
@@ -924,7 +924,7 @@ void CProcessor::ExecuteINC ()  // INC - Èíêðåìåíò
     }
 }
 
-void CProcessor::ExecuteDEC ()  // DEC - Äåêðåìåíò
+void CProcessor::ExecuteDEC ()  // DEC - Ð”ÐµÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚
 {
     uint16_t ea = 0;
     if (m_instruction & 0100000)
@@ -1582,7 +1582,7 @@ void CProcessor::ExecuteMUL ()  // MUL
 }
 void CProcessor::ExecuteDIV ()  // DIV
 {
-    //âðåìÿ íàäî ñ÷èòàòü òóò
+    //Ð²Ñ€ÐµÐ¼Ñ Ð½Ð°Ð´Ð¾ ÑÑ‡Ð¸Ñ‚Ð°Ñ‚ÑŒ Ñ‚ÑƒÑ‚
     uint16_t ea = 0;
     int longsrc;
     int res, res1, src2;
@@ -1599,13 +1599,13 @@ void CProcessor::ExecuteDIV ()  // DIV
 
     if (src2 == 0)
     {
-        new_psw |= (PSW_V | PSW_C); //åñëè äåëÿò íà 0 -- òî óñòàíàâëèâàåì V è C
+        new_psw |= (PSW_V | PSW_C); //ÐµÑÐ»Ð¸ Ð´ÐµÐ»ÑÑ‚ Ð½Ð° 0 -- Ñ‚Ð¾ ÑƒÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ V Ð¸ C
         SetLPSW(new_psw);
         return;
     }
     if ((longsrc == 020000000000) && (src2 == -1))
     {
-        new_psw |= PSW_V; // ïåðåïîëíÿåìñÿ, òîâàðèùè
+        new_psw |= PSW_V; // Ð¿ÐµÑ€ÐµÐ¿Ð¾Ð»Ð½ÑÐµÐ¼ÑÑ, Ñ‚Ð¾Ð²Ð°Ñ€Ð¸Ñ‰Ð¸
         SetLPSW(new_psw);
         return;
     }
@@ -1615,7 +1615,7 @@ void CProcessor::ExecuteDIV ()  // DIV
 
     if ((res > 32767) || (res < -32768))
     {
-        new_psw |= PSW_V; // ïåðåïîëíÿåìñÿ, òîâàðèùè
+        new_psw |= PSW_V; // Ð¿ÐµÑ€ÐµÐ¿Ð¾Ð»Ð½ÑÐµÐ¼ÑÑ, Ñ‚Ð¾Ð²Ð°Ñ€Ð¸Ñ‰Ð¸
         SetLPSW(new_psw);
         return;
     }
@@ -2039,7 +2039,7 @@ void CProcessor::ExecuteJSR ()  // JSR - Jump subroutine: *--SP = R; R = PC; PC 
     //int meth = GetDigit(m_instruction, DST + 1);
     if (m_methdest == 0)
     {
-        // Íåïðàâèëüíûé ìåòîä àäðåñàöèè
+        // ÐÐµÐ¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÑ‚Ð¾Ð´ Ð°Ð´Ñ€ÐµÑÐ°Ñ†Ð¸Ð¸
         m_RPLYrq = true;
         m_internalTick = TIMING_EMT;
     }

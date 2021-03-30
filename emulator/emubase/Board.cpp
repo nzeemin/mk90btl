@@ -1,4 +1,4 @@
-/*  This file is part of MK90BTL.
+п»ї/*  This file is part of MK90BTL.
     MK90BTL is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software Foundation,
 either version 3 of the License, or (at your option) any later version.
@@ -263,12 +263,12 @@ void CMotherboard::ExecuteCPU()
 }
 
 /*
-Каждый фрейм равен 1/25 секунды = 40 мс
-Фрейм делим на 20000 тиков, 1 тик = 2 мкс
-В каждый фрейм происходит:
-* 320000 тиков таймер 1 -- 16 раз за тик -- 8 МГц
-* 320000 тиков ЦП       -- 16 раз за тик
-*      2 тика IRQ2 и таймер 2 -- 50 Гц, в 0-й и 10000-й тик фрейма
+РљР°Р¶РґС‹Р№ С„СЂРµР№Рј СЂР°РІРµРЅ 1/25 СЃРµРєСѓРЅРґС‹ = 40 РјСЃ
+Р¤СЂРµР№Рј РґРµР»РёРј РЅР° 20000 С‚РёРєРѕРІ, 1 С‚РёРє = 2 РјРєСЃ
+Р’ РєР°Р¶РґС‹Р№ С„СЂРµР№Рј РїСЂРѕРёСЃС…РѕРґРёС‚:
+* 320000 С‚РёРєРѕРІ С‚Р°Р№РјРµСЂ 1 -- 16 СЂР°Р· Р·Р° С‚РёРє -- 8 РњР“С†
+* 320000 С‚РёРєРѕРІ Р¦Рџ       -- 16 СЂР°Р· Р·Р° С‚РёРє
+*      2 С‚РёРєР° IRQ2 Рё С‚Р°Р№РјРµСЂ 2 -- 50 Р“С†, РІ 0-Р№ Рё 10000-Р№ С‚РёРє С„СЂРµР№РјР°
 */
 bool CMotherboard::SystemFrame()
 {
