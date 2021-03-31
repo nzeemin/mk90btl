@@ -364,7 +364,7 @@ void DebugView_DrawMemoryForRegister(HDC hdc, int reg, const CProcessor* pProc, 
     COLORREF colorPrev = Settings_GetColor(ColorDebugPrevious);
     COLORREF colorOld = SetTextColor(hdc, colorText);
 
-    uint16_t current = pProc->GetReg(reg);
+    uint16_t current = pProc->GetReg(reg) & ~1;
     uint16_t previous = oldValue;
     bool okExec = (reg == 7);
 

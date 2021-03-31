@@ -257,34 +257,41 @@ void ScreenView_OnDraw(HDC hdc)
         m_xScreenOffset = (rc.right - m_cxScreenWidth) / 2;
     if (rc.bottom > m_cyScreenHeight)
         m_yScreenOffset = (rc.bottom - m_cyScreenHeight) / 2;
-    if (m_yScreenOffset < cyScreenHeader) m_yScreenOffset = cyScreenHeader;
 
-    UINT nKeyboardResource = IDB_KEYBOARD3;
-    switch (scale)
+    int yBitmapTop = m_yScreenOffset;
+    int yBitmapBottom = m_yScreenOffset + m_cyScreenHeight;
+    if (!Settings_GetDebug())
     {
-    case 3: nKeyboardResource = IDB_KEYBOARD3; break;
-    case 4: nKeyboardResource = IDB_KEYBOARD4; break;
-    case 5: nKeyboardResource = IDB_KEYBOARD5; break;
-    case 6: nKeyboardResource = IDB_KEYBOARD6; break;
-    case 8: nKeyboardResource = IDB_KEYBOARD8; break;
+        if (m_yScreenOffset < cyScreenHeader) m_yScreenOffset = cyScreenHeader;
+
+        UINT nKeyboardResource = IDB_KEYBOARD4;
+        switch (scale)
+        {
+        case 3: nKeyboardResource = IDB_KEYBOARD3; break;
+        case 4: nKeyboardResource = IDB_KEYBOARD4; break;
+        case 5: nKeyboardResource = IDB_KEYBOARD5; break;
+        case 6: nKeyboardResource = IDB_KEYBOARD6; break;
+        case 8: nKeyboardResource = IDB_KEYBOARD8; break;
+        }
+
+        HBITMAP hBmp = ::LoadBitmap(g_hInst, MAKEINTRESOURCE(nKeyboardResource));
+        HDC hdcMem = ::CreateCompatibleDC(hdc);
+        HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
+
+        BITMAP bitmap;
+        VERIFY(::GetObject(hBmp, sizeof(BITMAP), &bitmap));
+        int cxBitmap = (int)bitmap.bmWidth;
+        int cyBitmap = (int)bitmap.bmHeight;
+        int xBitmapLeft = m_xScreenOffset - scale * 22 - scale / 2;
+        yBitmapTop = m_yScreenOffset - cyScreenHeader;
+        yBitmapBottom = yBitmapTop + cyBitmap;
+
+        ::BitBlt(hdc, xBitmapLeft, yBitmapTop, cxBitmap, cyBitmap, hdcMem, 0, 0, SRCCOPY);
+
+        ::SelectObject(hdcMem, hOldBitmap);
+        VERIFY(::DeleteDC(hdcMem));
+        VERIFY(::DeleteObject(hBmp));
     }
-
-    HBITMAP hBmp = ::LoadBitmap(g_hInst, MAKEINTRESOURCE(nKeyboardResource));
-    HDC hdcMem = ::CreateCompatibleDC(hdc);
-    HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
-
-    BITMAP bitmap;
-    VERIFY(::GetObject(hBmp, sizeof(BITMAP), &bitmap));
-    int cxBitmap = (int)bitmap.bmWidth;
-    int cyBitmap = (int)bitmap.bmHeight;
-    int xBitmapLeft = m_xScreenOffset - scale * 22 - scale / 2;
-    int yBitmapTop = m_yScreenOffset - cyScreenHeader;
-
-    ::BitBlt(hdc, xBitmapLeft, yBitmapTop, cxBitmap, cyBitmap, hdcMem, 0, 0, SRCCOPY);
-
-    ::SelectObject(hdcMem, hOldBitmap);
-    VERIFY(::DeleteDC(hdcMem));
-    VERIFY(::DeleteObject(hBmp));
 
     DrawDibDraw(m_hdd, hdc,
             m_xScreenOffset, m_yScreenOffset, -1, -1,
@@ -297,8 +304,15 @@ void ScreenView_OnDraw(HDC hdc)
 
     if (yBitmapTop > 0)
         ::PatBlt(hdc, 0, 0, rc.right, yBitmapTop, PATCOPY);
-    if (yBitmapTop + cyBitmap < rc.bottom)
-        ::PatBlt(hdc, 0, yBitmapTop + cyBitmap, rc.right, rc.bottom - yBitmapTop - cyBitmap, PATCOPY);
+    if (yBitmapBottom < rc.bottom)
+        ::PatBlt(hdc, 0, yBitmapBottom, rc.right, rc.bottom - yBitmapBottom, PATCOPY);
+    if (Settings_GetDebug())
+    {
+        if (m_xScreenOffset > 0)
+            ::PatBlt(hdc, 0, 0, m_xScreenOffset, rc.bottom, PATCOPY);
+        if (m_xScreenOffset + m_cxScreenWidth < rc.right)
+            ::PatBlt(hdc, m_xScreenOffset + m_cxScreenWidth, 0, rc.right - m_xScreenOffset - m_cxScreenWidth, rc.bottom, PATCOPY);
+    }
 
     ::SelectObject(hdc, hOldBrush);
     VERIFY(::DeleteObject(hBrush));

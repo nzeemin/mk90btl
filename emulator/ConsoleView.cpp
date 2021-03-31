@@ -216,8 +216,8 @@ CProcessor* ConsoleView_GetCurrentProcessor()
 
 void ConsoleView_PrintFormat(LPCTSTR pszFormat, ...)
 {
-    TCHAR buffer[512];
-    const size_t buffersize = sizeof(buffer) / sizeof(TCHAR);
+    const size_t buffersize = 512;
+    TCHAR buffer[buffersize];
 
     va_list ptr;
     va_start(ptr, pszFormat);

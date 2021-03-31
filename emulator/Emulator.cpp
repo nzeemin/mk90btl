@@ -211,7 +211,7 @@ bool Emulator_InitConfiguration(uint16_t configuration)
         HRSRC hRes = NULL;
         uint32_t dwDataSize = 0;
         HGLOBAL hResLoaded = NULL;
-        void * pResData = NULL;
+        void * pResData = nullptr;
         if ((hRes = ::FindResource(NULL, MAKEINTRESOURCE(nRomResourceId), _T("BIN"))) == NULL ||
             (dwDataSize = ::SizeofResource(NULL, hRes)) < 32768 ||
             (hResLoaded = ::LoadResource(NULL, hRes)) == NULL ||
@@ -463,7 +463,7 @@ bool Emulator_SystemFrame()
     ScreenView_ProcessKeyboard();
 
     if (!g_pBoard->SystemFrame())
-        return 0;
+        return false;
 
     // Calculate frames per second
     m_nFrameCount++;
@@ -503,7 +503,7 @@ bool Emulator_SystemFrame()
         //TODO
     }
 
-    return 1;
+    return true;
 }
 
 void CALLBACK Emulator_SoundGenCallback(unsigned short L, unsigned short R)
@@ -705,12 +705,12 @@ bool Emulator_SaveImage(LPCTSTR sFilePath)
 {
     // Create file
     FILE* fpFile = ::_tfsopen(sFilePath, _T("w+b"), _SH_DENYWR);
-    if (fpFile == NULL)
+    if (fpFile == nullptr)
         return false;
 
     // Allocate memory
     uint8_t* pImage = (uint8_t*) ::calloc(MK90IMAGE_SIZE, 1);
-    if (pImage == NULL)
+    if (pImage == nullptr)
     {
         ::fclose(fpFile);
         return false;
@@ -743,7 +743,7 @@ bool Emulator_LoadImage(LPCTSTR sFilePath)
 
     // Open file
     FILE* fpFile = ::_tfsopen(sFilePath, _T("rb"), _SH_DENYWR);
-    if (fpFile == NULL)
+    if (fpFile == nullptr)
         return false;
 
     // Read header
@@ -759,7 +759,7 @@ bool Emulator_LoadImage(LPCTSTR sFilePath)
 
     // Allocate memory
     uint8_t* pImage = (uint8_t*) ::calloc(MK90IMAGE_SIZE, 1);
-    if (pImage == NULL)
+    if (pImage == nullptr)
     {
         ::fclose(fpFile);
         return false;

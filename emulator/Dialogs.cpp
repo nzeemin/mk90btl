@@ -88,7 +88,6 @@ BOOL InputBoxOctal(HWND hwndOwner, LPCTSTR strTitle, WORD* pValue)
     return TRUE;
 }
 
-
 INT_PTR CALLBACK InputBoxProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);

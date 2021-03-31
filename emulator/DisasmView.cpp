@@ -82,7 +82,7 @@ TCHAR m_strDisasmHint[42] = { 0 };
 TCHAR m_strDisasmHint2[42] = { 0 };
 
 int m_cxDisasmBreakpointZone = 16;  // Width of breakpoint zone at the left, for mouse click
-int m_cyDisasmLine = 10;
+int m_cyDisasmLine = 10;  // cyLine for the current font
 
 void DisasmView_UpdateWindowText();
 BOOL DisasmView_OnKeyDown(WPARAM vkey, LPARAM lParam);
