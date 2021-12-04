@@ -268,7 +268,7 @@ void CProcessor::Execute()
     }
     else  // Processing interrupts
     {
-        m_TBITrq = (m_psw & 020);  // T-bit
+        m_TBITrq = (m_psw & 020) != 0;  // T-bit
 
         for (;;)
         {

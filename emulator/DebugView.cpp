@@ -390,8 +390,7 @@ void DebugView_DrawMemoryForRegister(HDC hdc, int reg, const CProcessor* pProc, 
         SetTextColor(hdc, (wChanged != 0) ? colorChanged : colorText);
         DrawOctalValue(hdc, x + 11 * cxChar, y, value);
 
-        // Current position
-        if (address == current)
+        if (address == current)  // Current position
         {
             SetTextColor(hdc, colorText);
             TextOut(hdc, x + 2 * cxChar, y, _T(">"), 1);
