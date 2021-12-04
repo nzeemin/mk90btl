@@ -222,8 +222,6 @@ void Settings_SetWindowRect(const RECT * pRect)
 
 SETTINGS_GETSET_DWORD(WindowMaximized, _T("WindowMaximized"), BOOL, FALSE);
 
-SETTINGS_GETSET_DWORD(WindowFullscreen, _T("WindowFullscreen"), BOOL, FALSE);
-
 SETTINGS_GETSET_DWORD(Configuration, _T("Configuration"), int, 0);
 
 void Settings_GetSmpFilePath(int slot, LPTSTR buffer)

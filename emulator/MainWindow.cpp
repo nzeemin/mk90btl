@@ -37,11 +37,6 @@ HWND m_hwndSplitter = (HWND)INVALID_HANDLE_VALUE;
 int m_MainWindowMinCx = DEFAULT_SCREEN_WIDTH + 40;
 int m_MainWindowMinCy = DEFAULT_SCREEN_HEIGHT + 40;
 
-BOOL m_MainWindow_Fullscreen = FALSE;
-LONG m_MainWindow_FullscreenOldStyle = 0;
-BOOL m_MainWindow_FullscreenOldMaximized = FALSE;
-RECT m_MainWindow_FullscreenOldRect;
-
 
 //////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -56,7 +51,6 @@ void MainWindow_DoViewDebug();
 void MainWindow_DoDebugMemoryMap();
 void MainWindow_DoViewToolbar();
 void MainWindow_DoViewKeyboard();
-void MainWindow_DoViewFullscreen();
 void MainWindow_DoViewScreenMode(int newMode);
 void MainWindow_DoViewScreenPalette(int newPalette);
 void MainWindow_DoEmulatorRun();
@@ -261,21 +255,12 @@ void MainWindow_RestoreSettings()
 
 void MainWindow_SavePosition()
 {
-    if (m_MainWindow_Fullscreen)
-    {
-        Settings_SetWindowRect(&m_MainWindow_FullscreenOldRect);
-        Settings_SetWindowMaximized(m_MainWindow_FullscreenOldMaximized);
-    }
-    else
-    {
-        WINDOWPLACEMENT placement;
-        placement.length = sizeof(WINDOWPLACEMENT);
-        ::GetWindowPlacement(g_hwnd, &placement);
+    WINDOWPLACEMENT placement;
+    placement.length = sizeof(WINDOWPLACEMENT);
+    ::GetWindowPlacement(g_hwnd, &placement);
 
-        Settings_SetWindowRect(&(placement.rcNormalPosition));
-        Settings_SetWindowMaximized(placement.showCmd == SW_SHOWMAXIMIZED);
-    }
-    Settings_SetWindowFullscreen(m_MainWindow_Fullscreen);
+    Settings_SetWindowRect(&(placement.rcNormalPosition));
+    Settings_SetWindowMaximized(placement.showCmd == SW_SHOWMAXIMIZED);
 }
 void MainWindow_RestorePositionAndShow()
 {
@@ -329,11 +314,8 @@ LRESULT CALLBACK MainWindow_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
         {
             DefWindowProc(hWnd, message, wParam, lParam);
             MINMAXINFO* mminfo = (MINMAXINFO*)lParam;
-            if (!m_MainWindow_Fullscreen)
-            {
-                mminfo->ptMinTrackSize.x = m_MainWindowMinCx;
-                mminfo->ptMinTrackSize.y = m_MainWindowMinCy;
-            }
+            mminfo->ptMinTrackSize.x = m_MainWindowMinCx;
+            mminfo->ptMinTrackSize.y = m_MainWindowMinCy;
         }
         break;
     case WM_NOTIFY:
@@ -373,9 +355,6 @@ void MainWindow_AdjustWindowSize()
     const int MAX_DEBUG_WIDTH = 1450;
     const int MAX_DEBUG_HEIGHT = 1400;
 
-    // If Fullscreen or Maximized then do nothing
-    //if (m_MainWindow_Fullscreen)
-    //    return;
     WINDOWPLACEMENT placement;
     placement.length = sizeof(WINDOWPLACEMENT);
     ::GetWindowPlacement(g_hwnd, &placement);
@@ -545,7 +524,7 @@ void MainWindow_AdjustWindowLayout()
 
     int cyStatusReal = rcStatus.bottom - rcStatus.top;
     SetWindowPos(m_hwndStatusbar, NULL, 0, rc.bottom - cyStatusReal, cxStatus, cyStatusReal,
-            SWP_NOZORDER | (m_MainWindow_Fullscreen ? SWP_HIDEWINDOW : SWP_SHOWWINDOW));
+            SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
 void MainWindow_ShowHideDebug()
@@ -772,9 +751,6 @@ bool MainWindow_DoCommand(int commandId)
     case ID_VIEW_KEYBOARD:
         MainWindow_DoViewKeyboard();
         break;
-    case ID_VIEW_FULLSCREEN:
-        MainWindow_DoViewFullscreen();
-        break;
     case ID_VIEW_SCREENMODE0:
     case ID_VIEW_SCREENMODE1:
     case ID_VIEW_SCREENMODE2:
@@ -917,48 +893,6 @@ void MainWindow_DoViewScreenPalette(int newPalette)
     MainWindow_UpdateMenu();
 
     Settings_SetScreenPalette(newPalette);
-}
-
-void MainWindow_DoViewFullscreen()
-{
-    if (Settings_GetDebug())
-        MainWindow_DoViewDebug();  // Leave Debug mode
-
-    if (!m_MainWindow_Fullscreen)
-    {
-        // Store current window state and position
-        m_MainWindow_FullscreenOldMaximized = ::IsZoomed(g_hwnd);
-        if (m_MainWindow_FullscreenOldMaximized)
-            ::SendMessage(g_hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
-        ::GetWindowRect(g_hwnd, &m_MainWindow_FullscreenOldRect);
-    }
-
-    m_MainWindow_Fullscreen = !m_MainWindow_Fullscreen;
-
-    if (m_MainWindow_Fullscreen)
-    {
-        MONITORINFO monitorinfo;
-        monitorinfo.cbSize = sizeof(monitorinfo);
-        ::GetMonitorInfo(::MonitorFromWindow(g_hwnd, MONITOR_DEFAULTTONEAREST), &monitorinfo);
-        RECT rcnew = monitorinfo.rcMonitor;
-
-        m_MainWindow_FullscreenOldStyle = ::GetWindowLong(g_hwnd, GWL_STYLE);
-        ::SetWindowLong(g_hwnd, GWL_STYLE, m_MainWindow_FullscreenOldStyle & ~(WS_CAPTION | WS_THICKFRAME));
-        ::SetWindowPos(g_hwnd, NULL, rcnew.left, rcnew.top, rcnew.right - rcnew.left, rcnew.bottom - rcnew.top,
-                SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-    }
-    else
-    {
-        // Restore saved window position
-        RECT rcnew = m_MainWindow_FullscreenOldRect;
-        ::SetWindowLong(g_hwnd, GWL_STYLE, m_MainWindow_FullscreenOldStyle);
-        ::SetWindowPos(g_hwnd, NULL, rcnew.left, rcnew.top, rcnew.right - rcnew.left, rcnew.bottom - rcnew.top,
-                SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-        if (m_MainWindow_FullscreenOldMaximized)
-            ::SendMessage(g_hwnd, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
-    }
-
-    MainWindow_UpdateMenu();
 }
 
 void MainWindow_DoEmulatorRun()

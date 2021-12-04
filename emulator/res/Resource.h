@@ -65,7 +65,6 @@
 #define ID_VIEW_KEYBOARD                32783
 #define ID_VIEW_TOOLBAR                 32785
 #define ID_VIEW_RGBSCREEN               32787
-#define ID_VIEW_FULLSCREEN              32790
 #define ID_EMULATOR                     32791
 #define ID_EMULATOR_RUN                 32792
 #define ID_EMULATOR_RESET               32793
