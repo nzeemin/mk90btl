@@ -118,14 +118,6 @@ public:  // Saving/loading emulator status (pImage addresses up to 32 bytes)
 protected:  // Implementation
     void        FetchInstruction();      // Read next instruction
     void        TranslateInstruction();  // Execute the instruction
-protected:  // Implementation - instruction processing
-    uint8_t     GetByteSrc();
-    uint8_t     GetByteDest();
-    void        SetByteDest(uint8_t);
-    uint16_t    GetWordSrc();
-    uint16_t    GetWordDest();
-    void        SetWordDest(uint16_t);
-    uint16_t    GetDstWordArgAsBranch();
 protected:  // Implementation - memory access
     uint16_t    GetWordExec(uint16_t address) { return m_pBoard->GetWordExec(address, IsHaltMode()); }
     uint16_t    GetWord(uint16_t address) { return m_pBoard->GetWord(address, IsHaltMode()); }
@@ -148,38 +140,55 @@ protected:  // PSW bits calculations
     bool static CheckSubForCarry(uint16_t a, uint16_t b);
 
 protected:
-    uint16_t    GetWordAddr (uint8_t meth, uint8_t reg);
-    uint16_t    GetByteAddr (uint8_t meth, uint8_t reg);
+    uint16_t    GetWordAddr(uint8_t meth, uint8_t reg);
+    uint16_t    GetByteAddr(uint8_t meth, uint8_t reg);
 
 protected:  // Implementation - instruction execution
     void        ExecuteUNKNOWN ();  // There is no such instruction -- just call TRAP 10
 
     // Команды перечислены по книге "Микропроцессорный комплект БИС серии КР588" Таблица 2, стр.11-13
     // Одноадресные команды
-    void        ExecuteCLR ();      // CLR(B),  0001
+    void        ExecuteCLR ();      //  0001
+    void        ExecuteCLRB();      //  0001
     void        ExecuteCOM ();      //  0001
+    void        ExecuteCOMB();      //  0001
     void        ExecuteINC ();      //  0001
+    void        ExecuteINCB();      //  0001
     void        ExecuteDEC ();      //  0001
+    void        ExecuteDECB();      //  0001
     void        ExecuteNEG ();      //  0001
+    void        ExecuteNEGB();      //  0001
     void        ExecuteTST ();      //  0001
+    void        ExecuteTSTB();      //  0001
     void        ExecuteASR ();      //  0001
+    void        ExecuteASRB();      //  0001
     void        ExecuteASL ();      //  0001
+    void        ExecuteASLB();      //  0001
     void        ExecuteROR ();      //  0001
+    void        ExecuteRORB();      //  0001
     void        ExecuteROL ();      //  0001
+    void        ExecuteROLB();      //  0001
     void        ExecuteADC ();      //  0001
+    void        ExecuteADCB();      //  0001
     void        ExecuteSBC ();      //  0001
+    void        ExecuteSBCB();      //  0001
     void        ExecuteSXT ();      //  0002
     void        ExecuteSWAB ();     //  0002
     void        ExecuteMTPS ();     //  0002
     void        ExecuteMFPS ();     //  0002
     // Двухадресные команды
     void        ExecuteMOV ();      //  0001
+    void        ExecuteMOVB();      //  0001
     void        ExecuteCMP ();      //  0001
+    void        ExecuteCMPB();      //  0001
     void        ExecuteADD ();      //  0001
     void        ExecuteSUB ();      //  0001
     void        ExecuteBIT ();      //  0001
+    void        ExecuteBITB();      //  0001
     void        ExecuteBIC ();      //  0001
+    void        ExecuteBICB();      //  0001
     void        ExecuteBIS ();      //  0001
+    void        ExecuteBISB();      //  0001
     void        ExecuteXOR ();      //  0002
     // Команды управления программой
     void        ExecuteBR ();       //  0002
@@ -215,35 +224,7 @@ protected:  // Implementation - instruction execution
     void        ExecuteWAIT ();     //  0004
     void        ExecuteRESET ();    //  0004
     // Команды изменения признаков
-    void        ExecuteCLC ();      //  0002
-    void        ExecuteCLV ();      //  0002
-    void        ExecuteCLVC ();
-    void        ExecuteCLZ ();      //  0002
-    void        ExecuteCLZC ();
-    void        ExecuteCLZV ();
-    void        ExecuteCLZVC ();
-    void        ExecuteCLN ();      //  0002
-    void        ExecuteCLNC ();
-    void        ExecuteCLNV ();
-    void        ExecuteCLNVC ();
-    void        ExecuteCLNZ ();
-    void        ExecuteCLNZC ();
-    void        ExecuteCLNZV ();
     void        ExecuteCCC ();      //  0002
-    void        ExecuteSEC ();      //  0002
-    void        ExecuteSEV ();      //  0002
-    void        ExecuteSEVC ();
-    void        ExecuteSEZ ();      //  0002
-    void        ExecuteSEZC ();
-    void        ExecuteSEZV ();
-    void        ExecuteSEZVC ();
-    void        ExecuteSEN ();      //  0002
-    void        ExecuteSENC ();
-    void        ExecuteSENV ();
-    void        ExecuteSENVC ();
-    void        ExecuteSENZ ();
-    void        ExecuteSENZC ();
-    void        ExecuteSENZV ();
     void        ExecuteSCC ();      //  0002
     void        ExecuteNOP ();      //  0002
     // Команды расширенной арифметики
