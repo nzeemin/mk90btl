@@ -91,8 +91,10 @@ void CProcessor::Init()
     RegisterMethodRef( 0000200, 0000207, &CProcessor::ExecuteRTS );  // RTS / RETURN
     // RESERVED:       0000210, 0000227
     // SPL             0000230, 0000237
-    RegisterMethodRef( 0000240, 0000257, &CProcessor::ExecuteCCC );
-    RegisterMethodRef( 0000260, 0000277, &CProcessor::ExecuteSCC );
+    RegisterMethodRef( 0000240, 0000240, &CProcessor::ExecuteNOP );
+    RegisterMethodRef( 0000241, 0000257, &CProcessor::ExecuteCCC );
+    RegisterMethodRef( 0000260, 0000260, &CProcessor::ExecuteNOP );
+    RegisterMethodRef( 0000261, 0000277, &CProcessor::ExecuteSCC );
     RegisterMethodRef( 0000300, 0000377, &CProcessor::ExecuteSWAB );
     RegisterMethodRef( 0000400, 0000777, &CProcessor::ExecuteBR );
     RegisterMethodRef( 0001000, 0001377, &CProcessor::ExecuteBNE );

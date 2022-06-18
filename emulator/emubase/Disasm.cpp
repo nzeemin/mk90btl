@@ -63,7 +63,7 @@ uint16_t ConvertSrcToString(uint16_t instr, uint16_t addr, TCHAR* strSrc, uint16
         else if (param == 6 || param == 7)
         {
             uint16_t word = code;  //TODO: pMemory
-            _sntprintf(strSrc, strSrcSize - 1, format, (uint16_t)(addr + word + 2));
+            _sntprintf(strSrc, strSrcSize - 1, format, static_cast<uint16_t>(addr + word + 2));
             return 1;
         }
         else
@@ -106,7 +106,7 @@ uint16_t ConvertDstToString (uint16_t instr, uint16_t addr, TCHAR* strDst, uint1
         }
         else if (param == 6 || param == 7)
         {
-            _sntprintf(strDst, strDstSize - 1, format, (uint16_t)(addr + code + 2));
+            _sntprintf(strDst, strDstSize - 1, format, static_cast<uint16_t>(addr + code + 2));
             return 1;
         }
         else
@@ -185,7 +185,7 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, TCHAR* s
     }
 
     // One field
-    if ((instr & ~(uint16_t)7) == PI_RTS)
+    if ((instr & ~static_cast<uint16_t>(7)) == PI_RTS)
     {
         if (GetDigit(instr, 0) == 7)
         {
@@ -202,7 +202,7 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, TCHAR* s
     // Two fields
     length += ConvertDstToString(instr, addr + 2, strDst, pMemory[1]);
 
-    switch (instr & ~(uint16_t)077)
+    switch (instr & ~static_cast<uint16_t>(077))
     {
     case PI_JMP:    _tcscpy(strInstr, _T("JMP"));   _tcscpy(strArg, strDst);  return length;
     case PI_SWAB:   _tcscpy(strInstr, _T("SWAB"));  _tcscpy(strArg, strDst);  return length;
@@ -214,7 +214,7 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, TCHAR* s
 
     okByte = (instr & 0100000) != 0;
 
-    switch (instr & ~(uint16_t)0100077)
+    switch (instr & ~static_cast<uint16_t>(0100077))
     {
     case PI_CLR:  _tcscpy(strInstr, okByte ? _T("CLRB") : _T("CLR"));  _tcscpy(strArg, strDst);  return length;
     case PI_COM:  _tcscpy(strInstr, okByte ? _T("COMB") : _T("COM"));  _tcscpy(strArg, strDst);  return length;
@@ -231,10 +231,10 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, TCHAR* s
     }
 
     length = 1;
-    _sntprintf(strDst, strDstSize - 1, _T("%06o"), addr + ((short)(char)(uint8_t)(instr & 0xff) * 2) + 2);
+    _sntprintf(strDst, strDstSize - 1, _T("%06o"), addr + ((short)(char)static_cast<uint8_t>(instr & 0xff) * 2) + 2);
 
-    // Branchs & interrupts
-    switch (instr & ~(uint16_t)0377)
+    // Branches & interrupts
+    switch (instr & ~static_cast<uint16_t>(0377))
     {
     case PI_BR:   _tcscpy(strInstr, _T("BR"));   _tcscpy(strArg, strDst);  return 1;
     case PI_BNE:  _tcscpy(strInstr, _T("BNE"));  _tcscpy(strArg, strDst);  return 1;
@@ -253,16 +253,16 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, TCHAR* s
     case PI_BLO:  _tcscpy(strInstr, _T("BLO"));  _tcscpy(strArg, strDst);  return 1;
     }
 
-    _sntprintf(strDst, strDstSize - 1, _T("%06o"), (uint8_t)(instr & 0xff));
+    _sntprintf(strDst, strDstSize - 1, _T("%06o"), static_cast<uint8_t>(instr & 0xff));
 
-    switch (instr & ~(uint16_t)0377)
+    switch (instr & ~static_cast<uint16_t>(0377))
     {
     case PI_EMT:   _tcscpy(strInstr, _T("EMT"));   _tcscpy(strArg, strDst + 3);  return 1;
     case PI_TRAP:  _tcscpy(strInstr, _T("TRAP"));  _tcscpy(strArg, strDst + 3);  return 1;
     }
 
     // Three fields
-    switch (instr & ~(uint16_t)0777)
+    switch (instr & ~static_cast<uint16_t>(0777))
     {
     case PI_JSR:
         if (GetDigit(instr, 2) == 7)
@@ -322,9 +322,9 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, TCHAR* s
     okByte = (instr & 0100000) != 0;
 
     length += ConvertSrcToString(instr, addr + 2, strSrc, pMemory[1]);
-    length += ConvertDstToString(instr, (uint16_t)(addr + 2 + (length - 1) * 2), strDst, pMemory[length]);
+    length += ConvertDstToString(instr, static_cast<uint16_t>(addr + 2 + (length - 1) * 2), strDst, pMemory[length]);
 
-    switch (instr & ~(uint16_t)0107777)
+    switch (instr & ~static_cast<uint16_t>(0107777))
     {
     case PI_MOV:
         _tcscpy(strInstr, okByte ? _T("MOVB") : _T("MOV"));
@@ -348,7 +348,7 @@ uint16_t DisassembleInstruction(const uint16_t* pMemory, uint16_t addr, TCHAR* s
         return length;
     }
 
-    switch (instr & ~(uint16_t)0007777)
+    switch (instr & ~static_cast<uint16_t>(0007777))
     {
     case PI_ADD:
         _tcscpy(strInstr, _T("ADD"));

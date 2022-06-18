@@ -20,7 +20,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 //////////////////////////////////////////////////////////////////////
 
 
-class CProcessor  // KM1801VM1 processor
+class CProcessor  // PDP11-like processor
 {
 public:  // Constructor / initialization
     CProcessor(CMotherboard* pBoard);

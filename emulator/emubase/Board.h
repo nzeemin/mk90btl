@@ -75,7 +75,6 @@ class CMotherboard  // MK90 computer
 {
 private:  // Devices
     CProcessor* m_pCPU;  // CPU device
-    bool        m_okTimer50OnOff;
 private:  // Memory
     uint16_t    m_Configuration;  // See BK_COPT_Xxx flag constants
     uint8_t*    m_pRAM;  // RAM, 64 KB
@@ -84,14 +83,14 @@ public:  // Construct / destruct
     CMotherboard();
     ~CMotherboard();
 public:  // Getting devices
-    CProcessor*     GetCPU() { return m_pCPU; }
+    CProcessor* GetCPU() { return m_pCPU; }
 public:  // Memory access  //TODO: Make it private
-    uint16_t    GetRAMWord(uint16_t offset);
-    uint8_t     GetRAMByte(uint16_t offset);
+    uint16_t    GetRAMWord(uint16_t offset) const;
+    uint8_t     GetRAMByte(uint16_t offset) const;
     void        SetRAMWord(uint16_t offset, uint16_t word);
     void        SetRAMByte(uint16_t offset, uint8_t byte);
-    uint16_t    GetROMWord(uint16_t offset);
-    uint8_t     GetROMByte(uint16_t offset);
+    uint16_t    GetROMWord(uint16_t offset) const;
+    uint8_t     GetROMByte(uint16_t offset) const;
 public:  // Debug
     void        DebugTicks();  // One Debug CPU tick -- use for debug step or debug breakpoint
     void        SetCPUBreakpoints(const uint16_t* bps) { m_CPUbps = bps; } // Set CPU breakpoint list
@@ -99,6 +98,7 @@ public:  // Debug
     void        SetTrace(uint32_t dwTrace);
 public:  // System control
     void        SetConfiguration(uint16_t conf);
+    uint16_t    GetConfiguration() const { return m_Configuration; }
     void        Reset();  // Reset computer
     void        LoadROM(const uint8_t* pBuffer);  // Load 32K ROM image from the buffer
     void        LoadRAM(int startbank, const uint8_t* pBuffer, int length);  // Load data into the RAM
@@ -132,24 +132,25 @@ public:  // Memory
     // Write byte
     void SetByte(uint16_t address, bool okHaltMode, uint8_t byte);
     // Read word from memory for debugger
-    uint16_t GetWordView(uint16_t address, bool okHaltMode, bool okExec, int* pValid);
+    uint16_t GetWordView(uint16_t address, bool okHaltMode, bool okExec, int* pAddrType) const;
     // Read word from port for debugger
-    uint16_t GetPortView(uint16_t address);
+    uint16_t GetPortView(uint16_t address) const;
     // Get video buffer address
-    const uint8_t* GetVideoBuffer();
+    const uint8_t* GetVideoBuffer() const;
 private:
-    // Determite memory type for given address - see ADDRTYPE_Xxx constants
+    // Determine memory type for given address - see ADDRTYPE_Xxx constants
+    //   address - the address to use
     //   okHaltMode - processor mode (USER/HALT)
-    //   okExec - TRUE: read instruction for execution; FALSE: read memory
+    //   okExec - true: read instruction for execution; false: read memory
     //   pOffset - result - offset in memory plane
-    int TranslateAddress(uint16_t address, bool okHaltMode, bool okExec, uint16_t* pOffset);
+    int TranslateAddress(uint16_t address, bool okHaltMode, bool okExec, uint16_t* pOffset) const;
 private:  // Access to I/O ports
     uint16_t    GetPortWord(uint16_t address);
     void        SetPortWord(uint16_t address, uint16_t word);
     uint8_t     GetPortByte(uint16_t address);
     void        SetPortByte(uint16_t address, uint8_t byte);
 public:  // Saving/loading emulator status
-    void        SaveToImage(uint8_t* pImage);
+    void        SaveToImage(uint8_t* pImage) const;
     void        LoadFromImage(const uint8_t* pImage);
 private:  // Ports: implementation
     uint16_t    m_LcdAddr;
@@ -176,12 +177,13 @@ private:  // Implementation: SMPs
     uint8_t     SmpReadData(int slot);
     void        SmpWriteData(int slot, uint8_t byte);
 private:
-    bool        m_okSoundOnOff;
-    SOUNDGENCALLBACK m_SoundGenCallback;
-    void        DoSound();
-private:
     const uint16_t* m_CPUbps;  // CPU breakpoint list, ends with 177777 value
     uint32_t    m_dwTrace;  // Trace flags
+    bool        m_okTimer50OnOff;
+    bool        m_okSoundOnOff;
+private:
+    SOUNDGENCALLBACK m_SoundGenCallback;
+    void        DoSound();
 };
 
 

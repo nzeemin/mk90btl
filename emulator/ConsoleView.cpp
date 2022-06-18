@@ -280,7 +280,7 @@ BOOL ConsoleView_SaveMemoryDump(CProcessor * /*pProc*/)
             GENERIC_WRITE, FILE_SHARE_READ, NULL,
             OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    WORD buf[32768];
+    WORD buf[32768];//TODO: allocate on the heap
     DWORD dwBytesWritten = 0;
 
     for (int i = 0; i < 32768; i++)

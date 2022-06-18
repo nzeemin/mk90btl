@@ -14,25 +14,23 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "stdafx.h"
 #include "Emubase.h"
 
-void TraceInstruction(CProcessor* pProc, CMotherboard* pBoard, uint16_t address, DWORD dwTrace);
+void TraceInstruction(const CProcessor* pProc, const CMotherboard* pBoard, uint16_t address, DWORD dwTrace);
 
 
 //////////////////////////////////////////////////////////////////////
 
-CMotherboard::CMotherboard ()
+CMotherboard::CMotherboard () :
+    m_pCPU(new CProcessor(this))
 {
-    // Create devices
-    m_pCPU = new CProcessor(this);
-
     m_dwTrace = TRACE_NONE;
-    m_SoundGenCallback = NULL;
+    m_SoundGenCallback = nullptr;
     m_okTimer50OnOff = false;
     m_okSoundOnOff = false;
     m_CPUbps = nullptr;
 
     // Allocate memory for RAM and ROM
-    m_pRAM = (uint8_t*) ::calloc(64 * 1024, 1);
-    m_pROM = (uint8_t*) ::calloc(32 * 1024, 1);
+    m_pRAM = static_cast<uint8_t*>(::calloc(64 * 1024, 1));
+    m_pROM = static_cast<uint8_t*>(::calloc(32 * 1024, 1));
 
     SetConfiguration(0);  // Default configuration
 
@@ -111,7 +109,7 @@ void CMotherboard::Reset()
     m_pCPU->Start();
 }
 
-// Load 4 KB ROM image from the buffer
+// Load 32 KB ROM image from the buffer
 void CMotherboard::LoadROM(const uint8_t* pBuffer)
 {
     ::memcpy(m_pROM, pBuffer, 32768);
@@ -119,7 +117,7 @@ void CMotherboard::LoadROM(const uint8_t* pBuffer)
 
 void CMotherboard::LoadRAM(int startbank, const uint8_t* pBuffer, int length)
 {
-    ASSERT(pBuffer != NULL);
+    ASSERT(pBuffer != nullptr);
     ASSERT(startbank >= 0 && startbank < 15);
     int address = 8192 * startbank;
     ASSERT(address + length <= 128 * 1024);
@@ -160,7 +158,7 @@ bool CMotherboard::AttachSmpImage(int slot, LPCTSTR sFileName)
     m_Smp[slot].mask = size < 65536 ? 0xffff : 0xffffff;
 
     // allocate the memory
-    m_Smp[slot].pData = (uint8_t*)::calloc(1, m_Smp[slot].size);
+    m_Smp[slot].pData = static_cast<uint8_t*>(::calloc(1, m_Smp[slot].size));
     //TODO: if null
 
     // load the file data
@@ -194,28 +192,28 @@ void CMotherboard::DetachSmpImage(int slot)
 
 //////////////////////////////////////////////////////////////////////
 
-uint16_t CMotherboard::GetRAMWord(uint16_t offset)
+uint16_t CMotherboard::GetRAMWord(uint16_t offset) const
 {
-    return *((uint16_t*)(m_pRAM + offset));
+    return *reinterpret_cast<uint16_t*>(m_pRAM + offset);
 }
-uint8_t CMotherboard::GetRAMByte(uint16_t offset)
+uint8_t CMotherboard::GetRAMByte(uint16_t offset) const
 {
     return m_pRAM[offset];
 }
 void CMotherboard::SetRAMWord(uint16_t offset, uint16_t word)
 {
-    *((uint16_t*)(m_pRAM + offset)) = word;
+    *reinterpret_cast<uint16_t*>(m_pRAM + offset) = word;
 }
 void CMotherboard::SetRAMByte(uint16_t offset, uint8_t byte)
 {
     m_pRAM[offset] = byte;
 }
 
-uint16_t CMotherboard::GetROMWord(uint16_t offset)
+uint16_t CMotherboard::GetROMWord(uint16_t offset) const
 {
-    return *((uint16_t*)(m_pROM + offset));
+    return *reinterpret_cast<uint16_t*>(m_pROM + offset);
 }
-uint8_t CMotherboard::GetROMByte(uint16_t offset)
+uint8_t CMotherboard::GetROMByte(uint16_t offset) const
 {
     return m_pROM[offset];
 }
@@ -313,7 +311,7 @@ void CMotherboard::KeyboardEvent(uint8_t scancode, bool okPressed)
     {
         //if (m_dwTrace & TRACE_KEYBOARD)
         {
-            DebugLogFormat(_T("Keyboard %03o %d\r\n"), (uint16_t)scancode, (int)okPressed);
+            DebugLogFormat(_T("Keyboard %03o %d\r\n"), static_cast<uint16_t>(scancode), static_cast<int>(okPressed));
         }
 
         m_ExtDeviceKeyboardScan = scancode;
@@ -523,7 +521,7 @@ void CMotherboard::SmpWriteData(int slot, uint8_t byte)
 // Motherboard: memory management
 
 // Read word from memory for debugger
-uint16_t CMotherboard::GetWordView(uint16_t address, bool okHaltMode, bool okExec, int* pAddrType)
+uint16_t CMotherboard::GetWordView(uint16_t address, bool okHaltMode, bool okExec, int* pAddrType) const
 {
     uint16_t offset;
     int addrtype = TranslateAddress(address, okHaltMode, okExec, &offset);
@@ -578,7 +576,7 @@ uint8_t CMotherboard::GetByte(uint16_t address, bool okHaltMode)
     {
     case ADDRTYPE_RAM:
         if (address == 0177562)
-            DebugLogFormat(_T("GetByte %06o %03o\r\n"), address, (uint16_t)GetRAMByte(offset));
+            DebugLogFormat(_T("GetByte %06o %03o\r\n"), address, static_cast<uint16_t>(GetRAMByte(offset)));
         return GetRAMByte(offset);
     case ADDRTYPE_ROM:
         return GetROMByte(offset);
@@ -644,12 +642,12 @@ void CMotherboard::SetByte(uint16_t address, bool okHaltMode, uint8_t byte)
 }
 
 // Calculates video buffer start address, for screen drawing procedure
-const uint8_t* CMotherboard::GetVideoBuffer()
+const uint8_t* CMotherboard::GetVideoBuffer() const
 {
     return (m_pRAM + m_LcdAddr);
 }
 
-int CMotherboard::TranslateAddress(uint16_t address, bool /*okHaltMode*/, bool /*okExec*/, uint16_t* pOffset)
+int CMotherboard::TranslateAddress(uint16_t address, bool /*okHaltMode*/, bool /*okExec*/, uint16_t* pOffset) const
 {
     if (address < 0040000)  // 000000-037777 -- RAM, 16K
     {
@@ -696,7 +694,7 @@ uint8_t CMotherboard::GetPortByte(uint16_t address)
     if (address & 1)
         return GetPortWord(address & 0xfffe) >> 8;
 
-    return (uint8_t) GetPortWord(address);
+    return static_cast<uint8_t>(GetPortWord(address));
 }
 
 uint16_t CMotherboard::GetPortWord(uint16_t address)
@@ -733,7 +731,7 @@ uint16_t CMotherboard::GetPortWord(uint16_t address)
 }
 
 // Read word from port for debugger
-uint16_t CMotherboard::GetPortView(uint16_t address)
+uint16_t CMotherboard::GetPortView(uint16_t address) const
 {
     switch (address)
     {
@@ -812,6 +810,32 @@ void CMotherboard::SetPortWord(uint16_t address, uint16_t word)
 
 
 //////////////////////////////////////////////////////////////////////
+
+void CMotherboard::DoSound(void)
+{
+    if (m_SoundGenCallback == nullptr)
+        return;
+
+    uint16_t volume = 0;//TODO
+
+    uint16_t sound = 0x1fff >> (3 - volume);
+    (*m_SoundGenCallback)(sound, sound);
+}
+
+void CMotherboard::SetSoundGenCallback(SOUNDGENCALLBACK callback)
+{
+    if (callback == nullptr)  // Reset callback
+    {
+        m_SoundGenCallback = nullptr;
+    }
+    else
+    {
+        m_SoundGenCallback = callback;
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////
 // Emulator image
 //  Offset Length
 //       0     32 bytes  - Header
@@ -822,16 +846,16 @@ void CMotherboard::SetPortWord(uint16_t address, uint16_t word)
 //   36864 131072 bytes  - RAM image 64K
 //  196608     --        - END
 
-void CMotherboard::SaveToImage(uint8_t* pImage)
+void CMotherboard::SaveToImage(uint8_t* pImage) const
 {
     // Board data
-    uint16_t* pwImage = (uint16_t*) (pImage + 32);
+    uint16_t* pwImage = reinterpret_cast<uint16_t*>(pImage + 32);
     *pwImage++ = m_Configuration;
     pwImage += 6;  // RESERVED
     *pwImage++ = m_LcdAddr;
     *pwImage++ = m_LcdConf;
     *pwImage++ = m_LcdIndex;
-    *pwImage++ = (uint16_t)m_okSoundOnOff;
+    *pwImage++ = static_cast<uint16_t>(m_okSoundOnOff);
 
     // CPU status
     uint8_t* pImageCPU = pImage + 160;
@@ -846,7 +870,7 @@ void CMotherboard::SaveToImage(uint8_t* pImage)
 void CMotherboard::LoadFromImage(const uint8_t* pImage)
 {
     // Board data
-    uint16_t* pwImage = (uint16_t*)(pImage + 32);
+    const uint16_t* pwImage = reinterpret_cast<const uint16_t*>(pImage + 32);
     m_Configuration = *pwImage++;
     pwImage += 6;  // RESERVED
     m_LcdAddr = *pwImage++;
@@ -869,35 +893,9 @@ void CMotherboard::LoadFromImage(const uint8_t* pImage)
 
 //////////////////////////////////////////////////////////////////////
 
-void CMotherboard::DoSound(void)
-{
-    if (m_SoundGenCallback == NULL)
-        return;
-
-    uint16_t volume = 0;//TODO
-
-    uint16_t sound = 0x1fff >> (3 - volume);
-    (*m_SoundGenCallback)(sound, sound);
-}
-
-void CMotherboard::SetSoundGenCallback(SOUNDGENCALLBACK callback)
-{
-    if (callback == NULL)  // Reset callback
-    {
-        m_SoundGenCallback = NULL;
-    }
-    else
-    {
-        m_SoundGenCallback = callback;
-    }
-}
-
-
-//////////////////////////////////////////////////////////////////////
-
 #if !defined(PRODUCT)
 
-void TraceInstruction(CProcessor* pProc, CMotherboard* pBoard, uint16_t address, DWORD dwTrace)
+void TraceInstruction(const CProcessor* pProc, const CMotherboard* pBoard, uint16_t address, DWORD dwTrace)
 {
     bool okHaltMode = pProc->IsHaltMode();
 

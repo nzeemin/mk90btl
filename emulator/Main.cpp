@@ -213,9 +213,11 @@ void ParseCommandLine()
     {
         LPTSTR arg = args[curargn];
 
-        if (_tcscmp(arg, _T("/boot")) == 0)
+        if (_tcslen(arg) >= 5 && _tcsncmp(arg, _T("/boot"), 5) == 0)
         {
-            Option_AutoBoot = TRUE;
+            Option_AutoBoot = 0;
+            if (_tcslen(arg) >= 6 && arg[5] >= _T('0') && arg[5] <= _T('1'))
+                Option_AutoBoot = arg[5] - _T('0');
         }
         else if (_tcscmp(arg, _T("/autostart")) == 0 || _tcscmp(arg, _T("/autostarton")) == 0)
         {
@@ -240,6 +242,15 @@ void ParseCommandLine()
         else if (_tcscmp(arg, _T("/soundoff")) == 0 || _tcscmp(arg, _T("/nosound")) == 0)
         {
             Settings_SetSound(FALSE);
+        }
+        else if (_tcslen(arg) > 7 && _tcsncmp(arg, _T("/smp"), 4) == 0)  // "/smpN:filePath", N=0..1
+        {
+            if (arg[4] >= _T('0') && arg[4] <= _T('1') && arg[5] == ':')
+            {
+                int slot = arg[4] - _T('0');
+                LPCTSTR filePath = arg + 6;
+                Settings_SetSmpFilePath(slot, filePath);
+            }
         }
     }
 

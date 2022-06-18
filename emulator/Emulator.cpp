@@ -202,7 +202,7 @@ bool Emulator_InitConfiguration(uint16_t configuration)
         break;
     }
 
-    uint8_t buffer[32768];
+    uint8_t buffer[32768];//TODO: allocate on the heap
 
     // Load ROM file
     if (!Emulator_LoadRomFile(szRomFileName, buffer, 0, 32768))
@@ -498,7 +498,7 @@ bool Emulator_SystemFrame()
     }
 
     // Auto-boot option processing
-    if (Option_AutoBoot)
+    if (Option_AutoBoot >= 0)
     {
         //TODO
     }
