@@ -1,0 +1,7297 @@
+; Elektronika MK-90 ROM disassembly, BASIC V1.0
+; The disassembly made by Piotr Piatek
+; Converted to octals by nzeemin
+
+000000:
+000004:				; odd address when accessing word size data,
+				; accessing nonexisting memory,
+				; HALT in the user mode,
+				; JMP/JSR with a register as the destination
+000010:				; unimplemented instruction
+000014:				; vector BPT
+000020:				; vector IOT
+000024:				; vector POK (power supply)
+000030:				; vector EMT
+000034:	.WORD	100152		; vector TRAP
+000170:				; INT0 interrupt vector
+000174:				; INT1 interrupt vector
+000270:				; INT2 interrupt vector
+000274:				; INT3 interrupt vector
+000310:	.WORD	130514, 000000	; keyboard controller interrupt vector
+
+027476:				; end of the stack area
+030000:	.BLKB	001700		; display RAM
+031700:				; USRBUF
+033702:	.WORD	000007		; height of a character in pixels
+033704:	.WORD	000005		; width of a character in pixels
+033706:	.WORD	000043		; number of bits to store each character in
+				; the font table
+034020:	.WORD	027476		; initial SP value
+034022:	.WORD	030000		; address of the display RAM
+034072:	.BLKW	001		; print mode
+				; bit 0 set - inverted print mode
+034144:	.BLKW	001		; key scan code
+034162:	.BLKW	001		; SU keyboard mode if not zero
+034230:	.BLKB	000120		; input line buffer (up to 80 characters)
+
+100000:	87 1A 7D 47 FB 7F
+
+; default system error handler routine
+100006:	MOV	(SP)+,R1
+100010:	TST	(SP)+
+100012:	MOV	#033765,R0
+100016:	MOV	#006,R4
+100022:	CALL	100040	
+100026:	MOV	#033742,R0
+100032:	TRAP	066		; print a string pointed to by r0
+100034:	JMP	103056
+
+; convert the word in r1 to octal ASCII, number of digits in r4
+; for values > 7FFF the result is incorrect (first digit = 7 instead of 1)
+100040:	MOV	R1,R2
+100042:	BIC	#177770,R2
+100046:	BIS	#060,R2		; '0'
+100052:	MOVB	R2,-(R0)
+100054:	ASR	R1		; should be CLC, ROR R1
+100056:	ASR	R1
+100060:	ASR	R1
+100062:	SOB	R4,100040	; next digit
+100064:	RETURN
+
+; trap 6C
+100066:	MOV	034022,R1	; address of the display RAM
+100072:	MOV	#000740,R2	; size of the display RAM (03C0 bytes)
+100076:	CLR	(R1)+
+100100:	SOB	R2,100076
+100102:	MOV	034022,@#164000	; address of the display RAM
+100110:	MOV	#104306,@#164002
+100116:	MOV	#130514,@#310	; keyboard controller interrupt vector
+100124:	CLR	@#312
+100130:	MOV	#200,@#164022
+100136:	MOV	#342,@#164024
+100144:	CALL	132476
+100150:	RETURN
+
+; TRAP handler routine
+100152:	MOV	(SP),000002(SP)
+100156:	SUB	#002,(SP)
+100162:	MOV	@(SP)+,-(SP)
+100164:	ASR	(SP)
+100166:	BLO	100200
+; even traps = system function calls
+100170:	ASL	(SP)
+100172:	ADD	#173714,(SP)	; 173714 + TRAP_0_opcode = 100314
+100176:	MOV	@(SP)+,PC
+; odd traps = error_codes * 2 + 1
+100200:	BIC	#177600,(SP)
+100204:	MOV	(SP)+,R2
+100206:	CMP	R2,#100
+100212:	BGT	100236		; recoverable errors (error code > 64)
+; unrecoverable errors (error code <= 64)
+100214:	CLR	034366
+100220:	MOV	#001,034014
+100226:	MOV	034020,SP
+100232:	MOV	#104422,-(SP)
+100236:	MOV	R1,-(SP)
+100240:	MOV	033716,-(SP)
+100244:	CALL	122422
+100250:	MOV	R2,R1
+100252:	MOV	#033772,R0	; address of the error code as an ASCII string
+100256:	MOV	R1,-(SP)	; error code
+100260:	TRAP	012		; ITOA
+100262:	TRAP	002		; print CR, LF
+100264:	MOV	#033767,R0	; string 'error X in line X'
+100270:	TRAP	066		; print a string pointed to by r0
+100272:	TRAP	004		; display the line number 38EA
+100274:	TRAP	002		; print CR, LF
+100276:	TST	(SP)+
+100300:	BNE	100304
+100302:	TRAP	116
+100304:	MOV	(SP)+,033716
+100310:	MOV	(SP)+,R1
+100312:	RETURN
+
+; TRAP vectors
+100314:	.WORD	100540, 100614, 102166, 110510		; trap 000, 002, 004, 006
+100324:	.WORD	112054, 112122, 112202, 112366		; trap 010, 012, 014, 016
+100334:	.WORD	112632, 113056, 113114, 113164		; trap 020, 022, 024, 026
+100344:	.WORD	113412, 113724, 113740, 113602		; trap 030, 032, 034, 036
+100354:	.WORD	114112, 114104, 115164, 115262		; trap 040, 042, 044, 046
+100364:	.WORD	115204, 115054, 113770, 115200		; trap 050, 052, 054, 056
+100374:	.WORD	116334, 112412, 112452, 100626		; trap 060, 062, 064, 066
+100404:	.WORD	100472, 101154, 101606, 101550		; trap 070, 072, 074, 076
+100414:	.WORD	100662, 101576, 102010, 101740		; trap 100, 102, 104, 106
+100424:	.WORD	101166, 101270, 101366, 101206		; trap 110, 112, 114, 116
+100434:	.WORD	101540, 101466, 101722, 101654		; trap 120, 122, 124, 126
+100444:	.WORD	102222, 102026, 102236, 105102		; trap 130, 132, 134, 136
+100454:	.WORD	102254, 102270, 106414, 101232		; trap 140, 142, 144, 146
+100464:	.WORD	101252, 000000, 100066			; trap 150, 152, 154
+
+; trap 38 - test if r2 is a digit
+; returns V set if r2 is not a digit
+; returns Z set if r2 is a decimal digit '0'..'9'
+; returns V cleared if r2 is a hex digit 'A'..'F'
+100472:	CMP	R2,#060		; '0'
+100476:	BLT	100532
+100500:	CMP	R2,#071		; '9'
+100504:	BGT	100512
+100506:	SET	Z		; decimal digit: Z=1, V=0
+100510:	RETURN
+100512:	CMP	R2,#101		; 'A'
+100516:	BLT	100532
+100520:	CMP	R2,#132		; 'Z'
+100524:	BGT	100532
+100526:	CLEAR	CVZN		; hexadecimal digit: Z=0, V=0
+100530:	RETURN
+100532:	CLEAR	CVZN
+100534:	SET	V		; not a digit: Z=0, V=1
+100536:	RETURN
+
+; trap 000 - print character r2
+100540:	MOV	R1,-(SP)
+100542:	TST	034370
+100546:	BEQ	100556
+100550:	CALL	137020
+100554:	BR	100610
+100556:	TST	034402		; screen or printer?
+100562:	BEQ	100572		; branch if screen
+100564:	CALL	153156		; print character r2 on the printer
+100570:	BR	100610
+100572:	TST	034014
+100576:	BEQ	100610
+100600:	INC	034016
+100604:	CALL	116542		; display character r2
+100610:	MOV	(SP)+,R1
+100612:	RETURN
+
+; trap 002 - print CR, LF
+100614:	MOV	#177776,034364
+100622:	MOV	#104371,R0
+
+; trap 066 - print a zero terminated string pointed to by r0
+100626:	MOVB	(R0)+,R2
+100630:	BEQ	100612
+100632:	TRAP	000		; print character r2
+100634:	BR	100626
+
+100636:	CALL	120670
+100642:	TST	034366
+100646:	BNE	100666
+100650:	CMP	#034230,R3
+100654:	BHIS	100662
+100656:	DEC	R3
+100660:	BR	100666
+
+; trap 100 - input a line from the keyboard
+100662:	MOV	#034230,R3	; input line buffer
+100666:	TST	034366
+100672:	BEQ	100706
+100674:	CLR	034014
+100700:	CALL	136552
+100704:	BR	100720
+100706:	INC	034016
+100712:	CALL	131120		; wait for a key
+100716:	BEQ	100666
+100720:	BIC	#177600,R2
+100724:	CMPB	R2,#020
+100730:	BEQ	101042
+100732:	CMPB	#015,R2
+100736:	BNE	100750
+100740:	TRAP	002		; print CR, LF
+100742:	MOV	#012,R2
+100746:	BR	100766
+100750:	CMPB	#177,R2
+100754:	BEQ	100636
+100756:	CMPB	#025,R2
+100762:	BEQ	101022
+100764:	TRAP	000		; print character r2
+100766:	MOVB	R2,(R3)+
+100770:	CMPB	R2,#012
+100774:	BEQ	101006
+100776:	CMP	R3,#034351
+101002:	BLO	100666
+101004:	TRAP	031		; error 12 - input line too long
+101006:	MOV	#034230,R1
+101012:	MOV	#001,034014
+101020:	RETURN
+101022:	MOVB	#136,R2
+101026:	TRAP	000		; print character r2
+101030:	MOVB	#125,R2
+101034:	TRAP	000		; print character r2
+101036:	TRAP	002		; print CR, LF
+101040:	BR	100662
+101042:	CLR	-(SP)
+101044:	MOV	#103070,-(SP)
+101050:	MOV	R2,-(SP)
+101052:	BR	101102
+101054:	TRAP	007		; error 3 - illegal character
+101056:	MOV	R2,-(SP)
+101060:	CALL	131120		; wait for a key
+101064:	BIC	#177600,R2
+101070:	CMPB	R2,#020
+101074:	BEQ	101102
+101076:	MOV	(SP)+,R2
+101100:	RTI
+101102:	MOV	034014,-(SP)
+101106:	CALL	122422
+101112:	CLR	034402		; select the LCD as the output device
+101116:	MOV	#001,034014
+101124:	MOV	#136,R2
+101130:	TRAP	000		; print character r2
+101132:	MOV	#120,R2
+101136:	TRAP	000		; print character r2
+101140:	MOV	(SP)+,034014
+101144:	MOV	#001,034372
+101152:	BR	101076
+
+; trap 072 - GETNSC, get a character other than space
+101154:	MOVB	(R1)+,R2
+101156:	CMP	#040,R2
+101162:	BEQ	101154
+101164:	RETURN
+
+; trap 110
+101166:	CMPB	(R1),#072
+101172:	BEQ	101204
+101174:	CMPB	(R1)+,#012
+101200:	BNE	101166
+101202:	DEC	R1
+101204:	RETURN
+
+; trap 116
+101206:	CLR	034362
+101212:	TST	034360
+101216:	BEQ	101230
+101220:	MOV	034360,R5
+101224:	CLR	034360
+101230:	RETURN
+
+; trap 146
+101232:	TRAP	112
+101234:	CLR	R0
+101236:	TRAP	112
+101240:	MOV	R5,R0
+101242:	TRAP	112
+101244:	TRAP	112
+101246:	TRAP	112
+101250:	RETURN
+
+; trap 150
+101252:	MOV	R2,R0
+101254:	TRAP	112
+101256:	MOV	R3,R0
+101260:	TRAP	112
+101262:	MOV	R4,R0
+101264:	TRAP	112
+101266:	RETURN
+
+; trap 112
+101270:	MOV	R4,-(SP)
+101272:	MOV	R5,R4
+101274:	ADD	#024,R4
+101300:	CMP	R4,SP
+101302:	BHIS	101334
+101304:	TST	034360
+101310:	BNE	101326
+101312:	MOV	R5,034360
+101316:	INC	R5
+101320:	ASR	R5
+101322:	CLC
+101324:	ASL	R5
+101326:	MOV	R0,(R5)+
+101330:	MOV	(SP)+,R4
+101332:	RETURN
+101334:	TRAP	001		; error 0 - out of memory
+101336:	MOV	(R3),R0
+101340:	BIC	(SP),R0
+101342:	CMP	R0,R4
+101344:	BEQ	101414
+101346:	BIC	#017777,R0
+101352:	CMP	#040000,R0
+101356:	BNE	101424
+101360:	ADD	#020,R3
+101364:	BR	101402
+
+; trap 114
+101366:	TST	R3
+101370:	BEQ	101422
+101372:	CMP	R5,SP
+101374:	BHIS	101334
+101376:	MOV	R1,-(SP)
+101400:	MOV	R0,-(SP)
+101402:	CMP	R3,SP
+101404:	BHIS	101334
+101406:	CMP	R3,R5
+101410:	BLO	101336
+101412:	CLR	R3
+101414:	MOV	(SP)+,R0
+101416:	MOV	(SP)+,R1
+101420:	TST	R3
+101422:	RETURN
+101424:	BGT	101440
+101426:	ADD	#002,R3
+101432:	ADD	#004,R3
+101436:	BR	101402
+101440:	TST	R0
+101442:	BEQ	101450
+101444:	TST	(R3)+
+101446:	BR	101402
+101450:	MOVB	000002(R3),R0
+101454:	MOVB	000003(R3),R1
+101460:	TRAP	122
+101462:	ADD	R0,R3
+101464:	BR	101432
+
+; trap 122
+101466:	BIC	#177400,R0
+101472:	BIC	#177400,R1
+101476:	INC	R0
+101500:	INC	R1
+101502:	MOV	R4,-(SP)
+101504:	MOV	R3,-(SP)
+101506:	TRAP	016		; IMUL
+101510:	MOV	(SP)+,R3
+101512:	MOV	(SP)+,R4
+101514:	TST	R1
+101516:	BNE	101534
+101520:	CMP	R0,#022000
+101524:	BHIS	101534
+101526:	TRAP	130		; multiply r0 by 6
+101530:	CLEAR	CVZN
+101532:	RETURN
+101534:	SET	V
+101536:	RETURN
+
+; trap 120
+101540:	MOV	R3,R1
+101542:	MOV	R1,R2
+101544:	ADD	R4,R1
+101546:	BR	101560
+
+; trap 076
+101550:	TRAP	116
+101552:	MOV	R1,R3
+101554:	MOV	R1,R2
+101556:	TRAP	102		; move the pointer r1 to the end of the line
+101560:	CMP	R1,R5
+101562:	BHIS	101570
+101564:	MOVB	(R1)+,(R3)+
+101566:	BR	101560
+101570:	MOV	R3,R5
+101572:	MOV	R2,R1
+101574:	RETURN
+
+; trap 102 - move the pointer r1 to the end of the line
+101576:	CMPB	(R1)+,#012
+101602:	BNE	101576
+101604:	RETURN
+
+; trap 074
+101606:	MOV	034354,R1
+101612:	TRAP	102		; move the pointer r1 to the end of the line
+101614:	CMP	R1,R5
+101616:	BHIS	101646
+101620:	MOV	R0,-(SP)
+101622:	MOV	R1,-(SP)
+101624:	TRAP	010		; ATOI
+101626:	MOV	(SP)+,R1
+101630:	MOV	R0,R2
+101632:	MOV	(SP)+,R0
+101634:	CMP	R0,R2
+101636:	BGT	101612
+101640:	BEQ	101644
+101642:	CLEAR	CVZN
+101644:	RETURN
+101646:	CLEAR	CVZN
+101650:	SET	V
+101652:	RETURN
+
+; trap 126 - get a variable name (single letter or a letter followed by
+; a single digit)
+; returned values:
+; r1 - pointer to the parsed string
+; r2 - first unprocessed character other than space
+; r4 - letter code in bits 11-6, digit in ASCII format in bits 5-0
+; V flag cleared if name found
+101654:	TRAP	072		; get a character other than space to r2
+101656:	TRAP	070		; is r2 a digit?
+101660:	BEQ	101716		; branch if yes
+101662:	BVS	101716
+101664:	BIC	#177700,R2
+101670:	MOV	R2,R4
+101672:	SWAB	R4
+101674:	ASR	R4
+101676:	ASR	R4
+101700:	TRAP	072		; get a character other than space to r2
+101702:	TRAP	070		; is r2 a digit?
+101704:	BNE	101712		; branch if not
+101706:	BIS	R2,R4
+101710:	TRAP	072		; get a character other than space to r2
+101712:	CLEAR	CVZN
+101714:	RETURN
+101716:	SET	V
+101720:	RETURN
+
+; trap 124
+101722:	TST	R0
+101724:	BLT	101642
+101726:	CMP	R0,#377
+101732:	BGT	101642
+101734:	SET	Z
+101736:	RETURN
+
+; trap 106 - get a pair of integer numbers separated by a comma
+; on entry r1 points to the parsed string
+; returned values:
+; r3 <- first number
+; r4 <- second number
+; r2 <- separator between numbers
+101740:	TRAP	072		; get a character other than space to r2
+101742:	TRAP	070		; is r2 a digit?
+101744:	BNE	102000
+101746:	DEC	R1
+101750:	TRAP	010		; ATOI
+101752:	MOV	R0,-(SP)
+101754:	TRAP	072		; get a character other than space to r2
+101756:	CMP	#054,R2
+101762:	BNE	102004
+101764:	TRAP	010		; ATOI
+101766:	TST	R0
+101770:	BEQ	102004
+101772:	MOV	R0,R4
+101774:	MOV	(SP)+,R3
+101776:	RETURN
+102000:	CLR	-(SP)
+102002:	BR	101756
+102004:	CLR	R4
+102006:	BR	101774
+
+; trap 104 - check the available stack space
+102010:	MOV	R5,R4
+102012:	ADD	R0,R4
+102014:	MOV	SP,R3
+102016:	SUB	#070,R3
+102022:	CMP	R3,R4
+102024:	RETURN
+
+; trap 132
+102026:	MOV	R3,-(SP)
+102030:	TRAP	136		; evaluate an arithmetical expression
+102032:	BVS	102132
+102034:	CMPB	(R1),#054
+102040:	BNE	102140
+102042:	CALL	102144
+102046:	TRAP	072		; get a character other than space to r2
+102050:	MOV	R0,-(SP)
+102052:	TRAP	136		; evaluate an arithmetical expression
+102054:	BVC	102140
+102056:	TRAP	040		; FIX
+102060:	BMI	102142
+102062:	MOV	(SP)+,R2
+102064:	MOV	@000000(SP),R4
+102070:	BIC	#177400,R4
+102074:	CMP	R0,R4
+102076:	BGT	102142
+102100:	MOV	R1,-(SP)
+102102:	MOV	R2,R1
+102104:	MOV	R0,-(SP)
+102106:	MOV	R4,R0
+102110:	INC	R0
+102112:	TRAP	016		; IMUL
+102114:	ADD	(SP)+,R0
+102116:	MOV	(SP)+,R1
+102120:	TRAP	130		; multiply r0 by 6
+102122:	MOV	(SP)+,R3
+102124:	ADD	R3,R0
+102126:	TST	(R0)+
+102130:	RETURN
+102132:	CALL	102144
+102136:	BR	102120
+102140:	TRAP	013		; error 5 - incorrect index
+102142:	TRAP	015		; error 6 - index out of range
+102144:	TRAP	040		; FIX
+102146:	BMI	102142
+102150:	MOV	@000002(SP),R4
+102154:	CLRB	R4
+102156:	SWAB	R4
+102160:	CMP	R0,R4
+102162:	BGT	102142
+102164:	RETURN
+
+; trap 004 - display the line number 38EA
+102166:	SUB	#010,SP
+102172:	MOV	SP,R0
+102174:	MOV	034352,R1
+102200:	TRAP	012		; ITOA
+102202:	MOV	SP,R0
+102204:	TST	(R0)+
+102206:	CLRB	000007(SP)
+102212:	TRAP	066		; print a string pointed to by r0
+102214:	ADD	#010,SP
+102220:	RETURN
+
+; trap 130 - multiply r0 by 6
+102222:	CLC
+102224:	ASL	R0
+102226:	MOV	R0,-(SP)
+102230:	ASL	R0
+102232:	ADD	(SP)+,R0
+102234:	RETURN
+
+; trap 134 - pointer to the beginning of the variable table
+102236:	MOV	034360,R3
+; align r3 to a word boundary
+102242:	INC	R3
+102244:	ASR	R3
+102246:	CLC
+102250:	ASL	R3
+102252:	RETURN
+
+; trap 140 - get a pair of characters other than space to r4
+102254:	TRAP	072		; get a character other than space to r2
+102256:	MOV	R2,R4
+102260:	SWAB	R4
+102262:	TRAP	072		; get a character other than space to r2
+102264:	BIS	R2,R4
+102266:	RETURN
+
+; trap 142 - MOVSTK, push r4,r3,r2 on the stack
+102270:	MOV	R3,-(SP)
+102272:	MOV	R2,-(SP)
+102274:	MOV	000004(SP),-(SP)	; push the return address on the stack
+102300:	MOV	R4,000006(SP)
+102304:	CMP	R5,SP
+102306:	BHIS	102312
+102310:	RETURN
+102312:	TRAP	001		; error 0 - out of memory
+
+; command LIST
+102314:	INC	034154
+102320:	CLR	034156
+102324:	CLR	034440
+102330:	TRAP	072		; get a character other than space to r2
+102332:	CMPB	R2,#052
+102336:	BNE	102346
+102340:	INC	034440
+102344:	BR	102350
+102346:	DEC	R1
+102350:	TRAP	116
+102352:	TRAP	106		; get a pair of integer numbers
+102354:	MOV	R3,R0
+102356:	BNE	102606
+102360:	MOV	034354,R3
+102364:	TST	R4
+102366:	BNE	102632
+102370:	MOV	R5,R4
+102372:	TST	034372
+102376:	BNE	102672
+102400:	MOVB	(R3)+,R2
+102402:	NOP
+102404:	NOP
+102406:	BPL	102466
+102410:	BIC	#177600,R2
+102414:	MOV	#103700,R0
+102420:	MOV	R2,R1
+102422:	DEC	R1
+102424:	BLT	102436
+102426:	CMPB	(R0)+,#044
+102432:	BNE	102426
+102434:	BR	102422
+102436:	MOVB	(R0)+,R2
+102440:	CMPB	R2,#044
+102444:	BEQ	102372
+102446:	TST	034440
+102452:	BEQ	102462
+102454:	CMPB	R2,#047
+102460:	BEQ	102436
+102462:	TRAP	000		; print character r2
+102464:	BR	102436
+102466:	CMPB	R2,#012
+102472:	BEQ	102500
+102474:	TRAP	000		; print character r2
+102476:	BR	102372
+102500:	TRAP	002		; print CR, LF
+102502:	INC	034156
+102506:	CMP	034156,#007
+102514:	BLT	102536
+102516:	TST	034370
+102522:	BNE	102536
+102524:	CALL	131120		; wait for a key
+102530:	CMP	R2,#015
+102534:	BNE	102524
+102536:	CMP	R3,R4
+102540:	BHIS	102560
+102542:	TST	034440
+102546:	BEQ	102372
+102550:	MOV	R3,R1
+102552:	TRAP	010		; ATOI
+102554:	MOV	R1,R3
+102556:	BR	102372
+102560:	CLR	034402		; select the LCD as the output device
+102564:	TST	034370
+102570:	BEQ	102576
+102572:	CALL	137066
+102576:	CLR	034154
+102602:	JMP	103120
+102606:	MOV	R4,-(SP)
+102610:	TRAP	074
+102612:	MOV	(SP)+,R4
+102614:	CMP	R1,R5
+102616:	BHIS	102360
+102620:	TST	034440
+102624:	BEQ	102630
+102626:	DEC	R1
+102630:	MOV	R1,R3
+102632:	CMP	R4,R0
+102634:	BLE	102654
+102636:	MOV	R4,R0
+102640:	MOV	R3,-(SP)
+102642:	TRAP	074
+102644:	BNE	102662
+102646:	MOV	(SP)+,R3
+102650:	CMP	R1,R5
+102652:	BHI	102370
+102654:	TRAP	102		; move the pointer r1 to the end of the line
+102656:	MOV	R1,R4
+102660:	BR	102372
+102662:	MOV	(SP)+,R3
+102664:	CMP	R1,R5
+102666:	BHI	102370
+102670:	BR	102656
+102672:	CLR	034154
+102676:	JMP	103070
+
+; command DELETE
+102702:	TRAP	116
+102704:	TRAP	106		; get a pair of integer numbers
+102706:	MOV	034354,R1
+102712:	TST	R4
+102714:	BNE	102720
+102716:	MOV	R3,R4
+102720:	MOV	R4,-(SP)
+102722:	MOV	R3,-(SP)
+102724:	TRAP	102		; move the pointer r1 to the end of the line
+102726:	CMP	R1,R5
+102730:	BHIS	102756
+102732:	MOV	R1,-(SP)
+102734:	TRAP	010		; ATOI
+102736:	MOV	(SP)+,R1
+102740:	CMP	R0,(SP)
+102742:	BLT	102724
+102744:	CMP	R0,000002(SP)
+102750:	BGT	102756
+102752:	TRAP	076
+102754:	BR	102726
+102756:	CMP	(SP)+,(SP)+
+102760:	BR	103124
+102762:	TRAP	116
+102764:	TRAP	074
+102766:	BNE	103016
+102770:	TRAP	076
+102772:	BR	103016
+102774:	CALL	101154		; get a character other than space
+103000:	CMPB	#072,R2
+103004:	BEQ	103300
+103006:	CMPB	#012,R2
+103012:	BEQ	103016
+103014:	TRAP	007		; error 3 - illegal character
+103016:	TST	034356
+103022:	BEQ	103150
+103024:	TST	034360
+103030:	BEQ	103040
+103032:	CMP	R1,034360
+103036:	BR	103042
+103040:	CMP	R1,R5
+103042:	BHIS	103326
+103044:	CALL	112054	; ATOI
+103050:	MOV	R0,034352
+103054:	BR	103300
+
+103056:	MOV	034354,R5
+103062:	INC	R5
+103064:	CLR	034360
+103070:	MOV	034020,SP
+103074:	CLR	034366
+103100:	CLR	034372
+103104:	CLR	034352
+103110:	MOV	#001,034014
+103116:	TRAP	002		; print CR, LF
+103120:	CLR	034370
+103124:	CLR	034356
+103130:	MOV	033716,-(SP)
+103134:	MOV	#104360,R0	; string 'Gotov' (Ready)
+103140:	TRAP	066		; print a string pointed to by r0
+103142:	MOV	(SP)+,033716
+103146:	TRAP	002		; print CR, LF
+103150:	CLR	034372
+103154:	TST	034116
+103160:	BEQ	103174
+103162:	CALL	121214
+103166:	CALL	100666
+103172:	BR	103176
+103174:	TRAP	100		; input a line from the keyboard
+103176:	TRAP	072		; get a character other than space to r2
+103200:	CMP	R2,#012
+103204:	BEQ	103150
+103206:	MOV	#034230,R1
+103212:	TRAP	010		; ATOI
+103214:	CMPB	(R1),#012
+103220:	BEQ	102762
+103222:	MOV	R1,R3
+103224:	MOV	#103700,R0
+103230:	CLR	R2
+103232:	CMPB	(R3)+,#040
+103236:	BEQ	103232
+103240:	CMPB	-(R3),(R0)+
+103242:	BNE	103256
+103244:	INC	R3
+103246:	CMPB	(R0),#044
+103252:	BEQ	103334
+103254:	BR	103232
+103256:	CMPB	(R0)+,#044
+103262:	BNE	103256
+103264:	CMPB	(R0),#044
+103270:	BEQ	103332
+103272:	MOV	R1,R3
+103274:	INC	R2
+103276:	BR	103232
+103300:	TST	034372
+103304:	BNE	103070
+103306:	CALL	101154		; get a character other than space
+103312:	BMI	103332
+103314:	BIC	#177600,R2
+103320:	ASL	R2
+103322:	JMP	@104234(R2)
+103326:	JMP	104406		; command STOP, END
+103332:	TRAP	003		; error 1 - unknown operator
+103334:	ADD	#200,R2
+103340:	MOVB	R2,(R1)+
+103342:	MOV	R1,R4
+103344:	MOVB	(R3),(R1)+
+103346:	CMPB	(R3)+,#012
+103352:	BNE	103344
+103354:	CMPB	R2,#203
+103360:	BEQ	103542
+103362:	CMPB	R2,#243
+103366:	BEQ	103542
+103370:	CMP	R2,#215
+103374:	BNE	103470
+103376:	MOV	R4,R1
+103400:	TRAP	072		; get a character other than space to r2
+103402:	CMPB	R2,#124		; 'T'
+103406:	BNE	103454
+103410:	TRAP	072		; get a character other than space to r2
+103412:	CMPB	R2,#110		; 'H'
+103416:	BNE	103402
+103420:	TRAP	072		; get a character other than space to r2
+103422:	CMPB	R2,#105		; 'E'
+103426:	BNE	103402
+103430:	TRAP	072		; get a character other than space to r2
+103432:	CMPB	R2,#116		; 'N'
+103436:	BNE	103402
+103440:	TRAP	072		; get a character other than space to r2
+103442:	DEC	R1
+103444:	MOV	R1,R4
+103446:	TRAP	070		; is r2 a digit?
+103450:	BEQ	103470
+103452:	BR	103222
+103454:	CMPB	R2,#012
+103460:	BEQ	103542
+103462:	CMPB	R2,#072
+103466:	BNE	103400
+103470:	MOV	R4,R1
+103472:	CMPB	(R1),#042
+103476:	BEQ	103520
+103500:	CMPB	(R1)+,#072
+103504:	BEQ	103440
+103506:	CMPB	-(R1),#012
+103512:	BEQ	103540
+103514:	INC	R1
+103516:	BR	103472
+103520:	INC	R1
+103522:	CMPB	(R1),#042
+103526:	BEQ	103514
+103530:	CMPB	(R1),#012
+103534:	BNE	103520
+103536:	TRAP	063		; error 25 - mismatched quotation marks
+103540:	INC	R1
+103542:	MOV	R1,R3
+103544:	MOV	#034230,R1
+103550:	TRAP	072		; get a character other than space to r2
+103552:	TRAP	070		; is r2 a digit?
+103554:	BEQ	103562
+103556:	DEC	R1
+103560:	BR	103300
+103562:	TRAP	116
+103564:	MOV	#034230,R1
+103570:	SUB	R1,R3
+103572:	MOV	R3,-(SP)
+103574:	TRAP	010		; ATOI
+103576:	TST	R0
+103600:	BEQ	103676
+103602:	CMP	R0,#017777
+103606:	BGT	103676
+103610:	TRAP	074
+103612:	BNE	103616
+103614:	TRAP	076
+103616:	MOV	(SP)+,R3
+103620:	TRAP	116
+103622:	MOV	R3,R0
+103624:	TRAP	104		; check the available stack space
+103626:	BHIS	103636
+103630:	TRAP	001		; error 0 - out of memory
+103632:	ADD	R0,R5
+103634:	BR	103656
+103636:	CMP	R1,R5
+103640:	BHIS	103632
+103642:	MOV	R5,R2
+103644:	ADD	R0,R5
+103646:	MOV	R5,R4
+103650:	MOVB	-(R2),-(R4)
+103652:	CMP	R1,R2
+103654:	BLOS	103650
+103656:	MOV	#034230,R2
+103662:	MOVB	(R2),(R1)+
+103664:	CMPB	(R2)+,#012
+103670:	BNE	103662
+103672:	JMP	103016
+103676:	TRAP	041		; error 16 - wrong line number or dimension
+
+; keyword table
+103700:	.ASCII	'LIST$', 'LET$', 'READ$', 'REM$'
+103722:	.ASCII	'RUN$', 'RESTORE$', 'RETURN$', 'DATA$'
+103752:	.ASCII	'DIM$', 'DELETE$', 'PRINT$', 'GOSUB$'
+104001:	.ASCII	'GOTO$', 'IF$', 'FOR$', 'NEXT$'
+104022:	.ASCII	'INPUT$', 'SAVE$', 'STOP$', 'END$'
+104046:	.ASCII	'DEF$', 'LOAD$', 'RANDOMIZE$', 'INIT$'
+104076:	.ASCII	'KILL$', 'DRAW$', 'DIS$', 'CLS$'
+104120:	.ASCII	'LOCATE$', 'WAIT$', 'PLAY$', 'AUTO$'
+104146:	.ASCII	'NAME$', 'FILES$', 'HELP$', 047, '$'
+104170:	.ASCII	'LLIST$', 'LPRINT$', 'LFILES$', 'DEV$'
+104220:	.ASCII	'EDIT$', 'MEM$', '$'
+104232:	.BYTE	000
+104233:	.EVEN
+
+; addresses of corresponding procedures
+104234:	.WORD	102314, 106474, 107600, 106730
+104244:	.WORD	104450, 104546, 104554, 106730
+104254:	.WORD	104640, 102702, 107034, 104504
+104264:	.WORD	104516, 106544, 107732, 110246
+104274:	.WORD	107310, 136724, 104406, 104406
+104304:	.WORD	105002, 136420, 110470, 137106
+104314:	.WORD	136374, 123022, 121610, 121640
+104324:	.WORD	121710, 121304, 121330, 121150
+104334:	.WORD	136644, 137202, 140514, 106730
+104344:	.WORD	153144, 153172, 153204, 140460
+104354:	.WORD	125060, 153216
+
+104360:	0E 67 4F 54 4F 57 0F 00				.gOTOW..
+104370:	00 0D 0A 00 FF FF FF FF FF FF FF 0A 00 00
+
+; command STOP, END
+104406:	TRAP	002		; print CR, LF
+104410:	MOV	#104432,R0
+104414:	TRAP	066		; print a string pointed to by r0
+104416:	TRAP	004		; display the line number 034352
+104420:	TRAP	002		; print CR, LF
+104422:	CLR	034352
+104426:	JMP	103124
+
+104432:	4F 43 54 20 42 20 43 54 50 4F 4B 45 20 00	}OCT B CTPOKE .
+
+; command RUN
+104450:	TRAP	116
+104452:	CLR	034352
+104456:	MOV	034354,R1
+104462:	INC	R1
+104464:	MOV	#013507,034010
+104472:	MOV	#001,034356
+104500:	JMP	103016
+
+; command GOSUB
+104504:	MOV	034352,R0
+104510:	BIS	#020000,R0
+104514:	TRAP	112
+
+; command GOTO
+104516:	TRAP	072		; get a character other than space to r2
+104520:	DEC	R1
+104522:	TRAP	136		; evaluate an arithmetical expression
+104524:	TRAP	040		; FIX
+104526:	TRAP	074
+104530:	BNE	104544
+104532:	MOV	#001,034356
+104540:	JMP	103044
+104544:	TRAP	005		; error 2 - illegal GOTO or GOSUB operator
+
+; command RESTORE
+104546:	CLR	034362
+104552:	BR	104772
+
+; command RETURN
+104554:	CLR	-(SP)
+104556:	MOV	#020000,R4
+104562:	TRAP	134		; r3 = pointer to the variable table
+104564:	BEQ	104636
+104566:	MOV	#017777,R0
+104572:	TRAP	114
+104574:	BEQ	104604
+104576:	MOV	R3,(SP)
+104600:	TST	(R3)+
+104602:	BR	104572
+104604:	MOV	(SP)+,R3
+104606:	BEQ	104636
+104610:	MOV	(R3),R0
+104612:	BIC	R4,R0
+104614:	INC	R0
+104616:	MOV	#002,R4
+104622:	TRAP	120
+104624:	CMP	R0,#001
+104630:	BEQ	104422
+104632:	TRAP	074
+104634:	BR	104532
+104636:	TRAP	011		; error 4 - RETURN without GOSUB
+
+; command DIM
+104640:	TRAP	144		; search for a variable
+104642:	BVS	104722		; error if invalid variable name
+104644:	BNE	105000		; error if the variable already exists
+104646:	MOV	R4,-(SP)	; encoded variable name
+104650:	TRAP	072		; get a character other than space to r2
+104652:	CMP	R2,#050
+104656:	BNE	104722
+104660:	TRAP	010		; ATOI
+104662:	TRAP	124
+104664:	BNE	104722
+104666:	MOV	R0,-(SP)
+104670:	SWAB	(SP)
+104672:	TRAP	072		; get a character other than space to r2
+104674:	CMPB	R2,#054
+104700:	BNE	104714
+104702:	TRAP	010		; ATOI
+104704:	TRAP	124
+104706:	BNE	104722
+104710:	BIS	R0,(SP)
+104712:	TRAP	072		; get a character other than space to r2
+104714:	CMP	R2,#051
+104720:	BEQ	104724
+104722:	TRAP	033		; error 13 - wrong size in the DIM operator
+104724:	MOV	(SP)+,R2
+104726:	MOV	(SP)+,R0
+104730:	MOV	R1,-(SP)
+104732:	TRAP	112
+104734:	MOV	R2,R0
+104736:	TRAP	112
+104740:	MOV	R2,R1
+104742:	SWAB	R1
+104744:	TRAP	122
+104746:	BVS	104776
+104750:	TRAP	104		; check the available stack space
+104752:	BLO	104776
+104754:	ADD	R0,R5
+104756:	MOV	(SP)+,R1
+104760:	TRAP	072		; get a character other than space to r2
+104762:	CMP	R2,#054
+104766:	BEQ	104640
+104770:	DEC	R1
+104772:	JMP	102774
+104776:	TRAP	035		; error 14 - not enough memory for the array
+105000:	TRAP	043		; error 17 - array of this name already defined
+
+; command DEF
+105002:	TRAP	140		; get a pair of characters to r4
+105004:	CMP	R4,#043116
+105010:	BNE	105100
+105012:	TRAP	072		; get a character other than space to r2
+105014:	TRAP	070		; is r2 a digit?
+105016:	BEQ	105100
+105020:	BVS	105100
+105022:	BIS	#060000,R2
+105026:	MOV	R2,R0
+105030:	TRAP	112
+105032:	TRAP	072		; get a character other than space to r2
+105034:	CMP	R2,#050		; '('
+105040:	BNE	105100
+105042:	TRAP	126		; get a variable name to r4
+105044:	BVS	105100		; branch if name not found
+105046:	MOV	R4,R0
+105050:	TRAP	112
+105052:	CMP	R2,#051
+105056:	BNE	105100
+105060:	TRAP	072		; get a character other than space to r2
+105062:	CMP	R2,#075
+105066:	BNE	105100
+105070:	MOV	R1,R0
+105072:	TRAP	112
+105074:	TRAP	110
+105076:	BR	104772
+105100:	TRAP	037		; error 15 - wrong DEF syntax
+
+
+; Original labels and comments copied from equivalent FOCAL-11 functions.
+
+; trap 136 - EVAL, evaluate an arithmetical expression pointed to by r1.
+; On exit r2,r3,r4 will contain the numeric value of the expression, r1 will
+; contain the address where the scan failed. If the scan fails on any
+; character other than a right parenthesis, r1 will point to the character
+; where the failure occurred. If the scan ended on a right parenthesis, r1
+; will point to the character following the prenthesis and the V bit will be
+; set. If the V bit is set on any parameter other than the last or is cleared
+; on the last parameter, a mismatching perenthesis error has occurred.
+105102:	CLR	R0
+105104:	TRAP	112
+105106:	MOV	#177777,-(SP)	; push null (-1) on the stack
+; EVAL02:
+105112:	TRAP	104		; check the available stack space
+105114:	BLO	105460
+105116:	TRAP	072		; get a character other than space to r2
+105120:	CMP	R2,#053		; is it a '+'?
+105124:	BEQ	105146
+105126:	CMP	R2,#055		; is it a '-'?
+105132:	BNE	105150
+105134:	MOV	R2,R0		; set operand2 = 0
+105136:	CLR	R2
+105140:	CLR	R3
+105142:	CLR	R4
+105144:	BR	105166
+; EVAL03:
+105146:	TRAP	072		; get a character other than space to r2
+; EVAL01
+105150:	CMP	R2,#050		; is it an opening parenthesis?
+105154:	BNE	105174		; no
+105156:	CLR	-(SP)		; push a zero on the stack
+105160:	INC	177776(R5)	; increment the parentheses count
+105164:	BR	105112
+; EVAL05:
+105166:	TRAP	142		; push operand r4,r3,r2 on the stack
+105170:	MOV	R0,-(SP)	; push operator on the stack
+105172:	BR	105146
+; EVAL04:
+105174:	DEC	R1		; move the character pointer back one
+105176:	MOV	-(R5),-(SP)	; store the parentheses count
+105200:	CALL	105506		; get an operand
+105204:	MOV	(SP)+,(R5)+	; restore the parentheses count
+; EVAL12:
+;
+; GTOPR - get an operator to r0. Look for +,-,*,/,^, and ).
+105206:	MOV	R2,-(SP)	; save the character
+105210:	TRAP	072		; get a character other than space to r2
+105212:	MOV	#105471,R0	; get address of list #EVAL07+7
+; GTPR01:
+105216:	CMPB	-(R0),R2	; is character a legal operator?
+105220:	BEQ	105240		; yes
+105222:	CMP	R0,#105463	; has search failed?
+105226:	BHI	105216		; no
+105230:	CLR	R0		; yes, set r0=0 and backup
+105232:	DEC	R1		; pointer to point of failure
+; GTPR03:
+105234:	MOV	(SP)+,R2	; restore the character
+105236:	BR	105244
+; GTPR02:
+105240:	MOV	R2,R0		; put the character in r0
+105242:	BR	105234
+; end of the GTOPR module
+;
+105244:	TST	(SP)		; is the stack null?
+105246:	BLE	105406		; yes
+; EVAL06:
+105250:	MOV	R1,-(SP)	; save the text pointer
+105252:	MOV	#105471,R1	; get the table address #EVAL07+7
+; EVAL08:
+105256:	CMPB	-(R1),R0	; find the operator
+105260:	BNE	105256		; it must be found
+105262:	ASR	R1		; clear the low order bit
+105264:	MOV	R1,(R5)+
+105266:	MOV	#105471,R1	; get the table address #EVAL07+7
+; EVAL09:
+105272:	CMPB	-(R1),000002(SP)	; find the operator
+105276:	BNE	105272		; it must be found
+105300:	ASR	R1		; clear the low order bit
+105302:	MOV	R1,(R5)+	; save it for now
+105304:	MOV	(SP)+,R1	; restore the text pointer
+105306:	CMP	-(R5),-(R5)	; is priority of operator1 > operator2?
+105310:	BLT	105166		; no
+105312:	MOV	R0,(R5)+	; yes, save operator2
+105314:	MOV	#105471,R0	; get table address
+; EVAL10:
+105320:	CMPB	-(R0),(SP)	; find the operator
+105322:	BNE	105320		; it must be found
+105324:	SUB	#105464,R0	; get the displacement, #EVAL07+2
+105330:	ASL	R0
+105332:	ADD	#105472,R0	; get routine address
+105336:	MOV	R0,(R5)+	; save it
+105340:	TST	(SP)+		; discard old operator
+105342:	MOV	SP,R0		; get destination address
+105344:	TRAP	142		; push the source r4,r3,r2 on the stack
+105346:	MOV	R1,-(SP)	; save the text pointer
+105350:	MOV	SP,R1
+105352:	TST	(R1)+		; get source address
+105354:	MOV	-(R5),R2	; get routine address
+105356:	MOV	-(R5),-(SP)	; save operator2
+105360:	CALL	@000000(R2)	; go compute value
+105364:	MOV	(SP)+,R0	; restore operator2
+105366:	MOV	(SP)+,R1	; restore text pointer
+105370:	ADD	#006,SP		; discard source
+105374:	MOV	(SP)+,R2	; place result in operand2
+105376:	MOV	(SP)+,R3
+105400:	MOV	(SP)+,R4
+105402:	TST	(SP)		; is stack null?
+105404:	BGT	105250		; no, take care of the rest of the stack
+; EVAL17:
+105406:	CMP	R0,#051		; is operator a closing parenthesis?
+105412:	BEQ	105434		; yes
+105414:	TST	R0		; no, is it a null?
+105416:	BGT	105166		; no
+105420:	TST	-(R5)		; yes, pop null
+105422:	BNE	105432
+105424:	TST	(SP)+
+105426:	CLEAR	CVZN
+105430:	RETURN			; return with result in r2,r3,r4
+; EVAL13:
+105432:	TRAP	017		; error 7 - mismatched parentheses
+; EVAL14:
+105434:	TST	-(R5)		; is parentheneses count zero?
+105436:	BNE	105446		; no
+; EVAL16:
+105440:	TST	(SP)+		; pop null
+105442:	SET	V		; error
+105444:	RETURN
+; EVAL15:
+105446:	TST	(SP)
+105450:	BLT	105440		; jump if stack = -1
+105452:	TST	(SP)+		; pop null off stack
+105454:	DEC	(R5)+		; decrease the parenteneses count by one
+105456:	BR	105206
+
+105460:	TRAP	001		; error 0 - out of memory
+
+; EVAL07:
+105462:	.BYTE	000, 051		; closing parenthesis
+105464:	.BYTE	053, 055, 052, 057, 136	; arithmetical operators +-*/^
+105471:	.EVEN
+; EVAL11:
+105472:	.WORD	112632, 113056, 113412, 113164, 114232	; corresponding procedures
+
+; GETOP - get an operand.
+; Upon entry r1 points to the start of an operand.
+; Upon exit r2,r3,r4 contain the value of the operand.
+105506:	MOV	R1,-(SP)	; save the text pointer
+105510:	TRAP	072		; get a character other than space to r2
+105512:	TRAP	070		; is r2 a digit?
+105514:	BVS	105554		; the character is a terminator
+105516:	BNE	105564
+; GTP18:
+; the character is a numeric
+105520:	MOV	(SP)+,R1	; restore the text pointer
+105522:	SUB	#006,SP		; reserve space for the number
+105526:	MOV	SP,R0		; move address for the number to r0
+105530:	TRAP	006		; ATOF
+105532:	BVS	105504
+105534:	MOV	(SP)+,R2	; place the number in r2,r3,r4
+105536:	MOV	(SP)+,R3
+105540:	MOV	(SP)+,R4
+105542:	RETURN
+;
+105544:	MOV	(R0)+,R2
+105546:	MOV	(R0)+,R3
+105550:	MOV	(R0)+,R4
+105552:	RETURN
+;
+; GTP15:
+; the character is a terminator
+105554:	CMP	R2,#056		; does the number begin with a decimal point?
+105560:	BEQ	105520		; yes
+105562:	BR	106054		; no
+;
+105564:	CMP	R2,#106		; 'F'
+105570:	BEQ	106056
+105572:	MOV	#177700,-(SP)
+105576:	BIC	(SP),R2
+105600:	MOV	R2,R0
+105602:	TRAP	130		; multiply r0 by 6
+105604:	TRAP	130		; multiply r0 by 6
+105606:	TRAP	072		; get a character other than space to r2
+105610:	TRAP	070		; is r2 a digit?
+105612:	BVS	106052
+105614:	BEQ	106052
+105616:	BIC	(SP),R2
+105620:	ADD	R2,R0
+105622:	TRAP	130		; multiply r0 by 6
+105624:	TRAP	130		; multiply r0 by 6
+105626:	CMP	R0,#051104	; encoded keyword "PI"
+105632:	BNE	105654
+; function PI
+105634:	MOV	#115570,R0	; PI/2
+105640:	MOV	(R0)+,R2
+105642:	MOV	(R0)+,R3
+105644:	MOV	(R0)+,R4
+105646:	INC	R4		; r2-r4 <- PI
+105650:	TST	(SP)+
+105652:	BR	105440
+105654:	TRAP	072		; get a character other than space to r2
+105656:	TRAP	070		; is r2 a digit?
+105660:	BVS	106052
+105662:	BEQ	106052
+105664:	BIC	(SP)+,R2
+105666:	ADD	R2,R0
+105670:	CMP	R0,#027613	; encoded keyword "INC"
+105674:	BNE	105700
+105676:	BR	106002		; function INC
+105700:	MOV	#106340,R3
+105704:	CMP	(R3)+,R0
+105706:	BEQ	105720
+105710:	CMP	R3,#106366
+105714:	BLO	105704
+105716:	BR	106304
+105720:	TRAP	072		; get a character other than space to r2
+105722:	CMP	R2,#050
+105726:	BNE	106304
+105730:	MOV	000024(R3),-(SP)
+105734:	TRAP	136		; evaluate an arithmetical expression
+105736:	BVC	106150
+105740:	MOV	(SP)+,R0
+105742:	TRAP	142		; push r4,r3,r2 on the stack
+105744:	MOV	R0,R2
+105746:	MOV	SP,R0
+105750:	MOV	R1,-(SP)
+105752:	MOV	R0,R1
+105754:	SUB	#006,SP
+105760:	MOV	SP,R0
+105762:	CALL	(R2)
+105764:	MOV	(SP)+,R2
+105766:	MOV	(SP)+,R3
+105770:	MOV	(SP)+,R4
+105772:	MOV	(SP)+,R1
+105774:	ADD	#010,SP
+106000:	RETURN
+
+; function INC
+106002:	CMPB	#337,034144	; key FK ?
+106010:	BNE	106016
+106012:	CLR	034144
+106016:	MOV	R1,-(SP)
+106020:	CALL	131130		; get the ASCII code of the pressed key in r2
+106024:	SUB	#006,SP
+106030:	MOV	SP,R0
+106032:	MOV	R2,R1
+106034:	TRAP	036		; FLT, convert integer R1 to float
+106036:	MOV	(SP)+,R2
+106040:	MOV	(SP)+,R3
+106042:	MOV	(SP)+,R4
+106044:	MOV	(SP)+,R1
+106046:	JMP	105440
+
+106052:	TST	(SP)+
+106054:	BR	106304
+106056:	TRAP	072		; get a character other than space to r2
+106060:	CMP	R2,#116
+106064:	BNE	106304
+106066:	TRAP	072		; get a character other than space to r2
+106070:	TRAP	070		; is r2 a digit?
+106072:	BVS	106304
+106074:	BEQ	106304
+106076:	TRAP	134		; r3 = pointer to the variable table
+106100:	BEQ	106320
+106102:	CLR	R0
+106104:	BIS	#060000,R2
+106110:	MOV	R2,R4
+106112:	TRAP	114
+106114:	BEQ	106304
+106116:	TST	(R3)+
+106120:	MOV	(R3)+,R4
+106122:	MOV	(R3)+,-(SP)
+106124:	TRAP	134		; r3 = pointer to the variable table
+106126:	TRAP	114
+106130:	BNE	106210
+106132:	TRAP	072		; get a character other than space to r2
+106134:	CMP	R2,#050
+106140:	BNE	106052
+106142:	MOV	R4,-(SP)
+106144:	TRAP	136		; evaluate an arithmetical expression
+106146:	BVS	106152
+106150:	TRAP	017		; error 7 - mismatched parentheses
+106152:	MOV	(SP)+,R0
+106154:	MOV	R5,-(SP)
+106156:	TRAP	112
+106160:	CLR	R0
+106162:	TRAP	112
+106164:	TRAP	150
+106166:	MOV	R1,-(SP)
+106170:	MOV	000004(SP),R1
+106174:	TRAP	136		; evaluate an arithmetical expression
+106176:	BVS	106150
+106200:	MOV	(SP)+,R1
+106202:	MOV	(SP)+,R5
+106204:	CMP	(SP)+,(SP)+
+106206:	RETURN
+106210:	CMP	(R3)+,(R3)+
+106212:	MOV	(SP)+,R0
+106214:	MOV	(R3)+,-(SP)
+106216:	MOV	(R3)+,-(SP)
+106220:	MOV	(R3)+,-(SP)
+106222:	MOV	R3,-(SP)
+106224:	MOV	R0,-(SP)
+106226:	TRAP	072		; get a character other than space to r2
+106230:	CMP	R2,#050
+106234:	BNE	106332
+106236:	TRAP	136		; evaluate an arithmetical expression
+106240:	BVC	106150
+106242:	MOV	R1,R0
+106244:	MOV	000002(SP),R1
+106250:	MOV	R4,-(R1)
+106252:	MOV	R3,-(R1)
+106254:	MOV	R2,-(R1)
+106256:	MOV	(SP)+,R1
+106260:	MOV	R0,-(SP)
+106262:	TRAP	136		; evaluate an arithmetical expression
+106264:	BVS	106150
+106266:	MOV	(SP)+,R1
+106270:	MOV	(SP)+,R0
+106272:	MOV	(SP)+,-(R0)
+106274:	MOV	(SP)+,-(R0)
+106276:	MOV	(SP)+,-(R0)
+106300:	TST	(SP)+
+106302:	RETURN
+106304:	MOV	(SP)+,R1
+106306:	TRAP	144
+106310:	BVS	106320
+106312:	BEQ	106320
+106314:	JMP	105544
+106320:	TRAP	367		; error 123 - variable doesn't exist
+106322:	CLR	R2
+106324:	CLR	R3
+106326:	CLR	R4
+106330:	RETURN
+106332:	ADD	#012,SP
+106336:	BR	106304
+
+; keywords stored in a format similar to Radix-50, but with a subset of 36
+; characters instead of 40
+106340:	.WORD	060602, 010537, 003756, 016300	; SIN, COS, ATN, EXP
+106350:	.WORD	037343, 002553, 061246, 027634	; LOG, ABS, SQR, INT
+106360:	.WORD	056434, 060472, 000000		; RND, SGN
+
+; addresses of corresponding procedures
+106366:	.WORD	115336, 115500, 115576, 114576
+106376:	.WORD	114302, 113104, 116160, 114006
+106406:	.WORD	110424, 113136, 000000
+
+; trap 144 - search for a variable of a name pointed to by r1
+; returned values:
+; r0 - pointer to the value
+; r1 - pointer to the parsed string
+; r2 - first unprocessed character other than space
+; r4 - encoded variable name: letter in bits 11-6, digit in bits 5-0
+; V flag set if invalid variable name
+; Z flag set if the variable doesn't exist
+106414:	TRAP	126		; get a variable name to r4
+106416:	BVS	106464		; return with V set if name not found
+106420:	DEC	R1
+106422:	CLR	R0
+106424:	TRAP	134		; r3 = pointer to the variable table
+106426:	BEQ	106462
+106430:	TRAP	114
+106432:	BEQ	106462
+106434:	CMP	(SP),#8E0
+106440:	BEQ	106470
+106442:	TST	(R3)+
+106444:	CMPB	(R1),#050
+106450:	BNE	106466
+106452:	INC	R1
+106454:	MOV	R4,-(SP)
+106456:	TRAP	132
+106460:	MOV	(SP)+,R4
+106462:	TST	R0
+106464:	RETURN
+106466:	TST	(R3)+
+106470:	MOV	R3,R0
+106472:	RETURN
+
+; command LET
+106474:	TRAP	144		; search for a variable
+106476:	BVS	106540		; invalid variable name
+106500:	BNE	106506		; skip if variable already exists
+106502:	MOV	R4,R0		; encoded variable name
+106504:	TRAP	146		; create the variable
+106506:	MOV	R0,-(SP)
+106510:	TRAP	072		; get a character other than space to r2
+106512:	CMP	R2,#075
+106516:	BNE	106540
+106520:	TRAP	136		; evaluate an arithmetical expression
+106522:	BVS	106542
+106524:	MOV	(SP)+,R0
+106526:	MOV	R2,(R0)+
+106530:	MOV	R3,(R0)+
+106532:	MOV	R4,(R0)+
+106534:	JMP	102774
+106540:	TRAP	021		; error 8 - illegal LET operator
+106542:	TRAP	017		; error 7 - mismatched parentheses
+
+; command IF
+106544:	TRAP	136		; evaluate an arithmetical expression
+106546:	BVS	106542
+106550:	TRAP	142		; push r4,r3,r2 on the stack
+106552:	TRAP	140		; get a pair of characters to r4
+106554:	CMP	R2,#076
+106560:	BEQ	106574
+106562:	CMP	R2,#075
+106566:	BEQ	106574
+106570:	DEC	R1
+106572:	CLRB	R4
+106574:	MOV	#106654,R2
+106600:	CMP	R4,(R2)+
+106602:	BEQ	106614
+106604:	CMP	R2,#106670
+106610:	BLO	106600
+106612:	TRAP	023		; error 9 - illegal relation operator
+106614:	SUB	#106656,R2
+106620:	ASL	R2
+106622:	ADD	#106670,R2
+106626:	MOV	R2,-(SP)
+106630:	TRAP	136		; evaluate an arithmetical expression
+106632:	BVS	106542
+106634:	MOV	R1,-(SP)
+106636:	MOV	SP,R1
+106640:	CMP	(R1)+,(R1)+
+106642:	TRAP	142		; push r4,r3,r2 on the stack
+106644:	MOV	SP,R0
+106646:	TRAP	034		; CMPF
+106650:	JMP	@000010(SP)
+
+106654:	3E 3C 3D 3C  00 3C 3D 3E  00 3E 00 3D	><=<.<=>.>.=
+
+106670:	BNE	106740
+106672:	BR	106716
+106674:	BLE	106740
+106676:	BR	106716
+106700:	BLT	106740
+106702:	BR	106716
+106704:	BGE	106740
+106706:	BR	106716
+106710:	BGT	106740
+106712:	BR	106716
+106714:	BEQ	106740
+106716:	ADD	#006,SP
+106722:	MOV	(SP)+,R1
+106724:	ADD	#010,SP
+;
+; commands REM, DATA
+106730:	TRAP	102		; move the pointer r1 to the end of the line
+106732:	DEC	R1
+106734:	JMP	102774
+106740:	ADD	#006,SP
+106744:	MOV	(SP)+,R1
+106746:	ADD	#010,SP
+106752:	TRAP	140		; get a pair of characters to r4
+106754:	CMP	R4,#052110
+106760:	BNE	107014
+106762:	TRAP	140		; get a pair of characters to r4
+106764:	CMP	R4,#042516
+106770:	BNE	107032
+106772:	TRAP	072		; get a character other than space to r2
+106774:	DEC	R1
+106776:	TRAP	070		; is r2 a digit?
+107000:	BVS	107010
+107002:	BNE	107032
+107004:	JMP	104516		; command GOTO
+107010:	JMP	103300
+107014:	CMP	R4,#043517
+107020:	BNE	107032
+107022:	TRAP	140		; get a pair of characters to r4
+107024:	CMP	R4,#052117
+107030:	BEQ	107004
+107032:	TRAP	025		; error 10 - illegal IF operator
+
+; command PRINT
+107034:	CLR	-(SP)
+107036:	MOV	#034,R0
+107042:	TRAP	104		; check the available stack space
+107044:	BLO	107306
+107046:	TRAP	072		; get a character other than space to r2
+107050:	CMPB	R2,#074
+107054:	BNE	107064
+107056:	CALL	122320
+107062:	BR	107046
+107064:	CMPB	R2,#054
+107070:	BEQ	107162
+107072:	CMPB	R2,#073
+107076:	BEQ	107224
+107100:	CMPB	R2,#042
+107104:	BEQ	107234
+107106:	CMPB	R2,#072
+107112:	BEQ	107262
+107114:	CMPB	R2,#012
+107120:	BEQ	107262
+107122:	TST	(SP)
+107124:	BLT	107232
+107126:	DEC	R1
+107130:	TRAP	136		; evaluate an arithmetical expression
+107132:	BVS	107232
+107134:	MOV	R1,-(SP)
+107136:	CALL	111332		; floating point to ASCII conversion
+107142:	MOV	SP,R0
+107144:	TRAP	066		; print a string pointed to by r0
+107146:	ADD	#024,SP
+107152:	MOV	(SP)+,R1
+107154:	MOV	#177777,(SP)
+107160:	BR	107036
+107162:	MOV	034364,R0
+107166:	CMP	R0,#070
+107172:	BLT	107200
+107174:	TRAP	002		; print CR, LF
+107176:	BR	107224
+107200:	NEG	R0
+107202:	BGT	107212
+107204:	ADD	#016,R0
+107210:	BR	107202
+107212:	MOVB	#040,R2
+107216:	TRAP	000		; print character r2
+107220:	DEC	R0
+107222:	BGT	107216
+107224:	MOV	#001,(SP)
+107230:	BR	107036
+107232:	TRAP	027		; error 11 - illegal PRINT operator
+107234:	MOVB	(R1)+,R2
+107236:	TRAP	000		; print character r2
+107240:	CMPB	(R1),#012
+107244:	BEQ	107232
+107246:	CMPB	(R1),#042
+107252:	BNE	107234
+107254:	INC	R1
+107256:	CLR	(SP)
+107260:	BR	107036
+107262:	TST	(SP)+
+107264:	BGT	107270
+107266:	TRAP	002		; print CR, LF
+107270:	CALL	122422
+107274:	DEC	R1
+107276:	CLR	034402		; select the LCD as the output device
+107302:	JMP	102774
+107306:	TRAP	001		; error 0 - out of memory
+
+; command INPUT
+107310:	CLR	-(SP)
+107312:	CALL	107516
+107316:	BVC	107322
+107320:	TRAP	045		; error 12 - input line too long (more than 80
+				; characters)
+107322:	CLR	-(SP)
+107324:	MOV	R1,-(SP)
+107326:	MOV	#077,R2
+107332:	TRAP	000		; print character r2
+107334:	TRAP	100		; input a line from the keyboard
+107336:	CALL	107414
+107342:	BVS	107410
+107344:	BGT	107400
+107346:	BLT	107404
+107350:	MOV	(SP)+,R1
+107352:	TST	(SP)+
+107354:	TST	(SP)+
+107356:	BNE	107354
+107360:	DEC	R1
+107362:	TST	034356
+107366:	BNE	107374
+107370:	MOVB	#012,(R1)
+107374:	JMP	102774
+107400:	TRAP	365		; error 122 - too much data entered
+107402:	BR	107326
+107404:	TRAP	363		; error 121 - not enough data entered
+107406:	BR	107326
+107410:	TRAP	361		; error 120 - illegal characters entered
+107412:	BR	107326
+107414:	MOV	SP,R4
+107416:	CMP	(R4)+,(R4)+
+107420:	TST	(R4)+
+107422:	TST	(R4)+
+107424:	BNE	107422
+107426:	TST	-(R4)
+107430:	MOV	-(R4),R0
+107432:	BEQ	107506
+107434:	MOV	R4,-(SP)
+107436:	TRAP	006		; ATOF
+107440:	BVS	107512
+107442:	MOV	(SP)+,R4
+107444:	CMPB	(R1),#054
+107450:	BEQ	107472
+107452:	CMPB	(R1),#072
+107456:	BEQ	107476
+107460:	CMPB	(R1),#012
+107464:	BEQ	107476
+107466:	SET	V
+107470:	RETURN
+107472:	INC	R1
+107474:	BR	107430
+107476:	MOV	-(R4),R0
+107500:	BEQ	107470
+107502:	SET	N
+107504:	RETURN
+107506:	CLEAR	CVZN
+107510:	RETURN
+107512:	TST	(SP)+
+107514:	BR	107466
+107516:	TRAP	144
+107520:	BVS	107572
+107522:	BNE	107530
+107524:	MOV	R4,R0
+107526:	TRAP	146
+107530:	MOV	(SP)+,R2
+107532:	MOV	R0,-(SP)
+107534:	MOV	#004,R0
+107540:	TRAP	104		; check the available stack space
+107542:	BLO	107576
+107544:	MOV	R2,-(SP)
+107546:	TRAP	072		; get a character other than space to r2
+107550:	CMPB	R2,#054
+107554:	BEQ	107516
+107556:	CMPB	R2,#072
+107562:	BEQ	107574
+107564:	CMPB	R2,#012
+107570:	BEQ	107574
+107572:	SET	V
+107574:	RETURN
+107576:	TRAP	001		; error 0 - out of memory
+
+; command READ
+107600:	MOV	#001,-(SP)
+107604:	CLR	-(SP)
+107606:	CALL	107516
+107612:	BVC	107616
+107614:	TRAP	047		; error 19 - wrong variable in the READ operator
+107616:	CLR	-(SP)
+107620:	MOV	R1,-(SP)
+107622:	MOV	034362,R1
+107626:	BNE	107636
+107630:	MOV	034354,R1
+107634:	BR	107712
+107636:	CMPB	(R1),#012
+107642:	BEQ	107712
+107644:	CALL	107414
+107650:	BVS	107730
+107652:	BLT	107702
+107654:	MOV	R1,034362
+107660:	MOV	(SP)+,R1
+107662:	TST	(SP)+
+107664:	TST	(SP)+
+107666:	BNE	107664
+107670:	TST	(SP)+
+107672:	BEQ	107670
+107674:	DEC	R1
+107676:	JMP	102774
+107702:	TST	(R4)+
+107704:	CLR	(R4)+
+107706:	TST	(R4)
+107710:	BNE	107704
+107712:	TRAP	134		; r3 = pointer to the variable table
+107714:	CMPB	#207,(R1)+
+107720:	BEQ	107636
+107722:	CMP	R1,R3
+107724:	BLO	107714
+107726:	TRAP	051		; error 20 - not enough DATA to READ
+107730:	TRAP	053		; error 21 - wrong DATA format
+
+; command FOR
+107732:	TRAP	126		; get a variable name to r4
+; missing test whether a variable name was found ???
+107734:	CMP	R2,#075		; '='
+107740:	BNE	110176
+107742:	CLR	R0
+107744:	MOV	R4,-(SP)
+107746:	TRAP	134		; r3 = pointer to the variable table
+107750:	TRAP	114
+107752:	BNE	107762
+107754:	MOV	R4,R0
+107756:	TRAP	146
+107760:	BR	107766
+107762:	MOV	R3,R0
+107764:	CMP	(R0)+,(R0)+
+107766:	MOV	R0,-(SP)
+107770:	CLR	R0
+107772:	TRAP	134		; r3 = pointer to the variable table
+107774:	BIS	#040000,R4
+110000:	TRAP	114
+110002:	BEQ	110022
+110004:	MOV	R4,-(SP)
+110006:	MOV	R1,-(SP)
+110010:	MOV	#020,R4
+110014:	TRAP	120
+110016:	MOV	(SP)+,R1
+110020:	MOV	(SP)+,R4
+110022:	MOV	R4,R0
+110024:	TRAP	112
+110026:	MOV	R1,R0
+110030:	TRAP	112
+110032:	TRAP	136		; evaluate an arithmetical expression
+110034:	MOV	(SP),R0
+110036:	MOV	R2,(R0)+
+110040:	MOV	R3,(R0)+
+110042:	MOV	R4,(R0)+
+110044:	TRAP	140		; get a pair of characters to r4
+110046:	CMP	R4,#052117
+110052:	BNE	110176
+110054:	TRAP	136		; evaluate an arithmetical expression
+110056:	TRAP	150
+110060:	CMPB	(R1),#123
+110064:	BNE	110114
+110066:	TRAP	140		; get a pair of characters to r4
+110070:	CMP	R4,#051524
+110074:	BNE	110176
+110076:	TRAP	140		; get a pair of characters to r4
+110100:	CMP	R4,#042520
+110104:	BNE	110176
+110106:	TRAP	136		; evaluate an arithmetical expression
+110110:	TRAP	150
+110112:	BR	110130
+110114:	CLR	R2
+110116:	MOV	#040000,R3
+110122:	MOV	#100001,R4
+110126:	BR	110110
+110130:	MOV	(SP),R0
+110132:	MOV	R1,-(SP)
+110134:	MOV	R5,R1
+110136:	SUB	#014,R1
+110142:	MOV	R1,-(SP)
+110144:	TRAP	034		; CMPF
+110146:	BEQ	110164
+110150:	BLT	110200
+110152:	MOV	(SP)+,R1
+110154:	TST	000010(R1)
+110160:	BLT	110210
+110162:	BR	110166
+110164:	TST	(SP)+
+110166:	MOV	(SP)+,R1
+110170:	CMP	(SP)+,(SP)+
+110172:	JMP	102774
+110176:	TRAP	055		; error 22 - illegal FOR operator
+110200:	MOV	(SP)+,R1
+110202:	TST	000010(R1)
+110206:	BLT	110166
+110210:	MOV	(SP)+,R1
+110212:	TST	(SP)+
+110214:	TRAP	134		; r3 = pointer to the variable table
+110216:	CMPB	(R1)+,#217
+110222:	BEQ	110232
+110224:	CMP	R1,R3
+110226:	BLO	110216
+110230:	TRAP	057		; error 23 - FOR without NEXT
+110232:	TRAP	126		; get a variable name to r4
+110234:	CMP	R4,(SP)
+110236:	BNE	110216
+110240:	TST	(SP)+
+110242:	DEC	R1
+110244:	BR	110172
+
+; command NEXT
+110246:	CLR	R0
+110250:	TRAP	126		; get a variable name to r4
+110252:	MOV	R4,-(SP)
+110254:	TRAP	134		; r3 = pointer to the variable table
+110256:	TRAP	114
+110260:	BEQ	110376
+110262:	MOV	R3,-(SP)
+110264:	BIS	#040000,R4
+110270:	TRAP	134		; r3 = pointer to the variable table
+110272:	TRAP	114
+110274:	BEQ	110376
+110276:	MOV	R1,-(SP)
+110300:	CMP	(R3)+,(R3)+
+110302:	MOV	R3,R1
+110304:	ADD	#006,R1
+110310:	MOV	000002(SP),R0
+110314:	MOV	R3,-(SP)
+110316:	CMP	(R0)+,(R0)+
+110320:	MOV	R0,-(SP)
+110322:	TRAP	020		; ADDF
+110324:	MOV	(SP)+,R0
+110326:	MOV	(SP),R3
+110330:	MOV	R3,R1
+110332:	TST	000010(R3)
+110336:	BPL	110346
+110340:	TRAP	034		; CMPF
+110342:	BGT	110400
+110344:	BR	110352
+110346:	TRAP	034		; CMPF
+110350:	BLT	110400
+110352:	MOV	(SP),R0
+110354:	MOV	-(R0),R1
+110356:	TRAP	110
+110360:	MOV	R1,R4
+110362:	MOV	(SP)+,R1
+110364:	TST	(SP)+
+110366:	MOV	(SP),R0
+110370:	MOV	R4,-(SP)
+110372:	CMP	(R0)+,(R0)+
+110374:	BR	110142
+110376:	TRAP	061		; error 24 - NEXT without FOR
+110400:	MOV	(SP)+,R1
+110402:	ADD	#006,R1
+110406:	MOV	000002(SP),R0
+110412:	CMP	(R0)+,(R0)+
+110414:	TRAP	022		; SUBF
+110416:	MOV	(SP)+,R1
+110420:	CMP	(SP)+,(SP)+
+110422:	BR	110242
+
+; function RND
+110424:	MOV	R0,-(SP)
+110426:	MOV	034010,R0
+110432:	MOV	034012,R1
+110436:	TRAP	016		; IMUL
+110440:	BIC	#100000,R0
+110444:	MOV	R0,034010
+110450:	MOV	R0,R1
+110452:	MOV	(SP),R0
+110454:	TRAP	036		; FLT, convert integer R1 to float
+110456:	MOV	(SP)+,R0
+110460:	SUB	#017,000004(R0)
+110466:	RETURN
+
+; command RANDOMIZE
+110470:	MOV	034016,034010
+110476:	BIS	#001,034010
+110504:	JMP	102774
+
+
+; The binary <-> ASCII number conversion routines are apparently based on the
+; floating point library of the RT-11 operating system. The original labels
+; and comments are preserved.
+
+; trap 006 - ATOF (documented), conversion of an ASCII string to a FP number
+; on entry r1 points to the string
+; on exit r1 points to the first invalid character,
+; result (3 words) stored at memory location pointed to by r0
+;
+; bit 0 - switch S
+; bit 1 - switch V, set if an overflow occurred
+; bit 2 - switch E, set if character 'E' encountered
+; bit 3 - switch D, set if a decimal point encountered
+; bit 4 - switch A
+; bit 5 - switch B
+; bit 6 - set if negative number
+; bit 7 - set if negative exponent
+; bit 8 - switch M
+110510:	MOV	R5,-(SP)
+110512:	MOV	R0,-(SP)
+110514:	CLR	(R0)+
+110516:	CLR	(R0)+
+110520:	CLR	(R0)
+110522:	CLR	-(SP)
+110524:	CLR	-(SP)
+110526:	CLR	-(SP)		; clear the switches
+; M.AFXN:
+110530:	TRAP	072		; get a character other than space to r2
+110532:	CMPB	#105,R2		; 'E'
+110536:	BEQ	110730
+110540:	CMPB	#055,R2		; '-'
+110544:	BEQ	110772
+110546:	CMPB	#053,R2		; '+'
+110552:	BEQ	110764
+110554:	CMPB	#056,R2		; decimal point
+110560:	BEQ	110750
+110562:	TRAP	070		; is r2 a digit?
+110564:	BNE	111040		; branch if r2 is not a decimal digit
+110566:	SUB	#060,R2		; convert the digit to binary
+110572:	MOV	R1,-(SP)
+110574:	BIT	#000004,000002(SP)	; test the E switch
+110602:	BNE	110672		; branch if collecting exponent
+110604:	SUB	#006,SP
+110610:	MOV	SP,R0
+110612:	MOV	R2,R1
+110614:	TRAP	036		; FLT, convert integer R1 to float
+110616:	MOV	000016(SP),R0
+110622:	MOV	#111274,R1	; floating point constant 10
+110626:	TRAP	030		; MULF, multiply by 10
+110630:	BVS	111106
+110632:	MOV	000016(SP),R0
+110636:	MOV	SP,R1
+110640:	TRAP	020		; ADDF, add current digit
+110642:	BIT	#000010,000010(SP)	; test the D switch
+110650:	BEQ	110656		; if 0, don't touch EXP2
+110652:	DEC	000012(SP)	; decrement EXP2
+110656:	ADD	#006,SP
+; M.AFSS:
+110662:	MOV	(SP)+,R1	; get digit SEFA
+110664:	BIS	#000001,(SP)	; set the S switch
+110670:	BR	111042		; go get another digit
+; M.AFXP
+110672:	MOV	R2,-(SP)
+110674:	MOV	000010(SP),R3
+110700:	MOV	#012,R5
+110704:	CLR	R2
+110706:	CLR	R4
+110710:	CMP	R3,#001724	; check for large exponent
+110714:	BGT	111116
+110716:	TRAP	062		; unsigned 32-bit integer multiplication
+110720:	ADD	(SP)+,R3
+110722:	MOV	R3,000006(SP)	; save EXP1 back on stack
+110726:	BR	110662		; set the S switch
+; M.AFE:
+110730:	BIT	#000004,(SP)	; first E?
+110734:	BNE	111100		; no error
+110736:	BIS	#000004,(SP)	; set the E switch
+110742:	BIC	#000001,(SP)	; have a fraction?
+110746:	BR	111042		; get next character
+; M.AFD:
+110750:	BIT	#000014,(SP)	; test the E and D switches
+110754:	BNE	111100		; either one is an error
+110756:	BIS	#000010,(SP)	; set the D switch
+110762:	BR	111042		; get next character
+; M.AFPL:
+110764:	BIC	#000400,(SP)	; clear the M switch
+110770:	BR	110774
+; M.AFMI:
+110772:	BIS	#000400,(SP)	; set the M switch
+110776:	BIT	#000004,(SP)	; test the E switch
+111002:	BNE	111044		; branch if sign of exponent
+111004:	BIT	#000001,(SP)	; test the S switch
+111010:	BNE	111040
+111012:	BIT	#000030,(SP)	; test the A and D switches
+111016:	BNE	111100		; error if any set
+111020:	BIS	#000020,(SP)	; set the A switch
+111024:	BIT	#000400,(SP)	; test the M switch
+111030:	BEQ	111042		; exit if plus
+111032:	BIS	#000100,(SP)	; set minus sign
+111036:	BR	111042		; PDP-11 branches don't reach more than 128...
+111040:	BR	111122
+; M.AFXN:
+111042:	BR	110530
+; M.AFSE:
+111044:	BIT	#000001,(SP)	; test the S switch
+111050:	BNE	111040
+111052:	BIT	(SP),#000040	; test the B switch
+111056:	BNE	111100
+111060:	BIS	#000040,(SP)	; set the B switch
+111064:	BIT	#000400,(SP)	; test the M switch
+111070:	BEQ	111042		; exit if plus
+111072:	BIS	#000200,(SP)	; negative exponent
+111076:	BR	111042
+; M.AFVS:
+111100:	BIS	#000002,(SP)	; set the V switch
+111104:	BR	111040
+111106:	ADD	#010,SP
+111112:	MOV	(SP)+,R1
+111114:	BR	111100
+; M.AFVU:
+111116:	CMP	(SP)+,(SP)+
+111120:	BR	111100
+; M.AFX6:
+111122:	MOV	R1,-(SP)
+111124:	BIT	#000100,000002(SP)
+111132:	BEQ	111144		; number not negative
+111134:	MOV	000010(SP),R0
+111140:	MOV	R0,R1
+111142:	TRAP	024		; NEGF
+; M.AFX2:
+111144:	BIT	#000200,000002(SP)	; negative exponent?
+111152:	BEQ	111172		; branch if not
+111154:	NEG	000006(SP)
+111160:	BVC	111172		; branch if exponent valid
+111162:	BIS	#000002,000002(SP)	; invalid exponent, set the V switch
+111170:	BR	111246
+; M.AFX3:
+111172:	ADD	000004(SP),000006(SP)
+111200:	BEQ	111246		; branch if EXP1+EXP2=0
+111202:	BLT	111226		; if less than 0 divide
+111204:	MOV	000010(SP),R0
+111210:	MOV	#111274,R1	; floating point constant 10
+111214:	TRAP	030		; MULF
+111216:	DEC	000006(SP)	; decrement and test
+111222:	BGT	111204		; loop
+111224:	BR	111246
+; M.AFDV:
+111226:	MOV	000010(SP),R0
+111232:	MOV	#111274,R1	; floating point constant 10
+111236:	TRAP	026		; DIVF
+111240:	INC	000006(SP)	; increment and test
+111244:	BLT	111226		; loop
+; M.AFX5:
+111246:	MOV	(SP)+,R1	; restore the character pointer
+111250:	DEC	R1
+111252:	MOV	(SP)+,R4	; save switches
+111254:	ADD	#006,SP
+111260:	MOV	(SP)+,R5
+111262:	BIT	#000002,R4	; test the V switch
+111266:	BEQ	111272		; normal return
+; error return
+111270:	SET	V
+111272:	RETURN
+
+111274:	.WORD	000000, 050000, 100004	; 10
+111302:	.WORD	000000, 040000, 100001	; 1
+111310:	.WORD	000000, 075022, 100024	; 1000000
+111316:	.WORD	040000, 046113, 100030	; 10000000
+111324:	.WORD	000000, 040000, 100000	; 0.5
+
+; FTOA - floating point to ASCII conversion
+; expects the floating point number in r2,r3,r4
+; r2 - lower word of the mantissa, r3 - upper word of the mantissa
+; r4 - biased exponent EXP1
+; returns the output string on the stack
+; typical calling sequence:
+; CALL	111332		; FTOA
+; MOV	SP,R0		; pointer to the output string
+; TRAP	066		; print a string pointed to by r0
+; ADD	#024,SP		; reclaim the stack space
+111332:	MOV	#012,R0
+111336:	CLR	-(SP)
+111340:	DEC	R0
+111342:	BGT	111336
+111344:	TRAP	142		; push r4,r3,r2 on the stack
+111346:	MOV	#030040,000010(SP)
+111354:	MOVB	#040,000012(SP)
+111362:	TST	R3		; upper word of the mantissa
+111364:	BEQ	111702		; skip if the number is equal 0
+111366:	BGT	111404		; skip if the number is positive
+; negative number
+111370:	MOV	SP,R0
+111372:	MOV	R0,R1
+111374:	TRAP	024		; NEGF
+111376:	MOVB	#055,000010(SP)	; '-'
+;
+; multiply or divide the number by 10 as many times as is needed to bring it
+; in the range 1e6 <= x < 1e7
+; compensate the multiplication or division by changing the exponent EXP2 with
+; base 10 (decimal)
+111404:	MOV	#111310,R1	; floating point constant 1000000
+111410:	MOV	SP,R0
+111412:	TRAP	034		; CMPF
+111414:	BGT	111446
+;
+111416:	MOV	#111316,R0	; floating point constant 10000000
+111422:	MOV	SP,R1
+111424:	TRAP	034		; CMPF
+111426:	BLT	111464		; branch if in range
+111430:	MOV	#111274,R1	; floating point constant 10
+111434:	MOV	SP,R0
+111436:	TRAP	026		; DIVF
+111440:	INC	000006(SP)	; increment exponent EXP2
+111444:	BR	111416		; repeat range check
+;
+111446:	MOV	#111274,R1	; floating point constant 10
+111452:	MOV	SP,R0
+111454:	TRAP	030		; MULF
+111456:	DEC	000006(SP)	; decrement exponent EXP2
+111462:	BR	111404		; repeat range check
+;
+; rounding
+111464:	MOV	#111324,R1	; floating point constant 0.5
+111470:	MOV	SP,R0
+111472:	TRAP	020		; ADDF
+;
+; convert the number to unsigned 32-bit integer (get rid of the exponent EXP1)
+111474:	SUB	#100037,000004(SP)
+111502:	ASR	000002(SP)	; upper word of the mantissa
+111506:	ROR	(SP)		; lower word of the mantissa
+111510:	INC	000004(SP)	; exponent EXP1 with base 2 (decimal)
+111514:	BNE	111502
+;
+111516:	MOV	SP,R0
+111520:	ADD	#016,R0
+111524:	MOV	SP,R1
+111526:	MOV	R0,-(SP)
+111530:	TRAP	014		; JTOA, 32-bit integer to ASCII conversion
+111532:	MOV	(SP)+,R0
+111534:	ADD	#003,R0		; skip first three spaces
+111540:	CMPB	#040,(R0)	; space?
+111544:	BEQ	111554		; branch if yes
+111546:	INC	000006(SP)	; exponent EXP2, move the decimal point
+111552:	BR	111556
+; M.XA7:
+111554:	INC	R0		; fourth position
+111556:	ADD	#007,000006(SP)
+111564:	MOV	#010,R1
+111570:	MOV	R0,R2
+111572:	ADD	#007,R2
+111576:	DEC	R1
+111600:	CMPB	#060,-(R2)
+111604:	BEQ	111576
+111606:	MOV	SP,R4
+111610:	ADD	#011,R4
+111614:	CMP	#010,000006(SP)	; exponent EXP2
+111622:	BLE	111744		; scientific notation if exponent too large
+111624:	CMP	#-8,000006(SP)
+111632:	BGE	111744		; scientific notation if exponent too small
+;
+; standard decimal notation
+111634:	MOV	R1,R3
+111636:	NEG	R3
+111640:	ADD	000006(SP),R3
+111644:	ADD	#007,R3
+111650:	BLT	111744
+111652:	MOV	000006(SP),R3
+111656:	BLT	111712
+111660:	BGT	111730
+111662:	MOVB	#056,(R4)+
+111666:	MOVB	(R0)+,(R4)+
+111670:	CMP	R0,R2
+111672:	BLOS	111666
+111674:	MOVB	#040,(R4)+
+111700:	CLRB	(R4)
+111702:	ADD	#010,SP
+111706:	MOV	000022(SP),PC
+111712:	MOVB	#056,(R4)+	; decimal point
+111716:	MOVB	#060,(R4)+
+111722:	INC	R3
+111724:	BLT	111716
+111726:	BR	111666
+111730:	MOVB	(R0)+,(R4)+
+111732:	DEC	R3
+111734:	BGT	111730
+111736:	CMP	R0,R2
+111740:	BLOS	111662
+111742:	BR	111674
+;
+; normalized scientific notation
+111744:	MOVB	#056,(R4)+
+111750:	MOVB	(R0)+,(R4)+
+111752:	CMP	R0,R2
+111754:	BLOS	111750
+111756:	MOVB	#105,(R4)+
+111762:	ADD	#006,SP
+111766:	MOV	(SP),R1
+111770:	MOV	SP,R0
+111772:	ADD	#014,R0
+111776:	MOV	R0,-(SP)
+112000:	MOV	R4,-(SP)
+112002:	TRAP	012		; ITOA
+112004:	MOV	(SP)+,R4
+112006:	MOV	(SP)+,R0
+112010:	CMPB	(R0)+,#040
+112014:	BEQ	112010
+112016:	CMPB	-(R0),#055
+112022:	BEQ	112030
+112024:	MOVB	#040,(R4)+
+112030:	MOVB	(R0)+,(R4)+
+112032:	CMPB	(R0),#040
+112036:	BNE	112030
+112040:	MOVB	#040,(R4)+
+112044:	CLRB	(R4)
+112046:	TST	(SP)+
+112050:	MOV	000022(SP),PC
+
+; trap 010 - ATOI (documented), conversion of an ASCII string to an unsigned
+; integer
+; on entry r1 points to the string
+; on exit r1 points to the first invalid character,
+; result (1 word) stored in r0
+112054:	CLR	R0
+112056:	CALL	101154		; get a character other than space
+112062:	CALL	100472		; test if r2 is a digit
+112066:	BNE	112116		; branch if not
+112070:	SUB	#060,R2		; create binary number from ASCII
+112074:	ASL	R0		; multiply by 10 (decimal)
+112076:	ADD	R0,R2
+112100:	ASL	R0
+112102:	ASL	R0
+112104:	ADD	R2,R0
+112106:	BIT	#160000,R0
+112112:	BEQ	112056
+112114:	TRAP	041		; error 16 - wrong line number or dimension
+112116:	DEC	R1
+112120:	RETURN
+
+; trap 012 - ITOA (documented), conversion of an 16-bit integer to ASCII string
+; on entry r1 contains the number and r0 points to the memory location where
+; the result should be stored
+112122:	MOV	R0,-(SP)	; save DEFA
+112124:	CLR	-(SP)		; clear high order of integer
+112126:	MOV	R1,-(SP)	; get integer
+112130:	BGE	112136		; skip if positive
+112132:	COM	000002(SP)	; propagate sign through high order
+112136:	MOV	SP,R1		; set SEFA
+112140:	SUB	#014,SP		; expand stack
+112144:	MOV	SP,R0
+112146:	TRAP	014		; JTOA, 32-bit integer to ASCII conversion
+112150:	MOV	SP,R1
+112152:	MOV	000020(SP),R0	; users DEFA
+112156:	ADD	#005,R1		; first five are spaces
+112162:	MOV	#007,R2		; seven digits
+112166:	MOVB	(R1)+,(R0)+
+112170:	DEC	R2		; move ASCII string
+112172:	BGT	112166		; loop
+112174:	ADD	#022,SP		; remove junk
+112200:	RETURN
+
+; trap 014 - JTOA, conversion of an 32-bit integer to ASCII string
+; on entry r1 points to the number and r0 points to the memory location where
+; the result should be stored
+112202:	MOV	R5,-(SP)
+112204:	MOV	R0,-(SP)
+112206:	CLR	-(SP)		; sign control word
+112210:	MOV	(R1)+,R3	; low order
+112212:	MOV	(R1),R2		; high order
+112214:	BGE	112226		; skip if positive
+; negative
+112216:	NEG	R2
+112220:	NEG	R3		; complement but...
+112222:	SBC	R2
+112224:	INC	(SP)		; ...remember sign
+112226:	MOV	#012,R5		; lower word of the dividend = 10 decimal
+112232:	CLR	R4		; upper word of the dividend = 0
+112234:	MOV	#-1,-(SP)	; flag
+; M.JA01:
+112240:	CLR	R0
+112242:	CLR	R1
+112244:	TRAP	064		; unsigned 32-bit integer division
+112246:	MOV	R1,-(SP)	; push remainder
+112250:	BIS	R2,R0		; test the quotient r2,r3 for 0
+112252:	BIS	R3,R0
+112254:	TST	R0		; superfluous?
+112256:	BNE	112240		; loop
+112260:	MOV	SP,R5		; count the number of digits
+112262:	INC	R4
+112264:	TST	(R5)+		; check for flag
+112266:	BGE	112262		; loop
+112270:	DEC	R4
+112272:	MOV	#013,R3
+112276:	SUB	R4,R3		; r3 <- number of leading spaces + sign
+112300:	DEC	R3
+112302:	MOV	000002(R5),R0
+; M.JA02:
+112306:	TST	R3		; count exhausted?
+112310:	BLE	112322		; branch if yes
+112312:	MOVB	#040,(R0)+	; insert leading spaces
+112316:	DEC	R3
+112320:	BR	112306		; loop
+; M.JA03:
+112322:	TST	(R5)		; test for sign
+112324:	BEQ	112334
+112326:	MOVB	#055,(R0)+	; '-'
+112332:	BR	112340
+; M.JA04:
+112334:	MOVB	#040,(R0)+	; space
+; M.JA05:
+112340:	ADD	#060,(SP)	; convert digits to ASCII
+112344:	MOVB	(SP)+,(R0)+
+112346:	TST	(SP)		; check flag
+112350:	BGE	112340		; loop
+112352:	MOVB	#040,(R0)	; trailing space
+112356:	ADD	#006,SP
+112362:	MOV	(SP)+,R5
+112364:	RETURN
+
+; End of code borrowed from the RT-11 operating system.
+
+
+; trap 016 - IMUL (documented), unsigned 16-bit integer multiplication
+; r0 - multiplicand, r1 - multiplier, r0,r1 - product (the upper word in r0)
+112366:	MOV	R5,-(SP)
+112370:	MOV	R0,R3
+112372:	MOV	R1,R5
+112374:	CLR	R2
+112376:	CLR	R4
+112400:	TRAP	062		; unsigned 32-bit integer multiplication
+112402:	MOV	R3,R0
+112404:	MOV	R2,R1
+112406:	MOV	(SP)+,R5
+112410:	RETURN
+
+; trap 062 - unsigned 32-bit integer multiplication
+; r2,r3 - multiplier (the upper word in r2)
+; r4,r5 - multiplicand (the upper word in r4)
+; r0,r1,r2,r3 - product (the upper word in r0)
+112412:	CLR	R0		; initial product = 0
+112414:	CLR	R1
+112416:	MOV	#041,-(SP)	; bit counter
+; multiplication loop
+112422:	ROR	R0		; shift the product and multiplier one bit down
+112424:	ROR	R1
+112426:	ROR	R2
+112430:	ROR	R3
+112432:	BHIS	112442		; if least significant bit of multiplier is 1
+112434:	ADD	R5,R1		; ... then add the multiplicand to the product
+112436:	ADC	R0
+112440:	ADD	R4,R0
+112442:	DEC	(SP)		; bit counter
+112444:	BNE	112422		; loop
+112446:	TST	(SP)+
+112450:	RETURN
+
+; trap 064 - unsigned 32-bit integer division
+; r0,r2,r2,r3 - dividend (the upper word in r0)
+; r4,r5 - divisor (the upper word in r4)
+; r2,r3 - quotient (the upper word in r2)
+; r0,r1 - remainder (the upper word in r0)
+112452:	MOV	#040,-(SP)	; bit counter
+; negated divisor goes on the stack
+112456:	MOV	R4,-(SP)
+112460:	MOV	R5,-(SP)
+112462:	NEG	000002(SP)
+112466:	NEG	(SP)
+112470:	SBC	000002(SP)
+112474:	ADD	(SP),R1
+112476:	ADC	R0
+112500:	ADD	000002(SP),R0
+112504:	BLO	112620		; overflow
+112506:	CLR	-(SP)
+; division loop
+112510:	ROL	R3		; shift the dividend/quotient one bit up
+112512:	ROL	R2
+112514:	ROL	R1
+112516:	ROL	R0
+112520:	TST	(SP)
+112522:	BEQ	112544
+; subtract the divisor from the dividend
+112524:	CLR	(SP)
+112526:	ADD	000002(SP),R1
+112532:	ADC	R0
+112534:	ADC	(SP)
+112536:	ADD	000004(SP),R0
+112542:	BR	112554
+; the dividend was less than the divisor, take back the subtraction
+112544:	ADD	R5,R1		; add the divisor to the dividend
+112546:	ADC	R0
+112550:	ADC	(SP)
+112552:	ADD	R4,R0
+112554:	ADC	(SP)
+112556:	TST	(SP)
+112560:	BEQ	112564
+112562:	INC	R3		; increment the quotient
+112564:	DEC	000006(SP)	; bit counter
+112570:	BGT	112510		; loop
+112572:	ROR	R3
+112574:	BLO	112606
+112576:	ADD	R5,R1
+112600:	ADC	R0
+112602:	ADD	R4,R0
+112604:	CLC
+112606:	ROL	R3
+112610:	ADD	#010,SP
+112614:	CLEAR	V
+112616:	RETURN
+; overflow
+112620:	ADD	#006,SP
+112624:	TRAP	373		; error 125 - multiplication/division overflow
+112626:	SET	V
+112630:	RETURN
+
+; trap 020 - ADDF (documented), floating point addition
+; addends pointed to by r0 and r1, sum pointed to by r0
+112632:	MOV	R5,-(SP)
+112634:	MOV	R0,-(SP)	; save the pointer to the sum
+; first addend
+112636:	MOV	(R1)+,-(SP)	; lower word of the mantissa
+112640:	MOV	(R1)+,-(SP)	; upper word of the mantissa
+112642:	MOV	(R1),-(SP)	; exponent
+; second addend
+112644:	MOV	(R0)+,R2	; lower word of the mantissa
+112646:	MOV	(R0)+,R1	; upper word of the mantissa
+112650:	MOV	(R0),R0		; exponent
+112652:	CMP	R0,(SP)		; compare exponents
+112654:	BLOS	112702
+; swap addends
+112656:	MOV	SP,R4
+112660:	MOV	R0,R3
+112662:	MOV	(R4),R0
+112664:	MOV	R3,(R4)+
+112666:	MOV	R1,R3
+112670:	MOV	(R4),R1
+112672:	MOV	R3,(R4)+
+112674:	MOV	R2,R3
+112676:	MOV	(R4),R2
+112700:	MOV	R3,(R4)+
+; larger addend is pointed to by SP
+; smaller addend: exponent in r0, mantissa in r1,r2
+112702:	SUB	(SP),R0		; difference between the exponents
+112704:	BEQ	112770		; no alignment required
+112706:	BPL	112716		; should never happen ???
+112710:	CMP	R0,#-1F
+112714:	BGE	112730
+; smaller addend is insignificant, the answer is the larger addend
+112716:	MOV	000002(SP),R5
+112722:	MOV	000004(SP),R3
+112726:	BR	113020
+; the mantissa of the smaller addend needs to be shifted until the exponents
+; are equal
+112730:	CMP	R0,#-10		; difference between exponents
+112734:	BGT	112754
+; we can spare on shifts
+112736:	ADD	#020,R0
+112742:	MOV	R1,R2		; upper word -> lower word
+112744:	CLR	R1		; 0 -> upper word
+112746:	TST	R2		; negative number?
+112750:	BPL	112754		; skip if not
+112752:	COM	R1		; FFFF -> upper word
+112754:	TST	R0
+112756:	BEQ	112770
+; this loop shifts the mantissa of the smaller addend -r0 times
+112760:	ASR	R1		; upper word of the mantissa
+112762:	ROR	R2		; lower word of the mantissa
+112764:	INC	R0
+112766:	BNE	112760		; loop
+; perform the addition of both mantissas
+112770:	MOV	000002(SP),R5
+112774:	MOV	000004(SP),R3
+113000:	ADD	R2,R3
+113002:	ADC	R5
+113004:	BVS	113050
+113006:	ADD	R1,R5
+113010:	BVC	113020
+; overflow
+113012:	ROR	R5		; shift the mantissa right
+113014:	ROR	R3
+113016:	INC	(SP)		; increment the exponent
+; save the result in the memory
+113020:	MOV	000006(SP),R0	; pointer where the sum is to be stored
+113024:	MOV	R0,R1		; save the pointer
+113026:	MOV	R3,(R0)+	; lower word of the mantissa
+113030:	MOV	R5,(R0)+	; upper word of the mantissa
+113032:	MOV	(SP),(R0)+	; exponent
+113034:	MOV	R1,R0		; restore the pointer
+113036:	ADD	#010,SP
+113042:	MOV	(SP)+,R5
+113044:	JMP	113616		; normalisation
+;
+113050:	ADD	R1,R5
+113052:	BLO	113020		; branch if negative
+113054:	BR	113012
+
+; trap 022 - SUBF (documented), floating point subtraction
+; minuend pointed to by r0, subtrahend pointed to by r1,
+; remainder pointed to by r0
+113056:	MOV	R0,R4
+113060:	SUB	#006,SP
+113064:	MOV	SP,R0
+113066:	TRAP	024		; NEGF
+113070:	MOV	R4,R0
+113072:	MOV	SP,R1
+113074:	TRAP	020		; ADDF
+113076:	ADD	#006,SP
+113102:	RETURN
+
+; function ABS
+113104:	TRAP	032		; MOVF
+113106:	TST	000002(R1)
+113112:	BGE	113134
+
+; trap 024 - NEGF (documented), floating point negation
+; argument pointed to by r1, result pointed to by r0
+113114:	MOV	(R1)+,R2
+113116:	MOV	(R1)+,R3
+113120:	NEG	R3
+113122:	NEG	R2
+113124:	SBC	R3
+113126:	MOV	R2,(R0)+
+113130:	MOV	R3,(R0)+
+113132:	MOV	(R1)+,(R0)+
+113134:	RETURN
+
+; function SGN
+113136:	TRAP	032		; MOVF
+113140:	MOV	#111302,R1	; floating point constant 1
+113144:	TST	000002(R0)
+113150:	BGT	113160
+113152:	BEQ	113162
+113154:	TRAP	024		; NEGF
+113156:	RETURN
+113160:	TRAP	032		; MOVF
+113162:	RETURN
+
+; trap 026 - DIVF (documented), floating point division
+; dividend pointed to by r0, divisor pointed to by r1,
+; quotient pointed to by r0
+113164:	MOV	R5,-(SP)
+113166:	MOV	R0,-(SP)	; save the pointer to the quotient
+113170:	CLR	-(SP)		; sign of the factor
+; divisor
+113172:	MOV	(R1)+,R5	; lower word of the mantissa
+113174:	MOV	(R1)+,R4	; upper word of the mantissa
+113176:	TST	R4
+113200:	BEQ	113400		; branch if division by 0 attempted
+113202:	BGE	113214		; skip if positive
+; negative
+113204:	NEG	R4
+113206:	NEG	R5		; complement but...
+113210:	SBC	R4
+113212:	INC	(SP)		; ...remember sign
+; dividend
+113214:	MOV	(R0)+,R3	; lower word of the mantissa
+113216:	MOV	(R0)+,R2	; upper word of the mantissa
+113220:	BEQ	113570		; branch if the dividend is equal 0
+113222:	BGT	113234		; skip if positive
+; negative
+113224:	NEG	R2
+113226:	NEG	R3		; complement but...
+113230:	SBC	R2
+113232:	DEC	(SP)		; ...remember sign
+; calculate the exponent of the quotient
+113234:	MOV	(R1),R1		; exponent of the divisor
+113236:	NEG	R1
+113240:	ADD	(R0),R1		; subtract it from the exponent of the dividend
+113242:	ROR	R1
+113244:	ROL	R1
+113246:	BVC	113400		; overflow
+113250:	ADD	#100000,R1	; bias
+113254:	MOV	R1,-(SP)
+; divide the mantissas
+113256:	MOV	R3,R1
+113260:	MOV	R2,R0
+113262:	CLR	R2
+113264:	CLR	R3
+113266:	ROR	R0
+113270:	ROR	R1
+113272:	ROR	R2
+113274:	TRAP	064		; unsigned 32-bit integer division
+113276:	NEG	R4
+113300:	NEG	R5
+113302:	SBC	R4
+113304:	ASL	R1
+113306:	ROL	R0
+113310:	ADD	R5,R1
+113312:	ADC	R0
+113314:	ADD	R4,R0
+113316:	BLT	113326
+113320:	ADD	#001,R3
+113324:	ADC	R2
+113326:	CLC
+113330:	ROR	R2
+113332:	ROR	R3
+113334:	INC	(SP)
+113336:	TST	000002(SP)
+113342:	BEQ	113352
+113344:	NEG	R2
+113346:	NEG	R3
+113350:	SBC	R2
+113352:	MOV	000004(SP),R0
+113356:	MOV	R3,(R0)+
+113360:	MOV	R2,(R0)+
+113362:	MOV	(SP)+,(R0)
+113364:	CMP	(SP)+,(SP)+
+113366:	MOV	(SP)+,R5
+113370:	CMP	-(R0),-(R0)
+113372:	MOV	R0,R1
+113374:	JMP	113616		; normalisation
+113400:	CMP	(SP)+,(SP)+
+113402:	TRAP	373		; error 125 - multiplication/division overflow
+113404:	MOV	(SP)+,R5
+113406:	SET	V
+113410:	RETURN
+
+; trap 030 - MULF (documented), floating point multiplication
+; factors pointed to by r0 and r1, product pointed to by r0
+113412:	MOV	R5,-(SP)
+113414:	MOV	R0,-(SP)	; save the pointer to the product
+; second factor
+113416:	MOV	(R1)+,R5	; lower word of the mantissa
+113420:	MOV	(R1)+,R4	; upper word of the mantissa
+113422:	MOV	(R1),R1		; exponent
+113424:	CLR	-(SP)		; sign of the product
+113426:	TST	R4
+113430:	BEQ	113570		; branch if the factor is equal 0
+113432:	BPL	113444		; skip if positive
+; negative
+113434:	NEG	R4
+113436:	NEG	R5		; complement but...
+113440:	SBC	R4
+113442:	DEC	(SP)		; ...remember sign
+; first factor
+113444:	MOV	(R0)+,R3	; lower word of the mantissa
+113446:	MOV	(R0)+,R2	; upper word of the mantissa
+113450:	BEQ	113570		; branch if the factor is equal 0
+113452:	BPL	113464		; skip if positive
+; negative
+113454:	NEG	R2
+113456:	NEG	R3		; complement but...
+113460:	SBC	R2
+113462:	INC	(SP)		; ...remember sign
+; calculate the exponent of the product
+113464:	ADD	(R0),R1		; sum of the exponents of the factors
+113466:	ROR	R1
+113470:	ROL	R1
+113472:	BVC	113400		; overflow
+113474:	ADD	#100000,R1	; bias
+113500:	MOV	R1,-(SP)
+; multiply the mantissas
+113502:	TRAP	062		; unsigned 32-bit integer multiplication
+; normalisation
+113504:	INC	(SP)
+113506:	ROL	R2
+113510:	ROL	R1
+113512:	ROL	R0		; shift the mantissa one bit left...
+113514:	BVS	113522		; ...until first bit is not zero
+113516:	DEC	(SP)		; exponent
+113520:	BR	113506		; loop
+; rounding
+113522:	ROR	R0
+113524:	ROR	R1
+113526:	ADC	R1
+113530:	ADC	R0
+113532:	BVC	113540
+113534:	INC	(SP)
+113536:	BR	113522
+113540:	MOV	(SP)+,R2	; exponent
+; apply the sign
+113542:	TST	(SP)+
+113544:	BEQ	113554		; skip if positive
+; complement the mantissa
+113546:	NEG	R0
+113550:	NEG	R1
+113552:	SBC	R0
+; save the result in the memory
+113554:	MOV	(SP)+,R3	; pointer where the result is to be stored
+113556:	MOV	R1,(R3)+	; lower word of the mantissa
+113560:	MOV	R0,(R3)+	; upper word of the mantissa
+113562:	MOV	R2,(R3)		; exponent
+113564:	MOV	(SP)+,R5
+113566:	RETURN
+; result = 0
+113570:	CLR	R0
+113572:	CLR	R1
+113574:	CLR	R2
+113576:	TST	(SP)+
+113600:	BR	113554
+
+; trap 036 - FLT, convert an integer number to a floating point, expects the
+; argument in r1 and the pointer to memory location where the result should
+; be stored in r0
+113602:	CLR	(R0)+
+113604:	MOV	R1,(R0)+
+113606:	MOV	#100017,(R0)
+113612:	CMP	-(R0),-(R0)
+113614:	MOV	R0,R1
+113616:	MOV	(R1)+,R4
+113620:	MOV	(R1)+,R2
+113622:	MOV	(R1)+,R3
+113624:	MOV	R3,R1
+113626:	TST	R2
+113630:	BNE	113642
+113632:	TST	R4
+113634:	BNE	113642
+113636:	CLR	R3
+113640:	BR	113702
+113642:	INC	R3
+113644:	DEC	R3
+113646:	ASL	R4
+113650:	ROL	R2
+113652:	BVC	113644
+113654:	BHIS	113676
+113656:	BNE	113676
+113660:	TST	R4
+113662:	BNE	113674
+113664:	SEC
+113666:	ROR	R2
+113670:	INC	R3
+113672:	INC	R1
+113674:	SEC
+113676:	ROR	R2
+113700:	ROR	R4
+113702:	MOV	R4,(R0)+
+113704:	MOV	R2,(R0)+
+113706:	MOV	R3,(R0)+
+113710:	CMP	R3,R1
+113712:	BHI	113720
+113714:	CLEAR	V
+113716:	RETURN
+113720:	SET	V
+113722:	RETURN
+
+; trap 032 - MOVF
+113724:	MOV	R1,R2
+113726:	MOV	R0,R4
+113730:	MOV	(R2)+,(R4)+
+113732:	MOV	(R2)+,(R4)+
+113734:	MOV	(R2)+,(R4)+
+113736:	RETURN
+
+; trap 034 - CMPF (documented), floating point comparison
+; compared numbers pointed to by r0 and r1, sets flags as CMP
+113740:	MOV	R1,-(SP)
+113742:	TRAP	054		; push a number pointed to by R0 on the stack
+113744:	MOV	SP,R0
+113746:	MOV	000006(SP),R1
+113752:	TRAP	022		; SUBF
+113754:	MOV	000002(SP),R1
+113760:	ADD	#010,SP
+113764:	NEG	R1
+113766:	RETURN
+
+; trap 054 - push the floating point number pointed to by R0 on the stack
+113770:	MOV	(SP)+,R2
+113772:	ADD	#006,R0
+113776:	MOV	-(R0),-(SP)
+114000:	MOV	-(R0),-(SP)
+114002:	MOV	-(R0),-(SP)
+114004:	MOV	R2,PC
+
+; function INT
+114006:	MOV	(R1)+,R3
+114010:	MOV	(R1)+,R2
+114012:	MOV	(R1),R4
+114014:	BPL	114060
+114016:	CMP	-(R1),-(R1)
+114020:	CMP	R4,#100037
+114024:	BHIS	113724		; CMPF
+114026:	SUB	#100037,R4
+114032:	ASR	R2
+114034:	ROR	R3
+114036:	INC	R4
+114040:	BLT	114032
+114042:	MOV	R0,R1
+114044:	MOV	R3,(R0)+
+114046:	MOV	R2,(R0)+
+114050:	MOV	#100037,(R0)
+114054:	MOV	R1,R0
+114056:	BR	113616		; normalisation
+114060:	TST	R2
+114062:	BPL	114074
+114064:	MOV	#111302,R1	; floating point constant 1
+114070:	JMP	113114
+114074:	CLR	(R0)+
+114076:	CLR	(R0)+
+114100:	CLR	(R0)
+114102:	RETURN
+
+; trap 042
+114104:	MOV	(R1)+,R2
+114106:	MOV	(R1)+,R3
+114110:	MOV	(R1),R4
+
+; trap 040 - FIX (documented), convert a floating point number to an integer
+; r2, r3, r4 -> r0
+114112:	CMP	R4,#100017
+114116:	BHI	114146
+114120:	BEQ	114142
+114122:	CMP	R4,#100000
+114126:	BLO	114150
+114130:	SUB	#100017,R4
+114134:	ASR	R3
+114136:	INC	R4
+114140:	BNE	114134
+114142:	MOV	R3,R0
+114144:	RETURN
+114146:	TRAP	371		; error 124 - number out of FIX operator range
+114150:	CLR	R0
+114152:	RETURN
+
+114140:	FD 02 C0 10  87 00 F9 89  00 0A 87 00  0F 42 41 53  }.@...y......BAS
+114160:	49 43 20 56  31 2E 30 20  28 63 29 20  31 39 38 36  IC V1.0 (c) 1986
+114200:	0D 0A 00 0E  6D 49 4E 53  4B 2E 20 70  6F 20 69 4E  ....mINSK. po iN
+114220:	54 45 47 52  41 4C 0F 0D  0A 00 66 10  26 10 C6 E5  TEGRAL....f.&.Fe
+
+; operator ^ (power)
+114232:	MOV	R1,-(SP)
+114234:	MOV	R0,-(SP)
+114236:	SUB	#006,SP
+114242:	MOV	R0,R1
+114244:	MOV	SP,R0
+114246:	CALL	114302	; function LOG
+114252:	MOV	000010(SP),R1
+114256:	MOV	SP,R0
+114260:	TRAP	030		; MULF
+114262:	MOV	000006(SP),R0
+114266:	MOV	SP,R1
+114270:	CALL	114576		; function EXP
+114274:	ADD	#012,SP
+114300:	RETURN
+
+
+; The routines for the trigonometric, exponential and square root functions
+; are apparently based on the floating point library of the RT-11 operating
+; system. The original labels and comments are preserved.
+
+; function LOG
+114302:	TRAP	056
+114304:	TST	000002(R0)
+114310:	BGT	114322
+114312:	TRAP	377		; error 127 - exponent/logarithm overflow
+114314:	ADD	#004,SP
+114320:	RETURN
+114322:	MOV	R0,R1
+114324:	TST	(R1)+
+114326:	BNE	114360
+114330:	CMP	(R1)+,#040000
+114334:	BNE	114360
+114336:	CMP	(R1)+,#100001
+114342:	BNE	114360
+114344:	CLR	(R0)+
+114346:	CLR	(R0)+
+114350:	CLR	(R0)+
+114352:	ADD	#004,SP
+114356:	RETURN
+114360:	MOV	000004(R0),-(SP)
+114364:	ADD	#100000,(SP)
+114370:	MOV	#100000,000004(R0)
+114376:	MOV	(SP),R1
+114400:	SUB	#006,SP
+114404:	MOV	SP,R0
+114406:	TRAP	036		; FLT, convert integer R1 to float
+114410:	MOV	000010(SP),R0
+114414:	TRAP	054		; push a number pointed to by R0 on the stack
+114416:	MOV	#114532,R1
+114422:	TRAP	022		; SUBF
+114424:	MOV	SP,R0
+114426:	MOV	#114532,R1
+114432:	TRAP	020		; ADDF
+114434:	MOV	000016(SP),R0
+114440:	MOV	SP,R1
+114442:	TRAP	026		; DIVF
+114444:	MOV	#114546,R4
+114450:	MOV	000016(SP),R0
+114454:	MOV	#004,R3
+114460:	TRAP	050		; M.SETU
+114462:	TRAP	052		; M.DOPO
+114464:	MOV	000016(SP),R0
+114470:	MOV	#115024,R1
+114474:	TRAP	022		; SUBF
+114476:	ADD	#006,SP
+114502:	MOV	SP,R0
+114504:	MOV	#114540,R1
+114510:	TRAP	030		; MULF
+114512:	MOV	SP,R1
+114514:	MOV	000010(SP),R0
+114520:	TRAP	020		; ADDF
+114522:	ADD	#014,SP
+114526:	CLEAR	V
+114530:	RETURN
+
+114532:	.WORD	074626, 055202, 100000	; 0.7071067794 = SQR (0.5)
+114540:	.WORD	005776, 054271, 100000	; 0.6931471815 = LN (2)
+114546:	.WORD	125112, 046414, 077777	; 0.3009745054
+114554:	.WORD	007411, 063120, 077777	; 0.3996590993
+114562:	.WORD	066333, 052525, 100000	; 0.6666694707
+114570:	.WORD	177772, 077777, 100001	; 1.9999999944
+
+; function EXP
+114576:	TRAP	056
+114600:	CMP	000004(R0),#100016
+114606:	BHI	114312
+114610:	MOV	#115016,R1
+114614:	TRAP	046
+114616:	MOV	000002(SP),R0
+114622:	MOV	#115024,R1
+114626:	TRAP	030		; MULF
+114630:	MOV	000002(SP),R0
+114634:	TRAP	054		; push a number pointed to by R0 on the stack
+114636:	TRAP	054		; push a number pointed to by R0 on the stack
+114640:	MOV	SP,R0
+114642:	MOV	#115032,R1
+114646:	TRAP	020		; ADDF
+114650:	MOV	SP,R0
+114652:	MOV	R0,R1
+114654:	TRAP	024		; NEGF
+114656:	INC	000012(SP)
+114662:	MOV	000016(SP),R0
+114666:	MOV	R0,R1
+114670:	TRAP	030		; MULF
+114672:	MOV	000016(SP),R0
+114676:	MOV	#115046,R1
+114702:	TRAP	020		; ADDF
+114704:	MOV	#115040,R0
+114710:	TRAP	054		; push a number pointed to by R0 on the stack
+114712:	MOV	SP,R0
+114714:	MOV	000024(SP),R1
+114720:	TRAP	026		; DIVF
+114722:	MOV	SP,R0
+114724:	MOV	R0,R1
+114726:	ADD	#006,R1
+114732:	TRAP	020		; ADDF
+114734:	MOV	SP,R1
+114736:	MOV	R1,R0
+114740:	ADD	#014,R0
+114744:	TRAP	026		; DIVF
+114746:	ADD	#014,SP
+114752:	MOV	SP,R0
+114754:	MOV	#111302,R1	; floating point constant 1
+114760:	TRAP	020		; ADDF
+114762:	MOV	SP,R0
+114764:	MOV	R0,R1
+114766:	TRAP	030		; MULF
+114770:	MOV	SP,R1
+114772:	MOV	000010(SP),R0
+114776:	TRAP	032		; MOVF
+115000:	MOV	000010(SP),R0
+115004:	ADD	000006(SP),000004(R0)
+115012:	JMP	114522
+
+115016:	.WORD	016624, 056125, 100001	; 1.4426950402
+115024:	.WORD	005776, 054271, 077777	; 0.3465735908
+115032:	.WORD	037347, 117741, 100004	; -12.015016742
+115040:	.WORD	041565, 132306, 100012	; -601.804265499
+115046:	.WORD	026570, 074056, 100006	; 60.090190649
+
+; trap 052 - M.DOPO
+; evaluates a polynomial according to the parameters on the stack (see M.SETU)
+; 2(SP) = number of constants
+; A(SP) = starting address of constants
+115054:	SUB	#002,000002(SP)	; subtract 2 from the counter
+115062:	MOV	000010(SP),R0
+115066:	MOV	000012(SP),R1	; address of the first constant
+115072:	MOV	R0,-(SP)
+115074:	TRAP	030		; MULF
+; M.LOOP:
+115076:	ADD	#006,000014(SP)	; move to the next constant
+115104:	MOV	(SP),R0
+115106:	MOV	000014(SP),R1
+115112:	TRAP	020		; ADDF, DEST=DEST+constant
+115114:	TST	000004(SP)	; test the counter
+115120:	BEQ	115140		; branch if done
+115122:	MOV	(SP),R0
+115124:	MOV	000010(SP),R1
+115130:	TRAP	030		; MULF, DEST=DEST*X^2
+115132:	DEC	000004(SP)	; decrement the counter
+115136:	BR	115076
+; M.HANK:
+115140:	MOV	(SP),R0
+115142:	MOV	000006(SP),R1
+115146:	TRAP	030		; MULF
+115150:	TST	(SP)+
+115152:	MOV	(SP)+,R3
+115154:	ADD	#026,SP
+115160:	MOV	R3,-(SP)
+115162:	RETURN
+
+; trap 044 - M.INIT
+115164:	MOV	(SP)+,R3	; return address
+115166:	CLR	-(SP)		; clear a flag
+115170:	MOV	R1,-(SP)	; push SOURCE pointer
+115172:	MOV	R0,-(SP)	; push DEST pointer
+115174:	TRAP	032		; MOVF, move SOURCE to DEST
+115176:	MOV	R3,PC
+
+; trap 056
+115200:	MOV	(SP)+,R3
+115202:	BR	115170
+
+; trap 050 - M.SETU
+115204:	MOV	(SP)+,R1
+115206:	TRAP	054		; push a number pointed to by R0 on the stack
+115210:	MOV	R1,-(SP)
+115212:	MOV	R4,-(SP)
+115214:	MOV	R3,-(SP)
+115216:	MOV	R0,-(SP)
+115220:	MOV	R0,R1
+115222:	TRAP	030		; MULF
+115224:	MOV	(SP)+,R0
+115226:	MOV	(SP)+,R3
+115230:	MOV	(SP)+,R4
+115232:	MOV	(SP)+,R1
+115234:	TRAP	054		; push a number pointed to by R0 on the stack
+115236:	MOV	R4,-(SP)
+115240:	MOV	R0,-(SP)
+115242:	MOV	#006,-(SP)
+115246:	ADD	SP,(SP)
+115250:	MOV	#016,-(SP)
+115254:	ADD	SP,(SP)
+115256:	MOV	R3,-(SP)
+115260:	MOV	R1,PC
+
+; trap 046
+115262:	MOV	000002(SP),R0
+115266:	TRAP	030		; MULF
+115270:	MOV	(SP)+,000002(SP)
+115274:	MOV	(SP),R1
+115276:	TRAP	042
+115300:	MOV	R0,-(SP)
+115302:	MOV	(SP),R1
+115304:	SUB	#006,SP
+115310:	MOV	SP,R0
+115312:	TRAP	036		; FLT, convert integer R1 to float
+115314:	MOV	SP,R1
+115316:	MOV	000010(SP),R0
+115322:	TRAP	022		; SUBF
+115324:	ADD	#006,SP
+115330:	MOV	000004(SP),-(SP)
+115334:	RETURN
+
+; function SIN
+115336:	TRAP	044		; M.INIT
+115340:	TST	000002(R0)
+115344:	BGE	115360		; skip if the operand not negative
+; operand negative
+115346:	MOV	R0,R1
+115350:	TRAP	024		; NEGF
+115352:	INC	000004(SP)	; set neg_flag
+115356:	BR	115370
+; M.NOTN:
+115360:	BNE	115370		; skip if the operand not equal 0
+; M.EXIT:
+115362:	ADD	#006,SP
+115366:	RETURN
+; M.NOTE:
+115370:	MOV	#115524,R1	; 2/PI
+115374:	TRAP	046
+115376:	MOV	(SP)+,R2
+115400:	BIC	#177774,R2	; get two low order bits
+115404:	ASL	R2		; multiply by 2
+115406:	ADD	#115514,R2	; address of the branch table
+115412:	MOV	(R2),PC		; branch through the table
+
+; M.Q2:
+115414:	MOV	#111302,R1	; floating point constant 1
+115420:	MOV	(SP),R0
+115422:	TRAP	022		; SUBF
+; M.Q3:
+115424:	MOV	(SP),R0
+115426:	MOV	R0,R1
+115430:	TRAP	024		; NEGF
+115432:	BR	115444
+; M.Q4:
+115434:	MOV	#111302,R1	; floating point constant 1
+115440:	MOV	(SP),R0
+115442:	TRAP	022		; SUBF
+; M.EVAL:
+115444:	MOV	(SP),R0
+115446:	MOV	#115532,R4
+115452:	MOV	#006,R3
+115456:	TRAP	050		; M.SETU
+115460:	TRAP	052		; M.DOPO
+115462:	TST	000004(SP)	; neg_flag set?
+115466:	BEQ	115362		; branch if not
+; negate the result
+115470:	MOV	(SP),R0
+115472:	MOV	R0,R1
+115474:	TRAP	024		; NEGF
+115476:	BR	115362
+
+; function COS
+115500:	TRAP	044		; M.INIT
+115502:	MOV	#115570,R1
+115506:	TRAP	020		; ADDF
+115510:	MOV	(SP),R0
+115512:	BR	115340
+
+115514:	.WORD	115444, 115414, 115424, 115434	; M.EVAL, M.Q2, M.Q3, M.Q4
+
+115524:	.WORD	140671, 050574, 100000	; 0.6366197732 = 2/PI
+
+115532:	.WORD	017676, 106516, 077756	; -0.000003418172245
+115540:	.WORD	175316, 051777, 077764	; 0.00016021713395
+115546:	.WORD	156214, 131513, 077771	; -0.004681620238
+115554:	.WORD	167376, 050632, 077775	; 0.07969258714
+115562:	.WORD	006165, 126521, 100000	; -0.6459640912
+
+115570:	.WORD	166516, 062207, 100001	; 1.5707963239 = PI/2
+
+; function ATN
+115576:	CLR	-(SP)
+115600:	TRAP	044		; M.INIT
+115602:	TST	000002(R0)	; is operand equal 0 ?
+115606:	BEQ	116070		; branch if yes
+115610:	BGE	115622		; skip if the operand not negative
+; operand negative
+115612:	INC	000006(SP)	; set neg_flag
+115616:	MOV	R0,R1
+115620:	TRAP	024		; NEGF
+; M.P2:
+115622:	MOV	#111302,R1	; floating point constant 1
+115626:	MOV	(SP),R0
+115630:	TRAP	034		; CMPF
+115632:	BGE	115672
+115634:	INC	000004(SP)	; X is > 1, set a_flag
+115640:	MOV	#111302,R0	; floating point constant 1
+115644:	TRAP	054		; push a number pointed to by R0 on the stack
+115646:	MOV	SP,R0
+115650:	MOV	000006(SP),R1
+115654:	TRAP	026		; DIVF, let X = 1/X
+115656:	MOV	SP,R1
+115660:	MOV	000006(SP),R0
+115664:	TRAP	032		; MOVF
+115666:	ADD	#006,SP
+; M.P:
+115672:	MOV	#116100,R1	; floating point constant 2 - SQR (3)
+115676:	MOV	(SP),R0
+115700:	TRAP	034		; CMPF, is X < 2 - SQR (3)
+115702:	BLE	115714
+115704:	CLR	-(SP)		; it is, so let C = 0
+115706:	CLR	-(SP)
+115710:	CLR	-(SP)
+115712:	BR	115774
+; let X=(X*SQR(3)-1)/(X+SQR(3))
+; let C=PI/6
+; M.BR4:
+115714:	MOV	#116114,R0	; floating point constant PI/6
+115720:	TRAP	054		; push a number pointed to by R0 on the stack
+115722:	MOV	000006(SP),R0
+115726:	TRAP	054		; push a number pointed to by R0 on the stack
+115730:	MOV	#116106,R1
+115734:	TRAP	030		; MULF
+115736:	MOV	000014(SP),R0
+115742:	MOV	#111302,R1	; floating point constant 1
+115746:	TRAP	022		; SUBF
+115750:	MOV	SP,R0
+115752:	MOV	#116106,R1
+115756:	TRAP	020		; ADDF
+115760:	MOV	000014(SP),R0
+115764:	MOV	SP,R1
+115766:	TRAP	026		; DIVF
+115770:	ADD	#006,SP
+115774:	MOV	000006(SP),R0
+116000:	MOV	#116122,R4
+116004:	MOV	#005,R3
+116010:	TRAP	050		; M.SETU
+116012:	TRAP	052		; M.DOPO
+116014:	MOV	SP,R1
+116016:	MOV	000006(SP),R0
+116022:	TRAP	020		; ADDF
+116024:	ADD	#006,SP
+116030:	TST	000004(SP)
+116034:	BEQ	116054
+116036:	MOV	(SP),R0
+116040:	MOV	#115570,R1
+116044:	TRAP	022		; SUBF
+116046:	MOV	(SP),R0
+116050:	MOV	R0,R1
+116052:	TRAP	024		; NEGF
+116054:	TST	000006(SP)
+116060:	BEQ	116070
+116062:	MOV	(SP),R0
+116064:	MOV	R0,R1
+116066:	TRAP	024		; NEGF
+116070:	ADD	#010,SP
+116074:	CLEAR	V
+116076:	RETURN
+
+116100:	.WORD	050574, 042230, 077777	; 0.2679491928 = 2 - SQR (3)
+116106:	.WORD	165640, 067331, 100001	; 1.7320508063 = SQR (3)
+116114:	.WORD	044336, 041405, 100000	; 0.5235987743 = PI/6
+116122:	.WORD	113440, 060462, 077775	; 0.09491954930
+116130:	.WORD	107717, 133556, 077776	; -0.1417346058
+116136:	.WORD	155646, 063141, 077776	; 0.1999653475
+116144:	.WORD	131012, 125252, 077777	; -0.3333328939
+116152:	.WORD	177776, 077777, 100000	; 0.9999999991
+
+; function SQR - radicand pointed to by r1, result pointed to by r0
+; algorithm: rough estimation followed by Newton's iteration
+116160:	TRAP	044		; M.INIT
+116162:	TST	000002(R0)	; test the high word of mantissa
+116166:	BEQ	116324		; if zero, we have the answer
+116170:	BGE	116202		; negative?
+116172:	INC	000004(SP)	; yes, set the neg_flag
+116176:	MOV	R0,R1
+116200:	TRAP	024		; NEGF
+116202:	CLR	000002(SP)	; clear odd_flag (exponent odd or even)
+116206:	MOV	(SP),R0		; pointer to the DEST
+116210:	CMP	(R0)+,(R0)+	; = add #4,r0
+116212:	ADD	#100000,(R0)	; get rid of the bias of the DEST exponent
+116216:	ASR	(R0)		; divide the DEST exponent by 2
+116220:	ADC	000002(SP)	; let odd_flag=Carry bit
+116224:	MOV	(R0),-(SP)	; save DEST exponent on the stack
+116226:	MOV	#100000,(R0)	; set DEST exponent=8000
+116232:	MOV	000002(SP),R0	; pointer to the DEST
+116236:	TRAP	054		; push a number pointed to by R0 on the stack
+; linear approximation SQR(X) = X*0.590+0.417 for X in range 0.5 to 1
+116240:	MOV	#116414,R1	; constant 0.5901620695
+116244:	TRAP	030		; MULF
+116246:	MOV	000010(SP),R0
+116252:	MOV	#116406,R1	; constant 0.4173075990
+116256:	TRAP	020		; ADDF
+; do three times the Newton's iteration
+116260:	TRAP	060
+116262:	TRAP	060
+116264:	TRAP	060
+116266:	ADD	6(SP),4(R0)	; add saved exponent to the DEST exponent
+116274:	ADD	#010,SP
+116300:	TST	000002(SP)	; was odd_flag set?
+116304:	BEQ	116314		; skip if not
+116306:	MOV	#116400,R1	; constant SQR(2)
+116312:	TRAP	030		; MULF, multiply DEST by SQR(2)
+116314:	TST	000004(SP)	; neg_flag set?
+116320:	BEQ	116324		; skip if not
+116322:	TRAP	375		; error 126 - negative radicand
+116324:	ADD	#006,SP
+116330:	CLEAR	V
+116332:	RETURN
+
+; trap 060 - M.APPR, approximation of the form .5(Y0+X/Y0)
+116334:	MOV	SP,R0
+116336:	TST	(R0)+
+116340:	TRAP	054		; push a number pointed to by R0 on the stack
+116342:	MOV	SP,R0
+116344:	MOV	000020(SP),R1
+116350:	TRAP	026		; DIVF
+116352:	MOV	SP,R1
+116354:	MOV	000020(SP),R0
+116360:	TRAP	020		; ADDF
+116362:	MOV	000020(SP),R0
+116366:	DEC	000004(R0)
+116372:	ADD	#006,SP
+116376:	RETURN
+
+116400:	.WORD	074626, 055202, 100001	; 1.4142135587 = SQR (2)
+116406:	.WORD	125672, 065324, 077777	; 0.4173075990
+116414:	.WORD	067102, 045612, 100000	; 0.5901620695
+
+; End of code borrowed from the RT-11 operating system.
+
+
+; start the BASIC system
+116422:	MOV	#200,SP
+116426:	MOV	#100,R2
+116432:	CLR	-(R2)
+116434:	MOV	#100006,-(R2)
+116440:	TST	R2
+116442:	BNE	116432
+116444:	MOV	#137,(R2)+
+116450:	MOV	#116422,(R2)+	; vector of the BASIC system start
+116454:	MOV	#100152,@#034	; vector TRAP
+116462:	CALL	153700		; RAM initialisation
+116466:	TRAP	154
+116470:	TRAP	002		; print CR, LF
+116472:	MOV	#027476,R1
+116476:	MOV	#114154,R0	; string 'BASIC V1.0 (c) 1986'
+116502:	TRAP	066		; print a string pointed to by r0
+116504:	MOV	R1,SP
+116506:	MOV	R1,034020
+116512:	MOV	#100,R1
+116516:	MOV	R1,034354
+116522:	MOV	034354,R5
+116526:	MOVB	#012,(R5)+
+116532:	CLR	034372
+116536:	JMP	103124
+
+; display character r2
+116542:	CMPB	#040,R2
+116546:	BLE	116554		; branch if a printable character
+116550:	CALL	120262
+116554:	CALL	120164
+116560:	CALL	116664
+116564:	CMP	034044,034062
+116572:	BLE	116614
+116574:	CLR	034044
+116600:	MOV	#116620,-(SP)
+116604:	CALL	116622		; save registers on the stack
+116610:	JMP	120370
+116614:	CALL	120164
+116620:	RETURN
+
+; save registers on the stack
+116622:	MOV	R4,-(SP)
+116624:	MOV	R3,-(SP)
+116626:	MOV	R2,-(SP)
+116630:	MOV	R1,-(SP)
+116632:	MOV	R0,-(SP)
+116634:	MOV	000012(SP),-(SP)	; return address
+116640:	MOV	R5,000014(SP)
+116644:	RETURN
+
+; restore registers from the stack
+116646:	MOV	(SP)+,R5
+116650:	MOV	(SP)+,R0
+116652:	MOV	(SP)+,R1
+116654:	MOV	(SP)+,R2
+116656:	MOV	(SP)+,R3
+116660:	MOV	(SP)+,R4
+116662:	RTS	R5
+
+116664:	CALL	116622		; save registers on the stack
+116670:	CMPB	R2,#040
+116674:	BGE	116702
+116676:	JMP	117700
+116702:	TST	033726
+116706:	BNE	116724
+116710:	BIT	#040,034072
+116716:	BNE	116724
+116720:	JMP	117700
+116724:	MOVB	R2,R1
+116726:	MOV	034052,034064
+116734:	MOV	033702,R5
+116740:	MOV	034044,-(SP)
+116744:	MOV	033726,-(SP)
+116750:	MOV	#034106,R4
+116754:	MOV	R1,-(SP)
+116756:	CMPB	R1,#077
+116762:	BLE	117000
+116764:	MOV	#100,R3
+116770:	MOV	033716,033714
+116776:	BR	117012
+;
+117000:	MOV	#040,R3
+117004:	MOV	#153736,033714	; font table
+117012:	SUB	R3,R1
+117014:	MUL	033706,R1	; number of bits for each character
+117020:	MOVB	034064,R3
+117024:	MUL	033704,R3	; width of a character in pixels
+117030:	ADD	R1,R3
+117032:	CLR	R2
+117034:	DIV	#010,R2
+117040:	CLR	R1
+117042:	ADD	033714,R2
+117046:	BISB	(R2)+,R1
+117050:	SWAB	R1
+117052:	BISB	(R2),R1
+117054:	ADD	033704,R3
+117060:	SUB	#010,R3
+117064:	ASH	R3,R1
+117066:	SWAB	R1
+117070:	MOV	#010,R3
+117074:	SUB	033704,R3
+117100:	ASH	R3,R1
+117102:	TST	034070
+117106:	BEQ	117166
+117110:	CMP	034070,#002
+117116:	BLT	117146
+117120:	CLR	R0
+117122:	MOV	033704,R3
+117126:	ASLB	R1
+117130:	RORB	R0
+117132:	SOB	R3,117126
+117134:	MOV	R0,R1
+117136:	CMP	#002,034070
+117144:	BEQ	117166
+117146:	MOV	#034106,R4
+117152:	MOV	033704,R3
+117156:	ROLB	R1
+117160:	ROLB	(R4)+
+117162:	SOB	R3,117156
+117164:	BR	117170
+117166:	MOVB	R1,(R4)+
+117170:	ADD	033724,034064
+117176:	MOV	(SP)+,R1
+117200:	DEC	R5
+117202:	BEQ	117210
+117204:	JMP	116754
+117210:	BIT	#001,034070
+117216:	BNE	117232
+117220:	MOV	033702,R5
+117224:	MOV	033704,R4
+117230:	BR	117256
+117232:	MOV	#010,R3
+117236:	MOV	#034106,R4
+117242:	ASLB	(R4)+
+117244:	SOB	R3,117242
+117246:	MOV	033704,R5
+117252:	MOV	033702,R4
+117256:	BIT	#001,034072
+117264:	BEQ	117302
+117266:	MOV	#004,R3
+117272:	MOV	#034106,R2
+117276:	COM	(R2)+
+117300:	SOB	R3,117276
+117302:	INC	R5
+117304:	MOV	#034106,R3
+117310:	MOV	R4,-(SP)
+117312:	MOVB	(R3)+,R1
+117314:	MOV	R3,-(SP)
+117316:	MOV	034044,-(SP)
+117322:	MOV	#010,-(SP)
+117326:	MOV	R1,R0
+117330:	CLR	R1
+117332:	MOV	033740,R3
+117336:	BIC	#177400,R0
+117342:	ASL	R0
+117344:	ASL	R1
+117346:	BIS	R0,R1
+117350:	CLRB	R1
+117352:	DEC	(SP)
+117354:	BGT	117444
+117356:	MOV	#177400,034102
+117364:	MOV	033726,(SP)
+117370:	CMP	#001,R5
+117374:	BNE	117404
+117376:	MOV	#001,R2
+117402:	BR	117410
+117404:	MOV	033736,R2
+117410:	CALL	117722		; plot a dot
+117414:	INC	033726
+117420:	SOB	R2,117410
+117422:	MOV	(SP)+,033726
+117426:	TST	R4
+117430:	BEQ	117530
+117432:	MOV	#010,-(SP)
+117436:	ADD	(SP),034044
+117442:	CLR	R1
+117444:	SOB	R3,117344
+117446:	SOB	R4,117332
+117450:	BIC	#177400,R0
+117454:	ASL	R0
+117456:	ASL	R1
+117460:	BIS	R0,R1
+117462:	CLRB	R1
+117464:	TST	(SP)
+117466:	BEQ	117356
+117470:	DEC	(SP)
+117472:	BEQ	117356
+117474:	MOV	(SP),R3
+117476:	NEG	R3
+117500:	ADD	#010,R3
+117504:	MOV	#377,R2
+117510:	SEC
+117512:	ROR	R2
+117514:	SOB	R3,117512
+117516:	CLRB	R2
+117520:	MOV	R2,034102
+117524:	ASH	(SP),R1
+117526:	BR	117364
+117530:	ADD	033736,033726
+117536:	MOV	(SP)+,034044
+117542:	MOV	(SP)+,R3
+117544:	MOV	(SP),R4
+117546:	DEC	R5
+117550:	BEQ	117556
+117552:	JMP	117312
+117556:	TST	(SP)+
+117560:	BIT	#001,034066
+117566:	BEQ	117650
+117570:	TST	(SP)+
+117572:	SUB	033736,033726
+117600:	MOV	(SP)+,034044
+117604:	CMP	#001,034066
+117612:	BNE	117624
+117614:	ADD	033732,033726
+117622:	BR	117700
+117624:	SUB	034056,033726
+117632:	SUB	034056,033726
+117640:	ADD	033732,033726
+117646:	BR	117700
+117650:	MOV	(SP)+,033726
+117654:	TST	034066
+117660:	BNE	117670
+117662:	ADD	034054,(SP)
+117666:	BR	117674
+117670:	SUB	034054,(SP)
+117674:	MOV	(SP)+,034044
+117700:	MOV	#034106,R4
+117704:	MOV	#004,R3
+117710:	CLR	(R4)+
+117712:	SOB	R3,117710
+117714:	CALL	116646		; restore registers from the stack
+117720:	RETURN
+
+; plot a dot
+117722:	CALL	116622	; save registers on the stack
+117726:	MOV	033726,R3	; coordinate Y
+117732:	CMP	R3,#100		; height of the screen in pixels
+117736:	BHIS	120110		; out of the screen
+117740:	MOV	034044,R5	; coordinate X
+117744:	CMP	R5,#170		; width of the screen in pixels
+117750:	BHIS	120110		; out of the screen
+117752:	MOV	#160,R0
+117756:	SUB	034044,R0
+117762:	BPL	117776
+117764:	SUB	#010,R0
+117770:	ASH	R0,R1
+117772:	NEG	R0
+117774:	ASH	R0,R1
+117776:	CLR	R4
+120000:	CLR	R2
+120002:	DIV	#040,R2
+120006:	DIV	#010,R4
+120012:	MUL	#017,R3
+120016:	ADD	R4,R3
+120020:	ASL	R3
+120022:	ADD	R2,R3
+120024:	MOV	R5,R0
+120026:	CLR	R5
+120030:	MOV	R3,R2
+120032:	ADD	034022,R2
+120036:	BISB	(R2),R5
+120040:	SWAB	R5
+120042:	BISB	000002(R2),R5
+120046:	ASHC	R0,R4
+120050:	BIC	#377,R1
+120054:	MOVB	033734,R2
+120060:	ASL	R2
+120062:	CALL	@120142(R2)
+120066:	NEG	R0
+120070:	ASHC	R0,R4
+120072:	ADD	034022,R3
+120076:	MOVB	R5,000002(R3)
+120102:	SWAB	R5
+120104:	MOVB	R5,(R3)
+120106:	CLC
+120110:	CALL	116646		; restore registers from the stack
+120114:	RETURN
+120116:	BIC	R1,R5
+120120:	RETURN
+120122:	BIC	034102,R5
+120126:	BIS	R1,R5
+120130:	RETURN
+120132:	XOR	R1,R5
+120134:	RETURN
+120136:	BIS	R5,R1
+120140:	RETURN
+
+; display modes
+120142:	.WORD	120116
+120144:	.WORD	120122
+120146:	.WORD	120132
+120150:	.WORD	120126
+120152:	.WORD	120136
+
+120154:	MOVB	(R1)+,(R4)+
+120156:	CMPB	(R1)+,(R4)+
+120160:	SOB	R3,120154
+120162:	RETURN
+
+120164:	TST	034076
+120170:	BNE	120260
+120172:	MOV	034044,-(SP)
+120176:	MOV	033726,-(SP)
+120202:	MOVB	033734,-(SP)
+120206:	MOVB	#002,033734
+120214:	ADD	034056,033726
+120222:	SUB	033732,033726
+120230:	MOV	R1,-(SP)
+120232:	MOV	#174000,R1
+120236:	CALL	117722	; plot a dot
+120242:	MOV	(SP)+,R1
+120244:	MOVB	(SP)+,033734
+120250:	MOV	(SP)+,033726
+120254:	MOV	(SP)+,034044
+120260:	RETURN
+120262:	CMPB	#016,R2
+120266:	BNE	120300
+120270:	MOV	033712,033716
+120276:	BR	120314
+120300:	CMPB	#017,R2
+120304:	BNE	120330
+120306:	MOV	033710,033716
+120314:	TST	034042
+120320:	BEQ	120532
+120322:	MOV	#040,R2
+120326:	RETURN
+120330:	CALL	116622		; save registers on the stack
+120334:	MOV	#120362,R0
+120340:	CLR	R3
+120342:	BISB	(R0)+,R3
+120344:	BEQ	120526
+120346:	CMPB	R2,(R0)+
+120350:	BNE	120340
+120352:	CALL	120164
+120356:	ASL	R3
+120360:	ADD	R3,PC
+120362:	CLR	R3
+120364:	MARK	033
+120366:	HALT
+120370:	CMP	034060,033726
+120376:	BGT	120440
+120400:	MOV	#010,033726
+120406:	CALL	120722
+120412:	MOV	034060,033726
+120420:	BIT	#020,034072
+120426:	BEQ	120522
+120430:	SUB	034056,034046
+120436:	BR	120522
+120440:	ADD	034056,033726
+120446:	BR	120522
+120450:	CLR	034044
+120454:	BR	120522
+120456:	SUB	034054,034044
+120464:	BGE	120520
+120466:	MOV	034062,034044
+120474:	SUB	034056,033726
+120502:	CMP	#010,033726
+120510:	BLT	120520
+120512:	MOV	034060,033726
+120520:	RETURN
+120522:	CALL	120164
+120526:	CALL	116646		; restore registers from the stack
+120532:	TST	(SP)+
+120534:	RETURN
+120536:	MOV	R0,-(SP)
+120540:	MOV	R1,-(SP)
+120542:	MOV	033736,R1
+120546:	MUL	033720,R1
+120552:	ADD	033732,R1
+120556:	MOV	R1,034056
+120562:	MOV	033740,R1
+120566:	MUL	033722,R1
+120572:	ADD	033730,R1
+120576:	MOV	R1,034054
+120602:	CLR	R0
+120604:	MOV	#070,R1
+120610:	DIV	034056,R0
+120614:	ADD	034056,R1
+120620:	NEG	R1
+120622:	ADD	#100,R1
+120626:	MOV	R1,034060
+120632:	CLR	R0
+120634:	MOV	#170,R1
+120640:	DIV	034054,R0
+120644:	ADD	034054,R1
+120650:	NEG	R1
+120652:	ADD	#170,R1
+120656:	MOV	R1,034062
+120662:	MOV	(SP)+,R1
+120664:	MOV	(SP)+,R0
+120666:	RETURN
+120670:	CALL	120164
+120674:	CALL	120456
+120700:	MOVB	#040,R2
+120704:	CALL	116664
+120710:	CALL	120456
+120714:	CALL	120164
+120720:	RETURN
+120722:	CALL	121054
+120726:	MOV	R1,R4
+120730:	ASL	R4
+120732:	ASL	R5
+120734:	MOV	R5,R1
+120736:	ADD	R4,R1
+120740:	MOV	000002(SP),R3
+120744:	BNE	120764
+120746:	MOV	(SP),R3
+120750:	SUB	000004(SP),R3
+120754:	ADD	034022,R1
+120760:	INC	R1
+120762:	BR	121022
+; display scroll
+120764:	ADD	034022,R4
+120770:	ADD	034022,R1
+120774:	CALL	120154
+121000:	MOV	034022,R1
+121004:	INC	R1
+121006:	MOV	000004(SP),R3
+121012:	CALL	120154
+121016:	CLR	R4
+121020:	MOV	(SP),R3
+121022:	ADD	034022,R4
+121026:	INC	R4
+121030:	CALL	120154
+121034:	MOV	000004(SP),R3
+121040:	CLRB	(R4)+
+121042:	INC	R4
+121044:	SOB	R3,121040
+121046:	ADD	#010,SP
+121052:	RETURN
+121054:	CALL	121134
+121060:	MOV	#170,R1
+121064:	MOV	R1,-(SP)
+121066:	MOV	R1,R5
+121070:	MUL	#017,R3
+121074:	NEG	R3
+121076:	ADD	#000740,R3
+121102:	SUB	(SP),R3
+121104:	TST	R2
+121106:	BNE	121124
+121110:	MOV	R3,-(SP)
+121112:	MOV	#000740,-(SP)
+121116:	SUB	000004(SP),(SP)
+121122:	BR	121130
+121124:	CLR	-(SP)
+121126:	MOV	R3,-(SP)
+121130:	MOV	000006(SP),PC
+121134:	CLR	R2
+121136:	MOV	033726,R3
+121142:	DIV	#040,R2
+121146:	RETURN
+
+; command AUTO
+121150:	TRAP	106		; get a pair of integer numbers
+121152:	TST	R3
+121154:	BNE	121162
+121156:	MOV	#012,R3
+121162:	MOV	R3,034216
+121166:	TST	R4
+121170:	BNE	121176
+121172:	MOV	#012,R4
+121176:	MOV	R4,034220
+121202:	MOV	#001,034116
+121210:	JMP	121702
+121214:	SUB	#010,SP
+121220:	MOV	SP,R0
+121222:	MOV	034216,R1
+121226:	TRAP	012		; ITOA
+121230:	MOV	SP,R0
+121232:	TST	(R0)+
+121234:	CLRB	000006(SP)
+121240:	MOV	#034230,R3
+121244:	CMPB	#040,(R0)+
+121250:	BEQ	121244
+121252:	DEC	R0
+121254:	MOVB	(R0),R2
+121256:	MOVB	(R0)+,(R3)+
+121260:	BEQ	121266
+121262:	TRAP	000		; print character r2
+121264:	BR	121254
+121266:	DEC	R3
+121270:	ADD	034220,034216
+121276:	ADD	#010,SP
+121302:	RETURN
+
+; command WAIT
+121304:	MOV	#122746,R4	; evaluate the argument to the variable 034212
+121310:	MOV	#001,R3		; number of arguments
+121314:	CALL	123216		; evaluate arguments to integer variables
+121320:	SUB	#001,R0
+121324:	BNE	121320		; simple delay loop
+121326:	BR	121702
+
+; command PLAY
+121330:	MOV	#122750,R4	; evaluate arguments to variables 034212, 034214
+121334:	MOV	#002,R3		; number of arguments
+121340:	CALL	123216		; evaluate arguments to integer variables
+121344:	CMP	#050,034212
+121352:	BHIS	121356
+121354:	TRAP	077		; error 31 - wrong note in the PLAY operator
+121356:	MOV	034212,R2
+121362:	ASL	R2
+121364:	CALL	121372
+121370:	BR	121702
+
+; play a note specified in R2 of duration time specified in R0
+; duration time = 8 * R0 / frequency
+121372:	MOV	#373,@#164024
+121400:	MOV	121466(R2),@#164022
+121406:	CLR	@#164026	; start of the transfer
+121412:	CALL	121456
+121416:	CLR	@#164020	; transmit dummy data
+121422:	CALL	121456
+121426:	SOB	R0,121416
+121430:	TST	@#164026	; end of the transfer
+121434:	CALL	121456
+121440:	MOV	#163,@#164024
+121446:	MOV	#352,@#164024
+121454:	RETURN
+
+121456:	TSTB	@#164024
+121462:	BPL	121456
+121464:	RETURN
+
+; tone frequency table, notes 0 (F4 = 349.23Hz) to 40 (A7 = 3520.0Hz)
+; frequency = 800kHz / table_entry
+121466:	.WORD	004356, 004162, 003771, 003603
+121476:	.WORD	003432, 003265, 003123, 002767
+121506:	.WORD	002644, 002521, 002406, 002274
+121516:	.WORD	002167, 002071, 001774, 001702
+121526:	.WORD	001615, 001532, 001452, 001373
+121536:	.WORD	001322, 001250, 001201, 001136
+121546:	.WORD	001075, 001035, 000776, 000742
+121556:	.WORD	000707, 000655, 000623, 000576
+121566:	.WORD	000551, 000525, 000502, 000457
+121576:	.WORD	000441, 000416, 000377, 000361
+121606:	.WORD	000343
+
+; command DIS
+121610:	CALL	132476
+121614:	CLR	034074
+121620:	TST	034076
+121624:	BEQ	121702
+121626:	CLR	034076
+121632:	CALL	120164
+121636:	BR	121702
+
+; command CLS
+121640:	MOV	034022,R3
+121644:	MOV	#000740,R2
+121650:	CLR	(R3)+
+121652:	SOB	R2,121650
+121654:	BIS	#040,034072
+121662:	CLR	034044
+121666:	CLR	033726
+121672:	INC	034074
+121676:	INC	034076
+121702:	TRAP	110
+121704:	JMP	102774
+
+; command LOCATE
+121710:	MOV	R1,-(SP)
+121712:	CALL	120164
+121716:	MOV	(SP)+,R1
+121720:	MOV	#002,R3		; number of arguments
+121724:	MOV	#122754,R4
+121730:	CALL	123216		; evaluate arguments to integer variables
+121734:	MOV	R1,-(SP)
+121736:	CALL	120164
+121742:	MOV	(SP)+,R1
+121744:	BR	121702
+121746:	CALL	116622		; save registers on the stack
+121752:	MOV	#034124,R0
+121756:	MOV	#001,034166
+121764:	MOV	#001,034170
+121772:	MOV	000006(R0),R1
+121776:	SUB	000002(R0),R1
+122002:	BGE	122012
+122004:	NEG	034166
+122010:	NEG	R1
+122012:	MOV	000010(R0),R2
+122016:	SUB	000004(R0),R2
+122022:	BGE	122032
+122024:	NEG	034170
+122030:	NEG	R2
+122032:	MOV	R2,-(SP)
+122034:	SUB	R1,(SP)
+122036:	BLE	122064
+122040:	MOV	034166,R3
+122044:	MOV	034170,034166
+122052:	MOV	R3,034170
+122056:	MOV	R2,R3
+122060:	MOV	R1,R2
+122062:	MOV	R3,R1
+122064:	MOV	R2,R3
+122066:	ASL	R3
+122070:	MOV	R3,034214
+122074:	SUB	R1,R3
+122076:	MOV	R3,034210
+122102:	MOV	R1,R3
+122104:	ASL	R3
+122106:	MOV	R3,034212
+122112:	SUB	034214,034212
+122120:	TST	(SP)
+122122:	BLE	122142
+122124:	MOV	000002(R0),R5
+122130:	MOV	000004(R0),R4
+122134:	MOV	000010(R0),R3
+122140:	BR	122156
+122142:	MOV	000002(R0),R4
+122146:	MOV	000004(R0),R5
+122152:	MOV	000006(R0),R3
+122156:	CALL	122234
+122162:	CMP	R4,R3
+122164:	BEQ	122224
+122166:	ADD	034166,R4
+122172:	TST	034210
+122176:	BGE	122210
+122200:	ADD	034214,034210
+122206:	BR	122156
+122210:	ADD	034170,R5
+122214:	SUB	034212,034210
+122222:	BR	122156
+122224:	TST	(SP)+
+122226:	CALL	116646		; restore registers from the stack
+122232:	RETURN
+122234:	TST	000002(SP)
+122240:	BLE	122254
+122242:	MOV	R5,034044
+122246:	MOV	R4,033726
+122252:	BR	122264
+122254:	MOV	R4,034044
+122260:	MOV	R5,033726
+122264:	MOVB	033734,-(SP)
+122270:	MOVB	034122,033734
+122276:	MOV	R1,-(SP)
+122300:	MOV	#100000,R1
+122304:	CALL	117722		; plot a dot
+122310:	MOV	(SP)+,R1
+122312:	MOVB	(SP)+,033734
+122316:	RETURN
+122320:	INC	034100
+122324:	MOV	#122334,-(SP)
+122330:	JMP	123024
+122334:	TRAP	072		; get a character other than space to r2
+122336:	CMPB	R2,#076
+122342:	BEQ	122354
+122344:	CMPB	R2,#073
+122350:	BEQ	122324
+122352:	TRAP	071		; error 28 - illegal PRINT syntax
+122354:	CALL	120164
+122360:	TST	033736
+122364:	BNE	122374
+122366:	MOV	#001,033736
+122374:	TST	033740
+122400:	BNE	122410
+122402:	MOV	#001,033740
+122410:	CALL	120536
+122414:	CALL	120164
+122420:	RETURN
+122422:	CLR	034100
+122426:	CALL	120164
+122432:	MOV	#001,033736
+122440:	MOV	#001,033740
+122446:	CLR	034066
+122452:	CLR	034070
+122456:	MOVB	#001,033734
+122464:	MOV	#001,033724
+122472:	CLR	034052
+122476:	BIC	#001,034072
+122504:	MOV	033702,033720
+122512:	MOV	033704,033722
+122520:	MOV	#001,033730
+122526:	MOV	#001,033732
+122534:	CALL	120536
+122540:	CALL	120164
+122544:	RETURN
+122546:	MOV	#034126,R3
+122552:	MOVB	#003,034122
+122560:	MOV	R1,-(SP)
+122562:	MOV	R3,R4
+122564:	CMP	(R4)+,(R4)+
+122566:	MOV	#002,R2
+122572:	MOV	#002,R0
+122576:	MOV	(R4),R1
+122600:	MOV	(R3),(R4)
+122602:	CALL	121746
+122606:	MOV	R1,(R4)+
+122610:	TST	(R3)+
+122612:	SOB	R0,122576
+122614:	MOV	R3,R4
+122616:	CMP	-(R4),-(R4)
+122620:	SOB	R2,122572
+122622:	MOV	(SP)+,R1
+122624:	RETURN
+
+; evaluate an arithmetical expression to an integer in R0
+122626:	TRAP	072		; get a character other than space to r2
+122630:	DEC	R1
+122632:	CMPB	R2,#072
+122636:	BEQ	122740
+122640:	CMPB	R2,#012
+122644:	BEQ	122740
+122646:	MOV	R3,-(SP)
+122650:	MOV	R4,-(SP)
+122652:	TRAP	136		; evaluate an arithmetical expression
+122654:	TRAP	040		; FIX
+122656:	MOV	(SP)+,R4
+122660:	MOV	(SP)+,R3
+122662:	TRAP	072		; get a character other than space to r2
+122664:	CMPB	R2,#054
+122670:	BEQ	122734
+122672:	CMPB	R2,#072
+122676:	BEQ	122732
+122700:	CMPB	R2,#012
+122704:	BEQ	122732
+122706:	TST	034100
+122712:	BEQ	122730
+122714:	CMPB	R2,#073
+122720:	BEQ	122732
+122722:	CMPB	R2,#076
+122726:	BEQ	122732
+122730:	TRAP	071		; error 28 - illegal PRINT syntax
+122732:	DEC	R1
+122734:	CLC
+122736:	RETURN
+122740:	DEC	R1
+122742:	SEC
+122744:	RETURN
+
+122746:	.WORD	034212
+122750:	.WORD	034212, 034214
+122754:	3824 37D6
+122760:	37DE 37E0 3838 37D8 37DA 3836
+122774:	.WORD	034044, 033726
+123000:	3888 034212 034214 3888 034212 034214 3858 385A
+123020:	3856
+
+; comand DRAW
+123022:	MOV	R3,-(SP)
+123024:	TRAP	072		; get a character other than space to r2
+123026:	MOV	#123064,R0
+123032:	CLR	R3		; those two instructions could be replaced...
+123034:	BIS	(R0)+,R3	; ...with a single MOV (R0)+,R3
+123036:	BNE	123042
+123040:	TRAP	073		; error 29 - wrong DRAW function
+123042:	CMP	R2,(R0)+
+123044:	BNE	123032
+123046:	ASL	R3
+123050:	TST	034100
+123054:	BNE	123062
+123056:	MOV	#123166,-(SP)
+123062:	ADD	R3,PC
+
+; offset to the handler routine, command code
+123064:	.WORD	000151, 'O'	; 123064+2*000151 = 123406
+	.WORD	000444, 'H'	; 123064+2*000444 = 124174
+	.WORD	000374, 'D'	; 123064+2*000374 = 124054
+	.WORD	000464, 'E'	; 123064+2*000464 = 124234
+	.WORD	000156, 'I'	; 123064+2*000156 = 123420
+	.WORD	000246, 'A'	; 123064+2*000246 = 123600
+	.WORD	000471, 'C'	; 123064+2*000471 = 124246
+	.WORD	000513, 'X'	; 123064+2*000513 = 124312
+	.WORD	000652, 'G'	; 123064+2*000652 = 124610
+	.WORD	000045, 'S'	; 123064+2*000045 = 123176
+	.WORD	000076, 'Q'	; 123064+2*000076 = 123260
+	.WORD	000064, 'Z'	; 123064+2*000064 = 123234
+	.WORD	000071, 'Y'	; 123064+2*000071 = 123246
+	.WORD	000265, 'M'	; 123064+2*000265 = 123636
+	.WORD	000226, 'N'	; 123064+2*000226 = 123540
+	.WORD	000236, 'P'	; 123064+2*000236 = 123560
+	.WORD	000000		; end marker
+
+123166:	MOV	(SP)+,R3
+123170:	TRAP	110
+123172:	JMP	102774
+
+; graphic command 'S'
+123176:	MOV	#122760,R4
+123202:	MOV	#002,R3
+123206:	TST	034100
+123212:	BNE	123216
+123214:	TRAP	073		; error 29 - wrong DRAW function
+; evaluate arguments to integer variables
+; number of arguments in R3
+; addresses of integer variables pointed to by R4
+123216:	CALL	122626		; evaluate arithm. expression to integer in R0
+123222:	BHIS	123226
+123224:	TRAP	075		; error 30 - wrong parameters
+123226:	MOV	R0,@(R4)+
+123230:	SOB	R3,123216
+123232:	RETURN
+
+; graphic command 'Z'
+123234:	MOV	#122766,R4
+123240:	MOV	#002,R3
+123244:	BR	123206
+
+; graphic command 'Y'
+123246:	MOV	#122772,R4
+123252:	MOV	#001,R3
+123256:	BR	123206
+
+; graphic command 'Q'
+123260:	MOV	#122764,R4
+123264:	MOV	#001,R3
+123270:	CALL	123206
+123274:	BIC	#177774,034070
+123302:	BIT	#001,034070
+123310:	BNE	123330
+123312:	MOV	033704,033722
+123320:	MOV	033702,033720
+123326:	BR	123344
+123330:	MOV	033702,033722
+123336:	MOV	033704,033720
+123344:	MOV	#001,033724
+123352:	CLR	034052
+123356:	CMP	#002,R0
+123362:	BLT	123404
+123364:	BEQ	123372
+123366:	TST	R0
+123370:	BEQ	123404
+123372:	MOV	#006,034052
+123400:	NEG	033724
+123404:	RETURN
+
+; graphic command 'O' - set the current screen position
+123406:	MOV	#122774,R4	; evaluate arguments to variables 3824, 37D6
+123412:	MOV	#002,R3		; number of arguments
+123416:	BR	123216		; evaluate arguments to integer variables
+
+; graphic command 'I' - draw a line specified by relative coordinates
+123420:	MOV	#034126,-(SP)
+123424:	MOV	(SP),R3
+123426:	MOV	034044,(R3)+
+123432:	MOV	033726,(R3)+
+123436:	MOV	#002,R4
+123442:	CALL	122626		; evaluate arithm. expression to integer in R0
+123446:	BLO	123536
+123450:	MOV	R0,(R3)+
+123452:	SOB	R4,123442
+123454:	MOV	(SP),R3
+123456:	ADD	(R3),000004(R3)
+123462:	ADD	000002(R3),000006(R3)
+123470:	MOVB	#003,034122
+123476:	CALL	121746
+123502:	MOV	000004(R3),(R3)
+123506:	MOV	000006(R3),000002(R3)
+123514:	CMP	(R3)+,(R3)+
+123516:	MOV	#002,R4
+123522:	CALL	122626		; evaluate arithm. expression to integer in R0
+123526:	BLO	123532
+123530:	BR	123450
+123532:	TST	(SP)+
+123534:	RETURN
+123536:	TRAP	075		; error 30 - wrong parameters
+
+; graphic command 'N' - inverted print mode (white on black)
+123540:	TST	034100
+123544:	BNE	123550
+123546:	TRAP	073		; error 29 - wrong DRAW function
+123550:	BIS	#001,034072
+123556:	RETURN
+
+; graphic command 'P' - normal print mode (black on white)
+123560:	TST	034100
+123564:	BNE	123570
+123566:	TRAP	073		; error 29 - wrong DRAW function
+123570:	BIC	#001,034072
+123576:	RETURN
+
+; graphic command 'A' - draw a rectangle
+123600:	MOV	R1,-(SP)
+123602:	MOV	#034126,R3
+123606:	MOV	#004,R4
+123612:	CALL	122626		; evaluate arithm. expression to integer in R0
+123616:	BLO	123634
+123620:	MOV	R0,(R3)+
+123622:	SOB	R4,123612
+123624:	CALL	122546
+123630:	MOV	(SP)+,R1
+123632:	RETURN
+123634:	TRAP	075		; error 30 - wrong parameters
+
+; graphic command 'M' - draw a bitmap specified with hexadecimal numbers
+123636:	MOV	#002,R3
+123642:	CLR	R2
+123644:	CLR	R4
+123646:	BIS	R2,R4
+123650:	TRAP	072		; get a character other than space to r2
+123652:	CMPB	R2,#012
+123656:	BEQ	123666
+123660:	CMPB	R2,#072
+123664:	BNE	123702
+123666:	CMP	#002,R3
+123672:	BEQ	124046
+123674:	DEC	R1
+123676:	CLR	R2
+123700:	BR	123740
+123702:	SUB	#060,R2
+123706:	BMI	124046
+123710:	CMP	R2,#011
+123714:	BLE	123736
+123716:	SUB	#007,R2
+123722:	CMP	R2,#017
+123726:	BHI	124046
+123730:	CMP	R2,#012
+123734:	BLT	124046
+123736:	SOB	R3,123646
+123740:	MOV	#004,R3
+123744:	ASL	R4
+123746:	SOB	R3,123744
+123750:	BIS	R2,R4
+123752:	SWAB	R4
+123754:	MOV	R1,-(SP)
+123756:	MOV	R4,R1
+123760:	CMP	#100,033726
+123766:	BGT	124002
+123770:	CLR	033726
+123774:	ADD	#010,034044
+124002:	MOVB	033734,-(SP)
+124006:	MOVB	#002,033734
+124014:	CALL	117722		; plot a dot
+124020:	MOV	(SP)+,033734
+124024:	MOV	(SP)+,R1
+124026:	INC	033726
+124032:	CMPB	(R1),#012
+124036:	BEQ	124046
+124040:	CMPB	(R1),#072
+124044:	BNE	123636
+124046:	TRAP	110
+124050:	JMP	102774
+
+; graphic command 'D' - draw a line specified by absolute coordinates
+124054:	MOVB	#003,034122
+124062:	MOV	#034126,R3
+124066:	MOV	#002,R4
+124072:	MOV	034044,(R3)+
+124076:	MOV	033726,(R3)+
+124102:	SOB	R4,124072
+124104:	MOV	#034126,R3
+124110:	MOV	#004,R4
+124114:	CALL	122626		; evaluate arithm. expression to integer in R0
+124120:	BHIS	124132
+124122:	CMP	#002,R4
+124126:	BEQ	124136
+124130:	TRAP	075		; error 30 - wrong parameters
+124132:	MOV	R0,(R3)+
+124134:	SOB	R4,124114
+124136:	CALL	121746
+124142:	CALL	122626		; evaluate arithm. expression to integer in R0
+124146:	BLO	124172
+124150:	MOV	#034126,R3
+124154:	MOV	034044,(R3)+
+124160:	MOV	033726,(R3)+
+124164:	MOV	#002,R4
+124170:	BR	124132
+124172:	RETURN
+
+; graphic command 'H' - plot a dot
+124174:	CALL	123406
+124200:	MOVB	033734,-(SP)
+124204:	MOV	R1,-(SP)
+124206:	MOVB	#003,033734
+124214:	MOV	#100000,R1
+124220:	CALL	117722		; plot a dot
+124224:	MOV	(SP)+,R1
+124226:	MOVB	(SP)+,033734
+124232:	RETURN
+
+; graphic command 'E' - erase a dot or a line
+124234:	CLRB	034122
+124240:	CALL	124104
+124244:	RETURN
+
+; graphic command 'C' - draw a circle
+124246:	CLR	034124
+124252:	MOV	#034134,034212
+124260:	MOV	#123014,R4
+124264:	MOV	#003,R3		; number of arguments
+124270:	CALL	123216		; evaluate arguments to integer variables
+124274:	CALL	116622		; save registers on the stack
+124300:	JMP	126602
+
+124304:	.WORD	000000, 040000, 100000
+
+; graphic command 'X' - draw the coordinate axes
+124312:	MOV	R1,-(SP)
+124314:	MOV	034044,-(SP)
+124320:	MOV	033726,-(SP)
+124324:	MOV	#123000,R4
+124330:	MOV	#003,R3		; number of arguments
+124334:	CALL	123216		; evaluate arguments to integer variables
+124340:	BIC	#177774,034210
+124346:	MOV	034210,-(SP)
+124352:	MOV	034212,R3
+124356:	MOV	R0,R4
+124360:	MOV	R0,R1
+124362:	MUL	R3,R1
+124364:	MOV	#034126,R2
+124370:	MOV	034044,(R2)+
+124374:	MOV	033726,(R2)+
+124400:	MOV	034044,(R2)+
+124404:	MOV	033726,(R2)
+124410:	BIT	#001,(SP)
+124414:	BEQ	124420
+124416:	TST	-(R2)
+124420:	TST	(SP)
+124422:	BEQ	124432
+124424:	CMP	#003,(SP)
+124430:	BNE	124434
+124432:	NEG	R1
+124434:	ADD	R1,(R2)
+124436:	MOVB	#003,034122
+124444:	CALL	121746
+124450:	MOV	(SP)+,R0
+124452:	MOV	#100000,R1
+124456:	MOV	#034126,R2
+124462:	CMP	034044,(R2)+
+124466:	BLE	124476
+124470:	MOV	177776(R2),034044
+124476:	CMP	033726,(R2)
+124502:	BLE	124510
+124504:	MOV	(R2),033726
+124510:	INC	R4
+124512:	MOVB	033734,-(SP)
+124516:	MOVB	#003,033734
+124524:	BIT	#001,R0
+124530:	BNE	124552
+124532:	INC	034044
+124536:	CALL	117722		; plot a dot
+124542:	ADD	R3,033726
+124546:	SOB	R4,124536
+124550:	BR	124570
+124552:	DEC	033726
+124556:	CALL	117722		; plot a dot
+124562:	ADD	R3,034044
+124566:	SOB	R4,124556
+124570:	MOVB	(SP)+,033734
+124574:	MOV	(SP)+,033726
+124600:	MOV	(SP)+,034044
+124604:	MOV	(SP)+,R1
+124606:	RETURN
+
+; graphic command 'G' - draw horizontal or vertical stripes
+124610:	MOV	#123006,R4
+124614:	MOV	#003,R3		; number of arguments
+124620:	CALL	123216		; evaluate arguments to integer variables
+124624:	BIC	#177774,034210
+124632:	MOV	034210,-(SP)
+124636:	MOV	034212,R4
+124642:	MOV	#034126,R3
+124646:	MOV	034044,(R3)
+124652:	MOV	(R3)+,-(SP)
+124654:	MOV	033726,(R3)
+124660:	MOV	(R3)+,-(SP)
+124662:	MOV	034044,(R3)
+124666:	ADD	R4,(R3)
+124670:	MOV	(R3)+,-(SP)
+124672:	MOV	033726,(R3)
+124676:	ADD	R0,(R3)
+124700:	MOV	(R3)+,-(SP)
+124702:	CALL	122546
+124706:	MOV	#004,R4
+124712:	MOV	#034136,R3
+124716:	MOV	(SP)+,-(R3)
+124720:	SOB	R4,124716
+124722:	TST	(SP)
+124724:	BEQ	125054
+124726:	MOV	#002,R2
+124732:	MOV	#034126,R3
+124736:	MOV	(R3),R4
+124740:	CMP	000004(R3),R4
+124744:	BGE	124756
+124746:	MOV	000004(R3),(R3)
+124752:	MOV	R4,000004(R3)
+124756:	TST	(R3)+
+124760:	SOB	R2,124736
+124762:	MOV	#034126,R3
+124766:	CALL	122626		; evaluate arithm. expression to integer in R0
+124772:	BHIS	125000
+124774:	MOV	#001,R0
+125000:	CMP	#001,(SP)
+125004:	BNE	125024
+125006:	MOV	000006(R3),R4
+125012:	MOV	000002(R3),000006(R3)
+125020:	TST	(R3)+
+125022:	BR	125034
+125024:	MOV	000004(R3),R4
+125030:	MOV	(R3),000004(R3)
+125034:	ADD	R0,(R3)
+125036:	CMP	(R3),R4
+125040:	BGE	125054
+125042:	ADD	R0,000004(R3)
+125046:	CALL	121746
+125052:	BR	125034
+125054:	TST	(SP)+
+125056:	RETURN
+
+; command EDIT
+125060:	BIS	#020,034072
+125066:	MOV	#001,034042
+125074:	TRAP	116
+125076:	TRAP	106		; get a pair of integer numbers
+125100:	MOV	R3,R0
+125102:	TRAP	074
+125104:	BEQ	125112
+125106:	JMP	103070
+125112:	MOV	034044,034050
+125120:	MOV	033726,034046
+125126:	MOV	#034230,R3
+125132:	MOV	#120,R2
+125136:	MOVB	#040,(R3)+
+125142:	SOB	R2,125136
+125144:	MOV	#034230,R3
+125150:	MOVB	(R1)+,R2
+125152:	BPL	125220
+125154:	BIC	#177600,R2
+125160:	MOV	#103700,R0
+125164:	MOV	R2,R4
+125166:	DEC	R4
+125170:	BLT	125202
+125172:	CMPB	(R0)+,#044
+125176:	BNE	125172
+125200:	BR	125166
+125202:	MOVB	(R0)+,R2
+125204:	CMPB	R2,#044
+125210:	BEQ	125150
+125212:	TRAP	000		; print character r2
+125214:	MOVB	R2,(R3)+
+125216:	BR	125202
+125220:	MOVB	R2,(R3)+
+125222:	CMPB	R2,#012
+125226:	BEQ	125234
+125230:	TRAP	000		; print character r2
+125232:	BR	125150
+125234:	MOVB	#040,R2
+125240:	TRAP	000		; print character r2
+125242:	CALL	120164
+125246:	MOV	034046,033726
+125254:	MOV	034050,034044
+125262:	CALL	120164
+125266:	MOV	R3,R4
+125270:	MOVB	#040,-(R4)
+125274:	MOV	#034230,R3
+125300:	CALL	125426
+125304:	BIC	#020,034072
+125312:	MOV	034046,033726
+125320:	MOV	034050,034044
+125326:	CMP	R3,R4
+125330:	BLO	125340
+125332:	BNE	125336
+125334:	INC	R3
+125336:	MOV	R3,R4
+125340:	MOVB	#012,(R4)+
+125344:	MOV	R1,R0
+125346:	MOV	033716,-(SP)
+125352:	MOV	033710,033716
+125360:	MOVB	(R0)+,R2
+125362:	CMPB	#012,R2
+125366:	BEQ	125376
+125370:	CALL	116542		; display character r2
+125374:	BR	125360
+125376:	CALL	116542		; display character r2
+125402:	MOVB	#015,R2
+125406:	CALL	116542		; display character r2
+125412:	CLR	034042
+125416:	MOV	(SP)+,033716
+125422:	JMP	103176
+125426:	CALL	131120		; wait for a key
+125432:	BEQ	125426
+125434:	CMPB	#015,R2
+125440:	BNE	125446
+125442:	JMP	126232
+125446:	MOV	#125474,R0
+125452:	CLR	R1
+125454:	BISB	(R0)+,R1
+125456:	BEQ	125526
+125460:	CMPB	R2,(R0)+
+125462:	BNE	125452
+125464:	CALL	120164
+125470:	ASL	R1
+125472:	ADD	R1,PC
+125474:	MOV	@-(R0),014463(SP)
+125500:	MOV	(R5),(R1)+
+125502:	MOV	(R0)+,@126306
+125506:	BLT	125132
+125510:	MOV	-(R2),-(PC)
+125512:	BNE	126042
+125514:	BGT	126010
+125516:	ILLOP
+125520:	ILLOP
+125522:	SOB	R4,125402
+125524:	45fpp
+125526:	CMPB	R2,#040
+125532:	BLO	125426
+125534:	CALL	126542
+125540:	BLO	125426
+125542:	BIT	#001,034040
+125550:	BEQ	125560
+125552:	CALL	126252
+125556:	BR	125426
+125560:	CALL	126566
+125564:	CALL	126542
+125570:	BR	125426
+125572:	MOV	033710,-(SP)
+125576:	CALL	126252
+125602:	MOV	(SP)+,033716
+125606:	BR	125426
+125610:	MOV	033712,-(SP)
+125614:	BR	125576
+125616:	CMP	R3,#034230
+125622:	BLOS	125664
+125624:	CALL	120164
+125630:	MOVB	#040,-(R3)
+125634:	CALL	120670
+125640:	BR	125426
+125642:	CALL	126432
+125646:	BR	125664
+125650:	CMP	#034230,R3
+125654:	BEQ	125664
+125656:	DEC	R3
+125660:	CALL	120456
+125664:	CALL	120164
+125670:	BR	125426
+125672:	CMP	R3,R4
+125674:	BHIS	125664
+125676:	MOV	R3,-(SP)
+125700:	SUB	R3,R4
+125702:	MOV	R4,R1
+125704:	DEC	R4
+125706:	BEQ	125720
+125710:	INC	R3
+125712:	MOVB	(R3),-(R3)
+125714:	INC	R3
+125716:	SOB	R4,125710
+125720:	MOVB	#040,(R3)
+125724:	MOV	R3,R4
+125726:	MOV	(SP)+,R3
+125730:	CALL	126344
+125734:	BR	125664
+125736:	BIT	#001,034040
+125744:	BEQ	125756
+125746:	BIC	#001,034040
+125754:	BR	125664
+125756:	BIS	#001,034040
+125764:	BR	125664
+125766:	CMPB	(R3),#040
+125772:	BEQ	126002
+125774:	CALL	126432
+126000:	BR	125766
+126002:	CMP	R3,R4
+126004:	BHIS	125664
+126006:	CALL	126432
+126012:	CMPB	(R3),#040
+126016:	BEQ	126002
+126020:	BR	125664
+126022:	CMP	#034230,R3
+126026:	BEQ	125664
+126030:	DEC	R3
+126032:	CALL	120456
+126036:	CMPB	(R3),#040
+126042:	BEQ	126022
+126044:	CMP	#034230,R3
+126050:	BEQ	125664
+126052:	DEC	R3
+126054:	CALL	120456
+126060:	CMPB	(R3),#040
+126064:	BNE	126044
+126066:	CALL	126432
+126072:	BR	125664
+126074:	MOV	034046,033726
+126102:	MOV	034050,034044
+126110:	MOV	#034230,R3
+126114:	BR	125664
+126116:	CMP	R3,R4
+126120:	BHIS	125664
+126122:	MOV	034044,-(SP)
+126126:	MOV	033726,-(SP)
+126132:	MOV	034046,-(SP)
+126136:	SUB	R3,R4
+126140:	MOV	R3,R1
+126142:	MOVB	#040,R2
+126146:	MOV	R2,(R3)+
+126150:	CALL	116542		; display character r2
+126154:	SOB	R4,126142
+126156:	CALL	120164
+126162:	MOV	R1,R3
+126164:	MOV	R3,R4
+126166:	CMP	034046,(SP)+
+126172:	BEQ	126200
+126174:	SUB	034056,(SP)
+126200:	MOV	(SP)+,033726
+126204:	MOV	(SP)+,034044
+126210:	BR	125664
+126212:	CMP	R3,R4
+126214:	BHIS	125664
+126216:	MOV	R4,R2
+126220:	SUB	R3,R2
+126222:	CALL	126432
+126226:	SOB	R2,126222
+126230:	BR	125664
+126232:	CALL	120164
+126236:	BIC	#001,034040
+126244:	MOV	#034230,R1
+126250:	RETURN
+126252:	CMP	#034351,R3
+126256:	BLOS	126270
+126260:	CMP	R3,R4
+126262:	BLO	126276
+126264:	CALL	126566
+126270:	CALL	120164
+126274:	RETURN
+126276:	MOV	R4,-(SP)
+126300:	SUB	R3,R4
+126302:	INC	R4
+126304:	MOV	R4,R1
+126306:	MOV	(SP),R3
+126310:	MOVB	(R3)+,(R3)
+126312:	CMPB	-(R3),-(R3)
+126314:	SOB	R4,126310
+126316:	INC	R3
+126320:	MOV	(SP)+,R4
+126322:	INC	R4
+126324:	MOVB	R2,(R3)
+126326:	CALL	126344
+126332:	CALL	126432
+126336:	CALL	120164
+126342:	RETURN
+126344:	MOV	034044,-(SP)
+126350:	MOV	033726,-(SP)
+126354:	MOV	034046,-(SP)
+126360:	MOV	R3,R0
+126362:	MOV	033716,-(SP)
+126366:	MOVB	(R0)+,R2
+126370:	CALL	116542		; display character r2
+126374:	SOB	R1,126366
+126376:	MOV	(SP)+,033716
+126402:	CALL	120164
+126406:	CMP	034046,(SP)+
+126412:	BEQ	126420
+126414:	SUB	034056,(SP)
+126420:	MOV	(SP)+,033726
+126424:	MOV	(SP)+,034044
+126430:	RETURN
+126432:	CMP	#034350,R3
+126436:	BLOS	126540
+126440:	INC	R3
+126442:	ADD	034054,034044
+126450:	CMP	034062,034044
+126456:	BHIS	126540
+126460:	CLR	034044
+126464:	ADD	034056,033726
+126472:	CMP	034060,033726
+126500:	BHIS	126540
+126502:	MOV	#010,033726
+126510:	MOV	R4,-(SP)
+126512:	MOV	R3,-(SP)
+126514:	CALL	120722
+126520:	MOV	(SP)+,R3
+126522:	MOV	(SP)+,R4
+126524:	MOV	034060,033726
+126532:	SUB	034056,034046
+126540:	RETURN
+126542:	CMP	#034351,R3
+126546:	BLOS	126562
+126550:	CMP	R3,R4
+126552:	BLOS	126556
+126554:	MOV	R3,R4
+126556:	CLC
+126560:	RETURN
+126562:	SEC
+126564:	RETURN
+126566:	MOVB	R2,(R3)+
+126570:	TRAP	000		; print character r2
+126572:	CMP	R4,R3
+126574:	BHIS	126600
+126576:	MOV	R3,R4
+126600:	RETURN
+126602:	MOVB	#003,034122
+126610:	MOV	#001,034222
+126616:	MOV	#001,034224
+126624:	CLR	034226
+126630:	MOV	#034124,R0
+126634:	TST	(R0)
+126636:	BNE	126652
+126640:	CLR	000010(R0)
+126644:	MOV	000002(R0),000012(R0)
+126652:	MOV	000010(R0),R4
+126656:	MOV	000012(R0),R5
+126662:	CALL	130304
+126666:	CALL	130454
+126672:	MOV	#001,034166
+126700:	MOV	#001,034170
+126706:	MOV	000004(R0),034172
+126714:	MOV	000006(R0),034174
+126722:	ADD	R4,034172
+126726:	SUB	R5,034174
+126732:	MOV	#177777,-(SP)
+126736:	CALL	127440
+126742:	CALL	130222
+126746:	MOV	034172,R4
+126752:	MOV	034174,R5
+126756:	TST	(R0)
+126760:	BEQ	126766
+126762:	CALL	127352
+126766:	CALL	122234
+126772:	TST	R3
+126774:	BGE	127016
+126776:	ADD	034166,R4
+127002:	SUB	034176,R2
+127006:	ADD	034200,R1
+127012:	ADD	R2,R3
+127014:	BR	127040
+127016:	ADD	034166,R4
+127022:	ADD	034170,R5
+127026:	SUB	034200,R2
+127032:	ADD	034202,R1
+127036:	SUB	R1,R3
+127040:	CMP	R4,034172
+127044:	BNE	127060
+127046:	CMP	R5,034174
+127052:	BNE	127060
+127054:	JMP	127336
+127060:	TST	R2
+127062:	BGE	127072
+127064:	CALL	127244
+127070:	BR	127040
+127072:	TST	R1
+127074:	BGE	126766
+127076:	CALL	127104
+127102:	BR	127040
+127104:	MOV	R4,-(SP)
+127106:	MOV	R5,R4
+127110:	MOV	(SP),R5
+127112:	MOV	034166,(SP)
+127116:	MOV	034170,034166
+127124:	MOV	(SP)+,034170
+127130:	NEG	000002(SP)
+127134:	MOV	034200,R0
+127140:	ASL	R0
+127142:	SUB	034202,R0
+127146:	MOV	R0,-(SP)
+127150:	SUB	034176,R0
+127154:	MOV	R0,034176
+127160:	SUB	034202,034200
+127166:	NEG	034202
+127172:	MOV	034200,R0
+127176:	ASR	R0
+127200:	SUB	R0,R2
+127202:	ADD	R1,R2
+127204:	NEG	R3
+127206:	ADD	R2,R3
+127210:	MOV	R1,R0
+127212:	ASR	R0
+127214:	SUB	R0,R3
+127216:	MOV	034202,R0
+127222:	ASR	R0
+127224:	ASR	R0
+127226:	ASR	R0
+127230:	ADD	R0,R3
+127232:	MOV	(SP)+,R0
+127234:	ASR	R0
+127236:	NEG	R1
+127240:	ADD	R0,R1
+127242:	RETURN
+127244:	NEG	034170
+127250:	MOV	034200,R0
+127254:	SUB	034176,R0
+127260:	NEG	034176
+127264:	MOV	034176,034200
+127272:	ADD	R0,034200
+127276:	ASL	R0
+127300:	ASL	R0
+127302:	NEG	034202
+127306:	ADD	R0,034202
+127312:	NEG	R2
+127314:	SUB	R0,R2
+127316:	NEG	R3
+127320:	SUB	R1,R3
+127322:	ADD	R2,R3
+127324:	SUB	R0,R1
+127326:	MOV	R2,R0
+127330:	ASL	R0
+127332:	SUB	R0,R1
+127334:	RETURN
+127336:	CALL	122234
+127342:	TST	(SP)+
+127344:	CALL	116646		; restore registers from the stack
+127350:	RETURN
+127352:	MOV	R4,-(SP)
+127354:	MOV	R5,-(SP)
+127356:	MOV	R1,-(SP)
+127360:	MOV	R2,-(SP)
+127362:	MOV	000014(R0),R4
+127366:	MOV	000016(R0),R5
+127372:	CALL	130304
+127376:	MOV	000004(R0),034172
+127404:	MOV	000006(R0),034174
+127412:	ADD	R4,034172
+127416:	SUB	R5,034174
+127422:	CALL	130222
+127426:	MOV	(SP)+,R2
+127430:	MOV	(SP)+,R1
+127432:	MOV	(SP)+,R5
+127434:	MOV	(SP)+,R4
+127436:	RETURN
+127440:	CMPB	#001,034206
+127446:	BNE	127610
+127450:	MOV	034224,034176
+127456:	ASL	034176
+127462:	MOV	034226,034200
+127470:	ASL	034200
+127474:	MOV	034222,034202
+127502:	ASL	034202
+127506:	ADD	034200,034202
+127514:	ADD	034176,034200
+127522:	ADD	034200,034202
+127530:	MOV	R5,R2
+127532:	ASL	R2
+127534:	SUB	034224,R2
+127540:	SUB	034226,R2
+127544:	MOV	R4,R1
+127546:	ASL	R1
+127550:	SUB	R2,R1
+127552:	MOV	034222,R3
+127556:	ASR	R3
+127560:	ASR	R3
+127562:	NEG	R3
+127564:	SUB	R4,R3
+127566:	ADD	R2,R3
+127570:	ADD	034204,R3
+127574:	MOV	R4,-(SP)
+127576:	MOV	R5,R4
+127600:	MOV	(SP)+,R5
+127602:	NEG	000002(SP)
+127606:	RETURN
+127610:	CMPB	#002,034206
+127616:	BNE	127762
+127620:	MOV	034222,034176
+127626:	ASL	034176
+127632:	NEG	034176
+127636:	MOV	034226,034200
+127644:	ASL	034200
+127650:	NEG	034200
+127654:	MOV	034224,034202
+127662:	ASL	034202
+127666:	NEG	034202
+127672:	ADD	034200,034202
+127700:	ADD	034176,034200
+127706:	ADD	034200,034202
+127714:	MOV	R4,R2
+127716:	ASL	R2
+127720:	ADD	034222,R2
+127724:	ADD	034226,R2
+127730:	MOV	R5,R1
+127732:	ASL	R1
+127734:	SUB	R2,R1
+127736:	MOV	034224,R3
+127742:	ASR	R3
+127744:	ASR	R3
+127746:	ADD	R2,R3
+127750:	SUB	R5,R3
+127752:	SUB	034204,R3
+127756:	JMP	127606
+127762:	CMPB	#003,034206
+127770:	BNE	130020
+127772:	NEG	034170
+127776:	NEG	034222
+130002:	NEG	034224
+130006:	NEG	R4
+130010:	NEG	034204
+130014:	JMP	127620
+130020:	CMPB	#004,034206
+130026:	BNE	130056
+130030:	NEG	034166
+130034:	NEG	034224
+130040:	NEG	034222
+130044:	NEG	R4
+130046:	NEG	034204
+130052:	JMP	127450
+130056:	CMPB	#005,034206
+130064:	BNE	130106
+130066:	NEG	034166
+130072:	NEG	034170
+130076:	NEG	R4
+130100:	NEG	R5
+130102:	JMP	127450
+130106:	CMPB	#006,034206
+130114:	BNE	130136
+130116:	NEG	034166
+130122:	NEG	034170
+130126:	NEG	R4
+130130:	NEG	R5
+130132:	JMP	127620
+130136:	CMPB	#007,034206
+130144:	BNE	130174
+130146:	NEG	034166
+130152:	NEG	034222
+130156:	NEG	034224
+130162:	NEG	R5
+130164:	NEG	034204
+130170:	JMP	127620
+130174:	NEG	034170
+130200:	NEG	034224
+130204:	NEG	034222
+130210:	NEG	R5
+130212:	NEG	034204
+130216:	JMP	127450
+130222:	CMPB	#001,034206
+130230:	BNE	130252
+130232:	MOV	034172,-(SP)
+130236:	MOV	034174,034172
+130244:	MOV	(SP)+,034174
+130250:	RETURN
+130252:	CMPB	#004,034206
+130260:	BEQ	130232
+130262:	CMPB	#005,034206
+130270:	BEQ	130232
+130272:	CMPB	#010,034206
+130300:	BEQ	130232
+130302:	BR	130250
+130304:	MOV	R4,R1
+130306:	MOV	R5,R2
+130310:	TST	R4
+130312:	BGE	130376
+130314:	TST	R5
+130316:	BGE	130350
+130320:	NEG	R1
+130322:	NEG	R2
+130324:	CMP	R1,R2
+130326:	BGE	130340
+130330:	MOVB	#006,034206
+130336:	BR	130452
+130340:	MOVB	#005,034206
+130346:	BR	130452
+130350:	NEG	R1
+130352:	CMP	R1,R2
+130354:	BGE	130366
+130356:	MOVB	#003,034206
+130364:	BR	130452
+130366:	MOVB	#004,034206
+130374:	BR	130452
+130376:	TST	R5
+130400:	BGT	130430
+130402:	NEG	R2
+130404:	CMP	R1,R2
+130406:	BGE	130420
+130410:	MOVB	#007,034206
+130416:	BR	130452
+130420:	MOVB	#010,034206
+130426:	BR	130452
+130430:	CMP	R1,R2
+130432:	BGE	130444
+130434:	MOVB	#002,034206
+130442:	BR	130452
+130444:	MOVB	#001,034206
+130452:	RETURN
+130454:	MOV	000002(R0),R1
+130460:	MUL	R1,R1
+130462:	MOV	R1,034204
+130466:	MOV	000010(R0),R1
+130472:	MUL	R1,R1
+130474:	SUB	R1,034204
+130500:	MOV	000012(R0),R1
+130504:	MUL	R1,R1
+130506:	SUB	R1,034204
+130512:	RETURN
+
+; keyboard interrupt service routine
+130514:	MOV	#362,@#164024
+130522:	CLR	@#164026	; start of the transfer
+130526:	TSTB	@#164024
+130532:	BPL	130526
+130534:	MOV	@#164026,034144	; key scan code, end of the transfer
+130542:	TSTB	@#164024
+130546:	BPL	130542
+130550:	MOV	R2,-(SP)
+130552:	TST	034164
+130556:	BEQ	130600
+130560:	MOV	R0,-(SP)
+130562:	MOV	#050,R2		; note C3
+130566:	MOV	#001,R0
+130572:	CALL	121372
+130576:	MOV	(SP)+,R0
+130600:	MOV	034144,R2
+130604:	CMPB	R2,#033		; key SU ?
+130610:	BNE	130656
+130612:	XOR	R2,034162	; SU keyboard mode flag
+130616:	MOV	#177740,R2
+130622:	XOR	R2,034152
+130626:	CALL	133052
+130632:	XOR	R2,034152
+130636:	MOV	(SP)+,R2
+130640:	MOV	#162,@#164024
+130646:	MOV	#352,@#164024
+130654:	RTI
+;
+130656:	TSTB	034162		; SU keyboard mode flag
+130662:	BEQ	130636		; branch if not SU keyboard mode
+130664:	CLR	034162
+130670:	CMPB	R2,#027		; key [ ?
+130674:	BNE	130704
+130676:	XOR	R2,034164
+130702:	BR	131102
+130704:	CMPB	R2,#063		; key S ?
+130710:	BEQ	131012
+130712:	CMPB	R2,#357		; key P ?
+130716:	BNE	130636
+130720:	MOV	034014,-(SP)
+130724:	CALL	122422
+130730:	CLR	034402		; select the LCD as the output device
+130734:	MOV	#001,034014
+130742:	MOV	#136,R2
+130746:	TRAP	000		; print character r2
+130750:	MOV	#120,R2
+130754:	TRAP	000		; print character r2
+130756:	MOV	(SP)+,034014
+130762:	MOV	#001,034372
+130770:	CLR	034144
+130774:	CLR	034152
+131000:	CALL	133052
+131004:	CLR	034116
+131010:	BR	130636
+131012:	CLR	034152
+131016:	CALL	133052
+131022:	MOV	#352,@#164024
+131030:	WAIT
+131032:	TST	034162
+131036:	BEQ	131030
+131040:	CLR	034162
+131044:	WAIT
+131046:	CMPB	034144,#357
+131054:	BEQ	130720
+131056:	CLR	034162
+131062:	CLR	034152
+131066:	CALL	133052
+131072:	CMPB	034144,#367
+131100:	BNE	131030
+131102:	CLR	034144
+131106:	CLR	034152
+131112:	CALL	133052
+131116:	BR	130636
+
+; wait for a key, return the ASCII code of the pressed key in r2
+131120:	MOV	#342,@#164024
+131126:	WAIT
+131130:	MOV	R4,-(SP)
+131132:	MOV	R5,-(SP)
+131134:	MOV	034144,R0	; key scan code
+131140:	CLR	034144
+131144:	BIC	#177400,R0
+131150:	CMP	#337,R0		; key ZV (backspace) ?
+131154:	BNE	131176
+131156:	TST	034154
+131162:	BNE	131552
+131164:	XOR	R0,034146
+131170:	CALL	133032
+131174:	BR	131552
+;
+131176:	SUB	#012,R0
+131202:	ASR	R0
+131204:	ASR	R0
+131206:	TST	034146
+131212:	BEQ	131422
+131214:	CMP	R0,#075
+131220:	BLE	131224
+131222:	BR	131552
+131224:	MOV	#132024,R5	; keywords typed with a single key stroke
+131230:	MOV	R0,R4
+131232:	INC	R0
+131234:	CMPB	(R5)+,#044	; '$'
+131240:	BNE	131234
+131242:	SOB	R0,131234
+131244:	BICB	#070,R4
+131250:	CMP	R4,#005
+131254:	BGT	131356
+131256:	MOVB	#040,R2
+131262:	BIT	#020,034072
+131270:	BEQ	131332
+131272:	MOV	R4,-(SP)
+131274:	MOV	000004(SP),R4
+131300:	BIT	#001,034040
+131306:	BEQ	131316
+131310:	CALL	126252
+131314:	BR	131322
+131316:	CALL	126566
+131322:	MOV	R4,000004(SP)
+131326:	MOV	(SP)+,R4
+131330:	BR	131350
+131332:	CALL	116542		; display character r2
+131336:	MOVB	R2,(R3)+
+131340:	CMP	R3,#034351
+131344:	BLO	131350
+131346:	TRAP	031		; error 12 - input line too long (more than 80
+				; characters)
+131350:	TST	034146
+131354:	BEQ	131552
+131356:	MOVB	(R5)+,R2
+131360:	CMPB	R2,#052
+131364:	BEQ	131374
+131366:	CMPB	#044,R2
+131372:	BNE	131262
+131374:	CLR	034146
+131400:	CALL	133032
+131404:	CMPB	R2,#052
+131410:	BEQ	131552
+131412:	CMP	R4,#005
+131416:	BLE	131256
+131420:	BR	131552
+;
+131422:	CMP	#064,R0
+131426:	BNE	131436
+131430:	MOV	#177,R0
+131434:	BR	131516
+131436:	MOV	#001,R5
+131442:	MOV	#020,R2
+131446:	CMP	#075,R0
+131452:	BEQ	131606
+131454:	ASL	R2
+131456:	CMPB	#005,R0
+131462:	BEQ	131564
+131464:	NEG	R2
+131466:	CMP	#004,R0
+131472:	BEQ	131542
+131474:	ADD	PC,R0
+131476:	ADD	#000230,R0	; B33E+0098 = B3D6, table of key codes
+131502:	MOVB	(R0),R0
+131504:	CMP	R0,#100
+131510:	BLT	131626
+131512:	BIS	034150,R0
+131516:	BIC	034152,R0
+131522:	TST	034152
+131526:	BEQ	131554
+131530:	CLR	034152
+131534:	CALL	133052
+131540:	BR	131554
+131542:	XOR	R2,034152
+131546:	CALL	133052
+131552:	CLR	R0
+131554:	MOV	(SP)+,R5
+131556:	MOV	(SP)+,R4
+131560:	MOV	R0,R2
+131562:	RETURN
+
+131564:	XOR	R2,034150
+131570:	XOR	R5,033700
+131574:	MOVB	033700,R0
+131600:	CALL	133010
+131604:	BR	131516
+131606:	XOR	R2,034160
+131612:	ASL	R2
+131614:	XOR	R2,034150
+131620:	CALL	132764
+131624:	BR	131552
+131626:	CMP	R0,#060
+131632:	BLT	131642
+131634:	SUB	034160,R0
+131640:	BR	131516
+131642:	TST	034160
+131646:	BEQ	131656
+131650:	CMP	R0,#040
+131654:	BLE	131664
+131656:	ADD	034160,R0
+131662:	BR	131516
+131664:	CMP	#024,R0
+131670:	BNE	131700
+131672:	BIS	#002,R0
+131676:	BR	131516
+131700:	CMP	#023,R0
+131704:	BNE	131712
+131706:	DEC	R0
+131710:	BR	131516
+131712:	CMP	#010,R0
+131716:	BNE	131516
+131720:	MOV	#002,R0
+131724:	BR	131516
+
+; table of key codes
+B3D6:	      41 49  52 5B 00 00	  AIR[..
+131734:	31 36 42 4A  53 5D 1C 1D	16BJS]..
+131744:	32 37 57 4B  54 58 1A 14	27WKTX..
+131754:	33 38 47 4C  55 59 2C 20	38GLUY, 
+131764:	34 39 44 4D  46 5F 2E 20	49DMF_. 
+131774:	35 30 45 4E  48 5C 19 13	50ENH\..
+132004:	3A 2F 56 4F  43 40 7F 1B	:/VOC@..
+132014:	3B 2D 5A 50  5E 51 0D 00	;-ZP^Q..
+
+; keywords typed with a single key stroke
+B414:	             24 41 55 54  4F 24 49 4E  50 55 54 24      $AUTO$INPUT$
+132040:	52 55 4E 24  52 45 54 55  52 4E 24 2A  24 2A 24 53  RUN$RETURN$*$*$S
+132060:	49 4E 28 24  43 4F 53 28  24 44 52 41  57 24 49 4E  IN($COS($DRAW$IN
+132100:	49 54 24 53  54 45 50 24  52 45 53 54  4F 52 45 24  IT$STEP$RESTORE$
+132120:	44 49 53 24  47 4F 53 55  42 24 45 58  50 28 24 4C  DIS$GOSUB$EXP($L
+132140:	4F 47 28 24  57 41 49 54  24 4B 49 4C  4C 24 53 41  OG($WAIT$KILL$SA
+132160:	56 45 24 52  45 4D 24 44  45 56 24 2A  24 41 42 53  VE$REM$DEV$*$ABS
+132200:	28 24 53 47  4E 28 24 47  4F 54 4F 24  4C 45 54 24  ($SGN($GOTO$LET$
+132220:	53 54 4F 50  24 52 45 41  44 24 44 45  46 20 46 4E  STOP$READ$DEF FN
+132240:	24 2A 24 53  51 52 28 24  41 54 4E 28  24 44 41 54  $*$SQR($ATN($DAT
+132260:	41 24 4C 49  53 54 24 46  4F 52 24 52  41 4E 44 4F  A$LIST$FOR$RANDO
+132300:	4D 49 5A 45  24 44 49 4D  24 2A 24 49  4E 54 28 24  MIZE$DIM$*$INT($
+132320:	52 4E 44 28  24 45 4E 44  24 4E 45 58  54 24 48 45  RND($END$NEXT$HE
+132340:	4C 50 24 46  49 4C 45 53  24 44 45 4C  45 54 45 24  LP$FILES$DELETE$
+132360:	2A 24 20 4C  4C 49 53 54  20 24 20 4C  46 49 4C 45  *$ LLIST $ LFILE
+132400:	53 20 24 45  44 49 54 24  4E 41 4D 45  24 43 4C 53  S $EDIT$NAME$CLS
+132420:	24 4C 4F 41  44 24 2A 24  2A 24 20 4C  50 52 49 4E  $LOAD$*$*$ LPRIN
+132440:	54 20 24 24  54 48 45 4E  24 50 52 49  4E 54 24 50  T $$THEN$PRINT$P
+132460:	4C 41 59 24  4C 4F 43 41  54 45 24 24  24           LAY$LOCATE$$$
+132475:	.EVEN
+
+132476:	CALL	120536
+132502:	MOV	033726,-(SP)
+132506:	MOV	034044,-(SP)
+132512:	MOV	R3,-(SP)
+132514:	CLR	033726
+132520:	BIS	#041,034072
+132526:	CLR	034044
+132532:	MOV	R0,-(SP)
+132534:	MOV	#027,R0		; number of characters to print
+132540:	MOV	#132734,R3	; string "basic v..."
+132544:	MOVB	(R3)+,R2
+132546:	CALL	116542		; display character r2
+132552:	SOB	R0,132544
+132554:	CLR	034044
+132560:	CLR	033726
+132564:	MOV	033734,-(SP)
+132570:	MOV	#002,033734
+132576:	CLR	R0
+132600:	MOV	#012,R2
+132604:	MOV	R1,-(SP)
+132606:	MOVB	132722(R0),R1
+132612:	SWAB	R1
+132614:	MOVB	132676(R0),R3
+132620:	ADD	R3,033726
+132624:	MOVB	132710(R0),R3
+132630:	ADD	R3,034044
+132634:	CALL	117722		; plot a dot
+132640:	INC	R0
+132642:	SOB	R2,132606
+132644:	MOV	(SP)+,R1
+132646:	MOV	(SP)+,033734
+132652:	MOV	(SP)+,R0
+132654:	MOV	(SP)+,R3
+132656:	MOV	(SP)+,034044
+132662:	MOV	(SP)+,033726
+132666:	BIC	#041,034072
+132674:	RETURN
+132676:	BR	132704
+132700:	BR	132704
+132702:	45fpp
+132704:	BR	132710
+132706:	BR	132712
+132710:	ILLOP
+132712:	HALT
+132714:	JSR	R0,R0
+132716:	HALT
+132720:	HALT
+132722:	BICB	R5,R0
+132724:	BIC	160354(R5),R1
+132730:	BIS	R0,160220(R0)
+132734:	CMP	R0,(PC)
+132736:	ADD	R5,-(R2)
+132740:	ADD	-(R5),020143(R3)
+132744:	CMP	R1,020040(SP)
+132750:	ILLOP
+132752:	CMP	R0,-(R0)
+132754:	BIS	(R1),#046040
+132760:	BIS	(R1)+,R1
+132762:	45fpp
+132764:	MOV	#133114,R5
+132770:	TST	034160
+132774:	BEQ	133002
+132776:	MOV	#133117,R5
+133002:	CALL	133136
+133006:	RETURN
+133010:	MOV	#133102,R5
+133014:	CMP	#016,033700
+133022:	BEQ	133002
+133024:	MOV	#133107,R5
+133030:	BR	133002
+133032:	MOV	#133122,R5
+133036:	TST	034146
+133042:	BNE	133002
+133044:	MOV	#133126,R5
+133050:	BR	133002
+133052:	MOV	R5,-(SP)
+133054:	MOV	#133132,R5
+133060:	TST	034152
+133064:	BNE	133072
+133066:	MOV	#133126,R5
+133072:	CALL	133136
+133076:	MOV	(SP)+,R5
+133100:	RETURN
+133102:	BIS	(R1),-(SP)
+133104:	BIS	(R5),(R5)+
+133106:	ADD	@(R0)+,R0
+133110:	BIC	R5,(R4)
+133112:	JMP	(R4)+
+133114:	BIS	@(R5)+,(R4)+
+133116:	BIS	(R0)+,R0
+133120:	JMP	(SP)
+133122:	BIC	@(R1)+,R2
+133124:	JMP	(R3)
+133126:	CMP	R1,R2
+133130:	ILLOP
+133132:	BIS	(R5),R2
+133134:	JMP	(R5)+
+133136:	TST	034074
+133142:	BNE	133270
+133144:	MOV	R2,-(SP)
+133146:	MOV	033726,-(SP)
+133152:	MOV	034044,-(SP)
+133156:	MOV	#001,034076
+133164:	BIS	#041,034072
+133172:	MOV	033716,-(SP)
+133176:	MOV	034042,-(SP)
+133202:	CLR	034042
+133206:	CLR	033726
+133212:	MOVB	(R5)+,034044
+133216:	MOV	#016,R2
+133222:	CALL	116542		; display character r2
+133226:	MOVB	(R5)+,R2
+133230:	BEQ	133234
+133232:	BR	133222
+133234:	CLR	034076
+133240:	MOV	(SP)+,034042
+133244:	MOV	(SP)+,033716
+133250:	MOV	(SP)+,034044
+133254:	MOV	(SP)+,033726
+133260:	MOV	(SP)+,R2
+133262:	BIC	#041,034072
+133270:	RETURN
+
+; file access routine
+; byte 0(R0) - ?
+; byte 1(R0) - action:	0 - kill file
+;			1 - read file
+;			2 - write file
+;			3 - rename file
+;			4 - ?
+; word 2(R0) - pointer to the file name(s) in the Radix-50 format
+133272:	CALL	116622		; save registers on the stack
+133276:	MOV	R0,R1
+133300:	CMPB	(R1),#002
+133304:	BHIS	133364
+133306:	MOVB	(R1)+,034406
+133312:	CMPB	(R1),#005	; action code
+133316:	BHIS	133372		; invalid command
+133320:	MOVB	(R1)+,R2	; action code
+133322:	MOV	(R1)+,(SP)	; pointer to the file name(s)
+133324:	MOV	(SP),R0
+133326:	MOV	R1,034424
+133332:	TST	(R1)+
+133334:	MOV	R1,034426
+133340:	CLR	R5
+133342:	ASL	R2
+133344:	TST	(R2)+		; R2 <- R2 + 2
+133346:	ADD	PC,R2		; B6E8+0002 = B6EA
+133350:	ADD	(R2),PC
+
+133352:	.WORD	000154		; B6EA+006C = B756, kill file
+133354:	.WORD	000032		; B6EA+001A = B704, read file
+133356:	.WORD	000176		; B6EA+007E = B768, write file
+133360:	.WORD	000026		; B6EA+0016 = B700, rename file
+133362:	.WORD	001450		; B6EA+0328 = BA12
+
+133364:	MOV	#-1,(SP)
+133370:	BR	133522
+
+133372:	MOV	#-2,(SP)
+133376:	BR	133522
+
+; rename file
+133400:	MOV	#100,R5
+; read file
+133404:	JSR	R5,134332
+133410:	MOV	R4,034422
+133414:	JSR	R5,135332
+133420:	BR	133516
+133422:	MOV	#010,-(SP)
+133426:	TST	R5
+133430:	BNE	133460
+133432:	ADD	(SP)+,R1
+133434:	MOV	034422,@034426
+133442:	MOV	(R1),(SP)
+133444:	MOV	(R1)+,@034424
+133450:	CLC
+133452:	CALL	116646		; restore registers from the stack
+133456:	RETURN
+133460:	ADD	#006,R0
+133464:	MOV	#200,(R1)+
+133470:	MOV	(R0)+,(R1)+
+133472:	MOV	(R0)+,(R1)+
+133474:	MOV	(R0)+,(R1)+
+133476:	SUB	(SP)+,R1
+133500:	JMP	135112
+133504:	CLR	(SP)
+133506:	BR	133450
+133510:	MOV	#-3,(SP)
+133514:	BR	133522
+133516:	MOV	#-4,(SP)
+133522:	SEC
+133524:	BR	133452
+
+; kill file
+133526:	JSR	R5,134332
+133532:	JSR	R5,135332
+133536:	BR	133516
+133540:	MOV	#200,(R1)
+133544:	JMP	135234
+
+; write file
+133550:	CLR	034430
+133554:	MOV	#200,R5
+133560:	JSR	R5,134332
+133564:	MOV	031704,034420
+133572:	CLR	034410
+133576:	CLR	034412
+133602:	BR	133612
+133604:	JSR	R5,134442
+133610:	BR	133716
+133612:	CALL	134632
+133616:	MOV	R4,034422
+133622:	MOV	#034410,R5
+133626:	JSR	R5,134356
+133632:	.WORD	001000
+133634:	BR	133604
+133636:	MOV	000010(R1),R0
+133642:	MOV	@034424,R2
+133646:	BEQ	133656
+133650:	CMP	#177777,R2
+133654:	BNE	133764
+133656:	CMP	(R5)+,R0
+133660:	BHIS	133704
+133662:	CMP	(R5),R0
+133664:	BHIS	133676
+133666:	MOV	(R5),-(R5)
+133670:	ADD	#010,R5
+133674:	MOV	-(R5),-(R5)
+133676:	MOV	R0,-(R5)
+133700:	MOV	R3,000004(R5)
+133704:	ADD	R0,034422
+133710:	CALL	135254
+133714:	BR	133622
+133716:	TST	(R5)+
+133720:	MOV	@034424,R2
+133724:	BNE	133740
+133726:	ROR	(R5)
+133730:	CMP	(R5),-(R5)
+133732:	BLO	133744
+133734:	TST	(R5)+
+133736:	BR	133744
+133740:	INC	R2
+133742:	BNE	133510
+133744:	MOV	(R5),@034424
+133750:	BEQ	133510
+133752:	MOV	000004(R5),R3
+133756:	JSR	R5,134454
+133762:	BR	133612
+133764:	CMP	R0,R2
+133766:	BLO	133704
+133770:	MOV	R1,-(SP)
+133772:	MOV	034436,R1
+133776:	CALL	135252
+134002:	CALL	135254
+134006:	CMP	R1,#033700
+134012:	BHI	134154
+134014:	MOV	(SP)+,R1
+134016:	MOV	034422,R4
+134022:	MOV	R1,R5
+134024:	SUB	R2,000010(R1)
+134030:	SUB	#016,R5
+134034:	SUB	031706,R5
+134040:	CMP	R5,#031712
+134044:	BLO	134074
+134046:	BIT	#100,(R5)
+134052:	BEQ	134074
+134054:	CALL	134404
+134060:	MOV	#200,(R1)
+134064:	CLR	000010(R1)
+134070:	CALL	135254
+134074:	CALL	134404
+134100:	MOV	#100,(R1)+
+134104:	MOV	(SP),R0
+134106:	MOV	(R0)+,(R1)+
+134110:	MOV	(R0)+,(R1)+
+134112:	MOV	(R0)+,(R1)+
+134114:	MOV	R2,(R1)+
+134116:	CLR	(R1)+
+134120:	MOV	@#054,(R1)
+134124:	ADD	#262,(R1)
+134130:	MOV	@000000(R1),(R1)
+134134:	MOV	R2,@034424
+134140:	MOV	R4,@034426
+134144:	JSR	R5,134546
+134150:	JMP	133450
+
+; EXTEND:
+; enlarge the size of a directory
+134154:	TST	(SP)+
+134156:	MOV	034420,R2
+134162:	CMP	R2,031700
+134166:	BGE	134322
+134170:	MOV	#031710,R1
+134174:	MOV	R1,R4
+134176:	ADD	#1FC,R4
+134202:	MOV	(R1)+,R5
+134204:	CALL	135244
+134210:	CMP	R1,R4
+134212:	BLO	134204
+134214:	CLR	R4
+134216:	BIT	#500,(R1)
+134222:	BEQ	134204
+134224:	MOV	(R1),-(SP)
+134226:	MOV	#800,(R1)
+134232:	INC	R2
+134234:	MOV	031702,-(SP)
+134240:	MOV	R2,031702
+134244:	JSR	R5,134546
+134250:	MOV	#031700,R0
+134254:	TST	(R0)+
+134256:	MOV	(SP)+,(R0)+
+134260:	MOV	(SP)+,(R1)
+134262:	CMP	(R0)+,(R0)+
+134264:	MOV	R5,(R0)+
+134266:	MOV	(R1)+,(R0)+
+134270:	CMP	R1,#033700
+134274:	BLOS	134266
+134276:	MOV	R2,R0
+134300:	JSR	R5,134554
+134304:	JSR	R5,134536
+134310:	INC	031704
+134314:	JSR	R5,134546
+134320:	BR	133756
+134322:	MOV	#177773,(SP)
+134326:	JMP	133522
+134332:	BIS	(SP),034434
+134336:	MOV	#001,R3
+134342:	JSR	R5,134454
+134346:	.WORD	000402
+134350:	TST	(R5)+
+134352:	TST	(R5)+
+134354:	RTS	R5
+
+; ENTRY:
+; scan for entry of specified type in current segment
+134356:	BIT	(R5),(R1)
+134360:	BNE	134350
+134362:	BIT	(R1),#800
+134366:	BNE	134352
+134370:	ADD	000010(R1),034422
+134376:	CALL	135254
+134402:	BR	134356
+
+; PUSH:
+; make room in current directory segment for new entry
+134404:	MOV	R3,-(SP)
+134406:	MOV	R1,R5
+134410:	JSR	R5,134356
+134414:	.WORD	000000
+134416:	MOV	R1,R3
+134420:	CALL	135254
+134424:	CMP	(R3)+,(R1)+
+134426:	MOV	-(R3),-(R1)
+134430:	CMP	R3,R5
+134432:	BNE	134426
+134434:	MOV	R5,R1
+134436:	MOV	(SP)+,R3
+134440:	RETURN
+134442:	MOV	031702,R0
+134446:	BEQ	134534
+134450:	MOV	R0,R3
+134452:	TST	(R5)+
+134454:	MOV	R0,-(SP)
+134456:	MOV	R3,R0
+134460:	BIC	#177740,R0
+134464:	CMP	R0,034430
+134470:	BNE	134502
+134472:	CMP	034406,034432
+134500:	BEQ	134516
+134502:	MOV	R0,034430
+134506:	MOV	R3,-(SP)
+134510:	JSR	R5,134544
+134514:	MOV	(SP)+,R3
+134516:	MOV	034406,034432
+134524:	MOV	#031710,R1
+134530:	MOV	(R1)+,R4
+134532:	MOV	(SP)+,R0
+134534:	RTS	R5
+
+; SEGRD1
+; read directory segments
+134536:	MOV	#001,034430
+134544:	CMP	#241,PC		; instead of SEC : BR B968
+; SEGWR:
+; write directory segments
+; B966:	clc
+134550:	MOV	034430,R0
+; SEGRW:
+134554:	JSR	R0,134566
+134560:	.WORD	000002		; number of sectors
+134562:	.WORD	031700		; USRBUF
+134564:	.WORD	034406		; device number
+
+; Carry set = read, Carry cleared = write
+134566:	MOV	(R0)+,R1	; number of sectors
+134570:	MOV	(R0)+,R2	; source/destination address
+134572:	MOV	@(R0)+,R3	; device number
+134574:	MOV	(SP)+,R0
+134576:	ROL	R0
+134600:	ADD	#000,R0
+134604:	BIT	#001,R0		; read or write?
+134610:	BEQ	134624
+134612:	BIC	#001,R0
+134616:	CALL	135672		; read sectors from the memory module
+134622:	BR	134630
+134624:	CALL	135720		; write sectors to the memory module
+134630:	RTS	R5
+
+; CONSOL:
+; remove unnecessary entries from a directory
+134632:	MOV	R4,-(SP)
+134634:	MOV	R3,-(SP)
+134636:	MOV	R1,-(SP)
+134640:	MOV	#016,R4
+134644:	ADD	031706,R4
+134650:	JSR	R5,134356
+134654:	.WORD	000400
+134656:	BR	134670
+134660:	MOV	#200,(R1)
+134664:	ADD	R4,R1
+134666:	BR	134650
+134670:	MOV	(SP),R1
+134672:	JSR	R5,134356
+134676:	.WORD	001000
+134700:	BR	135006
+134702:	MOV	R1,R2
+134704:	ADD	R4,R2
+134706:	BIT	#200,(R2)
+134712:	BEQ	134752
+134714:	ADD	000010(R2),000010(R1)
+134722:	MOV	R2,R5
+134724:	ADD	R4,R5
+134726:	MOV	R1,-(SP)
+134730:	JSR	R5,134356
+134734:	.WORD	000000
+134736:	MOV	R1,R3
+134740:	MOV	(R5)+,(R2)+
+134742:	CMP	R5,R3
+134744:	BLOS	134740
+134746:	MOV	(SP)+,R1
+134750:	BR	134672
+134752:	TST	000010(R1)
+134756:	BNE	135002
+134760:	MOV	R1,R2
+134762:	MOV	R1,R3
+134764:	SUB	R4,R3
+134766:	CMP	R3,#031712
+134772:	BLO	135002
+134774:	BIT	#400,(R3)
+135000:	BNE	134722
+135002:	ADD	R4,R1
+135004:	BR	134672
+135006:	MOV	R1,034436
+135012:	MOV	(SP)+,R1
+135014:	MOV	(SP)+,R3
+135016:	MOV	(SP)+,R4
+135020:	RETURN
+
+135022:	MOV	#001,R3
+135026:	JSR	R5,134454
+135032:	BR	135042
+135034:	JSR	R5,134442
+135040:	BR	135240
+135042:	MOV	(SP),R0
+135044:	JSR	R5,134356
+135050:	.WORD	000400
+135052:	BR	135034
+135054:	TST	(R1)+
+135056:	MOV	R1,R2
+135060:	ADD	#006,R2
+135064:	CMP	(R0)+,(R1)+
+135066:	BEQ	135102
+135070:	MOV	R2,R1
+135072:	CMP	(R1)+,(R1)+
+135074:	ADD	031706,R1
+135100:	BR	135042
+135102:	CMP	R1,R2
+135104:	BNE	135064
+135106:	SUB	#010,R1
+135112:	MOV	#034410,R0
+135116:	MOV	(R1)+,(R0)+
+135120:	MOV	(R1)+,(R0)+
+135122:	MOV	(R1)+,(R0)+
+135124:	MOV	(R1),(R0)
+135126:	CMP	-(R0),-(R0)
+135130:	CMP	-(R1),-(R1)
+135132:	MOV	R1,-(SP)
+135134:	MOV	R3,-(SP)
+135136:	MOV	#001,R3
+135142:	JSR	R5,135332
+135146:	BR	135166
+135150:	MOV	#200,(R1)
+135154:	MOV	R3,R1
+135156:	CMP	R1,(SP)
+135160:	BEQ	135166
+135162:	CALL	135266
+135166:	MOV	(SP)+,R3
+135170:	JSR	R5,134454
+135174:	MOV	(SP)+,R1
+135176:	MOV	#400,-(R1)
+135202:	BIT	#100,034434
+135210:	BNE	135310
+135212:	ADD	#010,R1
+135216:	MOV	(R1),R2
+135220:	MOV	@034424,(R1)
+135224:	SUB	(R1),R2
+135226:	CALL	135254
+135232:	ADD	R2,(R1)
+135234:	CALL	135266
+135240:	JMP	133504
+
+; INCR1A:
+; move R1 past one or two directory entries
+135244:	ADD	000010(R1),R5
+135250:	BR	135254
+; INCR2:
+135252:	MOV	PC,-(SP)
+; INCR1:
+135254:	ADD	031706,R1
+135260:	ADD	#016,R1
+135264:	RETURN
+
+; CLOSUP:
+; consolidate and rewrite a directory segment
+135266:	MOV	R0,-(SP)
+135270:	MOV	#031712,R1
+135274:	CALL	134632
+135300:	JSR	R5,134546
+135304:	MOV	(SP)+,R0
+135306:	RETURN
+
+135310:	TST	(R1)+
+135312:	MOV	(R0)+,(R1)+
+135314:	MOV	(R0)+,(R1)+
+135316:	MOV	(R0)+,(R1)+
+135320:	CMP	(R1)+,(R1)+
+135322:	BIC	#100,034434
+135330:	BR	135234
+135332:	MOV	R0,-(SP)
+135334:	JSR	R5,134454
+135340:	MOV	(SP),R0
+135342:	JSR	R5,134356
+135346:	.WORD	002000
+135350:	BR	135422
+135352:	TST	(R1)+
+135354:	MOV	R1,R2
+135356:	ADD	#006,R2
+135362:	CMP	(R0)+,(R1)+
+135364:	BNE	135404
+135366:	CMP	R1,R2
+135370:	BNE	135362
+135372:	SUB	#010,R1
+135376:	TST	(R5)+
+135400:	MOV	(SP)+,R0
+135402:	RTS	R5
+135404:	MOV	R2,R1
+135406:	ADD	(R1)+,034422
+135412:	CMP	(R1)+,(R1)+
+135414:	ADD	031706,R1
+135420:	BR	135340
+135422:	JSR	R5,134442
+135426:	BR	135400
+135430:	BR	135340
+
+; write R0 to the memory module address register
+135432:	SWAB	R0
+135434:	CALL	116622		; save registers on the stack
+135440:	MOV	#002,R1		; number of bytes
+135444:	MOV	SP,R2
+135446:	CLR	R0
+135450:	JSR	R5,135520
+135454:	.WORD	135472		; rts pc
+135456:	.WORD	000240		; Write Address
+135460:	.WORD	000000
+135462:	.WORD	135512		; movb (r2)+,@#164020
+135464:	CALL	116646		; restore registers from the stack
+135470:	SWAB	R0
+135472:	RETURN
+
+135474:	TSTB	@#164024
+135500:	BPL	135474
+135502:	RETURN
+
+135504:	MOVB	@#164020,(R2)+
+135510:	RETURN
+
+135512:	MOVB	(R2)+,@#164020
+135516:	RETURN
+
+; number of bytes in r1
+; device number in r3
+; the call to this procedure should be followed by:
+; 1. address of the procedure called before the transfer
+; 2. code to be written to the E816 register (command for the memory module)
+; 3. bit mask for the E814 register (data direction)
+; 4. address of the data transfer procedure
+135520:	MOV	#000011,@#164022
+135526:	CMP	000002(R5),#040	; command Write Postdecrement?
+135534:	BEQ	135546
+135536:	MOV	R0,R4
+135540:	BIC	#177777,R4	; WTF?
+135544:	ADD	R4,R0
+135546:	CALL	@(R5)+		; procedure called before the transfer
+135550:	TST	@#164026	; terminate the previous transfer
+135554:	BIC	#177776,R3
+135560:	BIS	#000370,R3
+135564:	MOV	R3,@#164024
+135570:	MOV	(R5)+,@#164026	; command for the SMP module
+135574:	CALL	135474
+135600:	BIC	(R5)+,R3
+135602:	MOV	R3,@#164024
+135606:	CALL	135474
+135612:	CALL	@000000(R5)	; call the data transfer procedure
+135616:	CALL	135474
+135622:	INC	R0
+135624:	DEC	R1
+135626:	BEQ	135656
+135630:	CMP	177774(R5),#040	; command Write Postdecrement?
+135636:	BEQ	135612
+135640:	MOV	R0,R4
+135642:	BIC	#177777,R4	; WTF?
+135646:	BEQ	135612
+135650:	SUB	#006,R5
+135654:	BR	135544
+135656:	TST	@#164026	; end of the transfer
+135662:	TST	(R5)+
+135664:	CALL	135474
+135670:	RTS	R5
+
+; read R1 sectors from the memory module starting from the sector R0
+135672:	SWAB	R0		; convert the starting sector number to ...
+135674:	ASL	R0		; ... an address
+135676:	SWAB	R1		; convert the number of sectors to read to ...
+135700:	ASL	R1		; ... the number of bytes
+; read a memory block from the SMP
+; source address in r0
+; destination address in r2
+; number of bytes in r1
+; device number in r3
+135702:	JSR	R5,135520
+135706:	.WORD	135432		; write R0 to the SMP address register
+135710:	.WORD	000320		; Read Postincrement
+135712:	.WORD	000010
+135714:	.WORD	135504		; movb @#E810,(r2)+
+135716:	BR	135744
+
+; write R1 sectors to the memory module starting from the sector R0
+135720:	SWAB	R0		; convert the starting sector number to ...
+135722:	ASL	R0		; ... an address
+135724:	SWAB	R1		; convert the number of sectors to write to ...
+135726:	ASL	R1		; ... the number of bytes
+; write a memory block to the SMP
+; destination address in r0
+; source address in r2
+; number of bytes in r1
+; device number in r3
+135730:	JSR	R5,135520
+135734:	.WORD	135432		; write R0 to the SMP address register
+135736:	.WORD	000300		; Write Postincrement
+135740:	.WORD	000000
+135742:	.WORD	135512		; movb (r2)+,@#E810
+135744:	BIC	#177776,R3
+135750:	BIS	#130,R3
+135754:	MOV	R3,@#164024
+135760:	MOV	#352,@#164024
+135766:	BIC	#177776,R3
+135772:	RETURN
+
+; erase the SMP with spaces
+135774:	MOV	#177777,R0	; obligatory destination address
+136000:	CLR	R1		; number of bytes = 65536
+136002:	JSR	R5,135520
+136006:	.WORD	135432		; write R0 to the SMP address register
+136010:	.WORD	000040		; Erase Postdecrement
+136012:	.WORD	000000
+136014:	.WORD	136020		; movb #20,@#E810
+136016:	BR	135744
+
+136020:	MOVB	#040,@#164020
+136026:	RETURN
+
+136030:	CLR	(R0)+
+136032:	CLR	(R0)+
+136034:	MOV	R0,R4
+136036:	CLR	(R0)
+136040:	CMP	-(R0),-(R0)
+136042:	MOV	#055533,R3
+136046:	TRAP	072		; get a character other than space to r2
+136050:	TRAP	070		; is r2 a digit?
+136052:	BVS	136132
+136054:	BNE	136062
+136056:	ADD	#056,R2
+136062:	SUB	#100,R2
+136066:	ASRB	R3
+136070:	BHIS	136112
+136072:	ASL	R2
+136074:	ASL	R2
+136076:	ASL	R2
+136100:	MOV	R2,-(SP)
+136102:	ASL	R2
+136104:	ASL	R2
+136106:	ADD	(SP)+,R2
+136110:	BR	136066
+136112:	CMP	R0,R4
+136114:	BEQ	136146
+136116:	ADD	R2,(R0)
+136120:	ASRB	R3
+136122:	BLO	136046
+136124:	TST	(R0)+
+136126:	SWAB	R3
+136130:	BR	136046
+136132:	CMPB	R2,#056
+136136:	BNE	136152
+136140:	MOV	R4,R0
+136142:	TST	(R4)+
+136144:	BR	136042
+136146:	SEC
+136150:	RETURN
+136152:	CLC
+136154:	RETURN
+136156:	MOV	R1,-(SP)
+136160:	MOV	R5,R4
+136162:	MOV	034354,R3
+136166:	SUB	R3,R4
+136170:	MOVB	(R3)+,R2
+136172:	BMI	136232
+136174:	CMP	R2,#012
+136200:	BNE	136204
+136202:	INC	R4
+136204:	CMP	R3,R5
+136206:	BLO	136170
+136210:	ADD	#1FF,R4
+136214:	CLRB	R4
+136216:	SWAB	R4
+136220:	ASR	R4
+136222:	MOV	R4,000004(R0)
+136226:	MOV	(SP)+,R1
+136230:	RETURN
+136232:	MOV	#103700,R1
+136236:	DEC	R4
+136240:	BIC	#177600,R2
+136244:	BEQ	136256
+136246:	CMPB	(R1)+,#044
+136252:	BNE	136246
+136254:	SOB	R2,136246
+136256:	CMPB	(R1)+,#044
+136262:	BEQ	136204
+136264:	INC	R4
+136266:	BR	136256
+
+; fetch the file name optionally preceeded by the device name
+136270:	MOV	R0,-(SP)
+136272:	TRAP	072		; get a character other than space to r2
+136274:	CMPB	R2,#042		; quotation mark
+136300:	BNE	136370
+136302:	MOV	R1,-(SP)
+136304:	TRAP	140		; get a pair of characters to r4
+136306:	CMP	R4,#051515	; "SM"
+136312:	BNE	136360
+136314:	TRAP	010		; ATOI
+136316:	MOV	R0,R4
+136320:	MOV	000002(SP),R0
+136324:	CMPB	(R1)+,#072	; colon
+136330:	BNE	136360
+136332:	MOV	R4,(R0)+
+136334:	TST	(SP)+
+136336:	MOV	(R0)+,R0	; R0 points to the output buffer
+136340:	CALL	136030		; fetch the filename and convert it to Radix-50
+136344:	BLO	136370		; branch if illegal characters in the filename
+136346:	CMPB	R2,#042		; quotation mark
+136352:	BNE	136370
+136354:	MOV	(SP)+,R0
+136356:	RETURN
+136360:	MOV	(SP)+,R1
+136362:	MOV	034400,(R0)+
+136366:	BR	136336
+136370:	TST	(SP)+
+136372:	TRAP	177		; error 63 - illegal file name
+
+; command KILL
+136374:	MOV	#034024,R0
+136400:	CALL	136270		; fetch the device and file name
+136404:	CALL	133272		; file access
+136410:	BHIS	136414
+136412:	TRAP	175		; error 62 - file not found
+136414:	JMP	103124
+
+; command LOAD
+136420:	MOV	#034024,R0
+136424:	CALL	136270		; fetch the device and file name
+136430:	TST	034446
+136434:	BNE	136444
+136436:	MOV	#CBB,034446
+136444:	MOVB	#001,000001(R0)	; read file
+136452:	CALL	133272		; file access
+136456:	BLO	136412
+136460:	MOV	034032,R2
+136464:	SWAB	R2
+136466:	ASL	R2
+136470:	MOV	R2,034404
+136474:	MOV	#001,034366
+136502:	MOV	R1,-(SP)
+136504:	TRAP	140		; get a pair of characters to r4
+136506:	CMP	R4,#026122	; ",R"
+136512:	BNE	136522
+136514:	INC	034366
+136520:	MOV	R1,(SP)
+136522:	MOV	(SP)+,R1
+136524:	MOV	034354,R5
+136530:	INC	R5
+136532:	CLR	034360
+136536:	CLR	034372
+136542:	CLR	034352
+136546:	JMP	102774
+
+136552:	CALL	116622		; save registers on the stack
+136556:	MOV	034404,R0	; source address
+136562:	MOV	#001,R1		; number of bytes
+136566:	MOV	R3,R2		; destination address
+136570:	MOV	034406,R3	; device number
+136574:	CALL	135702		; read a memory block from the SMP
+136600:	INC	034404
+136604:	CALL	116646		; restore registers from the stack
+136610:	MOVB	(R3),R2
+136612:	BEQ	136616
+136614:	RETURN
+136616:	MOV	#001,034014
+136624:	TST	(SP)+
+136626:	ASR	034366
+136632:	BLO	136414
+136634:	CLR	034366
+136640:	JMP	104450
+
+; command NAME
+136644:	MOV	#034024,R0
+136650:	CALL	136270		; fetch the device and file name
+136654:	TRAP	140		; get a pair of characters to r4
+136656:	CMP	R4,#040523
+136662:	BNE	136720
+136664:	MOV	#034034,R0
+136670:	CALL	136270		; fetch the device and file name
+136674:	MOV	#034024,R0
+136700:	MOVB	#003,000001(R0)	; rename file
+136706:	CALL	133272		; file access
+136712:	BLO	136722
+136714:	JMP	103124
+136720:	TRAP	173		; error 61 - wrong NAME operator format
+136722:	TRAP	171		; error 60 - renamed file not found
+
+; command SAVE
+136724:	MOV	#034024,R0
+136730:	CALL	136156
+136734:	CALL	136270		; fetch the device and file name
+136740:	TST	034446
+136744:	BNE	136754
+136746:	MOV	#CBB,034446
+136754:	MOVB	#002,000001(R0)	; write file
+136762:	CALL	133272		; file access
+136766:	BHIS	136772
+136770:	TRAP	167		; error 59 - SMP overflow
+136772:	MOV	034032,R2
+136776:	SWAB	R2
+137000:	ASL	R2
+137002:	MOV	R2,034404
+137006:	MOV	#001,034370
+137014:	JMP	102314
+137020:	CALL	116622		; save registers on the stack
+137024:	MOV	034404,R0	; destination address
+137030:	MOV	#002,R1		; number of bytes to write
+137034:	MOV	034406,R3	; device number
+137040:	MOV	SP,R2
+137042:	CMP	(R2)+,(R2)+	; R2 = source address
+137044:	CLRB	000001(R2)
+137050:	CALL	135730		; write a memory block to the SMP
+137054:	INC	034404
+137060:	CALL	116646		; restore registers from the stack
+137064:	RETURN
+
+137066:	MOV	#034024,R0
+137072:	MOVB	#004,000001(R0)
+137100:	CALL	133272		; file access
+137104:	RETURN
+
+; command INIT
+137106:	MOV	#034024,R0
+137112:	CALL	137730		; test for the end of the command line
+137116:	BEQ	137124		; skip if command without parameters
+137120:	CALL	136270		; fetch the device and file name
+137124:	MOV	R1,-(SP)
+137126:	MOV	(R0),R3		; device number
+137130:	CALL	135774		; erase the SMP with spaces
+137134:	CLR	034430
+137140:	MOV	#140232,R4	; data blocks copied to the SMP
+137144:	MOV	#004,-(SP)	; number of copied blocks
+137150:	MOV	(R4)+,R0	; destination address
+137152:	MOV	(R4)+,R2	; source address
+137154:	MOV	(R4)+,R1	; number of bytes to write
+137156:	MOV	R4,-(SP)
+137160:	CALL	135730		; write a memory block to the SMP
+137164:	MOV	(SP)+,R4
+137166:	DEC	(SP)		; counter of copied blocks
+137170:	BNE	137150		; next block
+137172:	TST	(SP)+
+137174:	MOV	(SP)+,R1
+137176:	JMP	103124
+
+; command FILES
+137202:	CALL	116622		; save registers on the stack
+137206:	MOV	#034024,R0
+137212:	CALL	137730		; test for the end of the command line
+137216:	BEQ	137230		; branch if command without parameters
+137220:	CALL	136270		; fetch the device and file name
+137224:	MOV	R1,000002(SP)
+137230:	MOV	(R0),034406
+137234:	CLR	034410
+137240:	CLR	034412
+137244:	CLR	034414
+137250:	CLR	R5
+137252:	JSR	R5,134332
+137256:	MOV	R4,034422
+137262:	MOV	#005,R5
+137266:	CALL	137664
+137272:	JSR	R5,134356
+137276:	.WORD	003000
+137300:	BR	137476
+137302:	CALL	137636
+137306:	BIT	(R1)+,#400
+137312:	BNE	137344
+137314:	MOV	#140023,R4
+137320:	MOVB	(R4)+,(R0)+
+137322:	BNE	137320
+137324:	MOVB	#040,-(R0)
+137330:	CMPB	(R0)+,(R0)+
+137332:	ADD	#006,R1
+137336:	ADD	(R1),034410
+137342:	BR	137406
+137344:	CALL	140106
+137350:	ADD	(R1),034414
+137354:	INC	034412
+137360:	MOV	#034241,R0
+137364:	MOV	#034242,R4
+137370:	MOVB	-(R0),-(R4)
+137372:	MOVB	-(R0),-(R4)
+137374:	MOVB	-(R0),-(R4)
+137376:	MOVB	#056,-(R4)
+137402:	ADD	#006,R0
+137406:	MOV	(R1),R3
+137410:	CALL	137606
+137414:	CMPB	(R0)+,(R0)+
+137416:	MOV	034422,R3
+137422:	CALL	137606
+137426:	CLRB	(R0)+
+137430:	MOV	#034230,R0
+137434:	TRAP	066		; print a string pointed to by r0
+137436:	TRAP	002		; print CR, LF
+137440:	ADD	(R1)+,034422
+137444:	CMP	(R1)+,(R1)+
+137446:	ADD	031706,R1
+137452:	SOB	R5,137272
+137454:	CALL	131120		; wait for a key	
+137460:	CMPB	R2,#015
+137464:	BNE	137572
+137466:	TRAP	002		; print CR, LF
+137470:	MOV	#006,R5
+137474:	BR	137272
+137476:	JSR	R5,134442
+137502:	BR	137506
+137504:	BR	137272
+137506:	CMP	R5,#006
+137512:	BEQ	137524
+137514:	CALL	137656
+137520:	CALL	131120 		; wait for a key
+137524:	MOV	#004,R5
+137530:	CALL	137656
+137534:	MOV	#140070,R5
+137540:	MOV	@(R5)+,R3
+137542:	CALL	137636
+137546:	CALL	137606
+137552:	CLRB	000001(R0)
+137556:	CMPB	-(R0),-(R0)
+137560:	TRAP	066		; print a string pointed to by r0
+137562:	MOV	(R5)+,R0
+137564:	TRAP	066		; print a string pointed to by r0
+137566:	TST	(R5)
+137570:	BNE	137540
+137572:	CALL	116646		; restore registers from the stack
+137576:	CLR	034402		; select the LCD as the output device
+137602:	JMP	103124
+137606:	CLR	R2
+137610:	DIV	#012,R2
+137614:	BEQ	137624
+137616:	BIS	#060,R2
+137622:	MOVB	R2,(R0)
+137624:	INC	R0
+137626:	BIS	#060,R3
+137632:	MOVB	R3,(R0)+
+137634:	RETURN
+137636:	MOV	#012,R2
+137642:	MOV	#034254,R0
+137646:	MOV	#020040,-(R0)
+137652:	SOB	R2,137646
+137654:	RETURN
+137656:	TRAP	002		; print CR, LF
+137660:	SOB	R5,137656
+137662:	RETURN
+137664:	MOV	034072,-(SP)
+137670:	MOV	#140040,R0
+137674:	TRAP	066		; print a string pointed to by r0
+137676:	BIS	#001,034072
+137704:	TRAP	066		; print a string pointed to by r0
+137706:	MOV	034406,R2
+137712:	BIS	#060,R2
+137716:	TRAP	000		; print character r2
+137720:	TRAP	066		; print a string pointed to by r0
+137722:	MOV	(SP)+,034072
+137726:	RETURN
+; test for the end of the command line
+137730:	MOV	034400,(R0)
+137734:	TRAP	072		; get a character other than space to r2
+137736:	DEC	R1
+137740:	CMPB	R2,#012
+137744:	BEQ	137752
+137746:	CMPB	R2,#072		; colon
+137752:	RETURN
+
+137740:	97 A0 0A 00  02 03 97 A0  3A 00 87 00  0E 46 41 4A  . ..... :....FAJ
+137760:	4C 4F 57 2C  20 00 42 4C  4F 4B 4F 57  0D 0A 00 53  LOW, .BLOKOW...S
+140000:	57 4F 42 4F  44 4E 59 48  20 42 4C 4F  4B 4F 57 0F  WOBODNYH BLOKOW.
+140020:	0D 0A 00 0E  3C 53 57 4F  42 4F 44 4E  4F 3E 0F 00  ....<SWOBODNO>..
+140040:	20 20 00 0E  20 73 50 52  41 57 4F 5E  4E 49 4B 0F    .. sPRAWO^NIK.
+140060:	20 53 4D 00  20 0D 0A 00  0A 39 EC BF  0C 39 F6 BF   SM. ....9l?.9v?
+140100:	08 39 FF BF  00 00
+
+140106:	MOV	R0,-(SP)
+140110:	MOV	R3,-(SP)
+140112:	MOV	R4,-(SP)
+140114:	MOV	R5,-(SP)
+140116:	MOV	#003,R4
+140122:	SUB	R4,R0
+140124:	MOV	#003,R5
+140130:	ADD	#006,R0
+140134:	MOV	(R1)+,R3
+140136:	CALL	140162
+140142:	MOVB	R2,-(R0)
+140144:	SOB	R5,140136
+140146:	SOB	R4,140124
+140150:	MOV	(SP)+,R5
+140152:	MOV	(SP)+,R4
+140154:	MOV	(SP)+,R3
+140156:	MOV	(SP)+,R0
+140160:	RETURN
+140162:	CLR	R2
+140164:	DIV	#050,R2
+140170:	MOV	R3,-(SP)
+140172:	MOV	R2,R3
+140174:	MOV	(SP)+,R2
+140176:	BEQ	140224
+140200:	CMP	R2,#033
+140204:	BLT	140220
+140206:	BEQ	140214
+140210:	ADD	#011,R2
+140214:	ADD	#177711,R2
+140220:	ADD	#040,R2
+140224:	ADD	#040,R2
+140230:	RETURN
+
+; destination address, source address, number of bytes
+140232:	.WORD	002000, 140262, 000032
+140240:	.WORD	000000, 140314, 000074
+140246:	.WORD	001000, 140410, 000002
+140254:	.WORD	001722, 140412, 000045
+
+C0B2:	      01 00  00 00 01 00  00 00 04 00  00 02 20 20
+140300:	20 20 20 20  10 00 20 20  20 20 00 08
+
+; boot loader written to the SMP
+140314:	NOP
+140316:	CALL	@#153700	; RAM initialisation
+140322:	CALL	@#120536
+140326:	MOV	@#034022,@#164000	; address of the display RAM
+140334:	MOV	#104306,@#164002
+140342:	JSR	R0,140376
+140346:	.ASCIZ	"\016\r\n smp BEZ ZAGRUZ^IKA"	;SMP without loader
+140375:	.EVEN
+140376:	MOVB	(R0)+,R2
+140400:	BEQ	140400
+140402:	CALL	@#116542	; display character r2
+140406:	BR	140376
+
+140410:	HALT
+140412:	WAIT
+140414:	RTT
+140416:	ILLOP
+
+140420:	42 41 53 49  43 20 20 20  20 20 20 20  20 20 20 20  BASIC           
+140440:	20 20 20 20  20 20 20 20  20 20 20 20  20 20 20 FF                 .
+
+; command DEV
+140460:	MOV	#034024,R0
+140464:	CALL	137730		; test for the end of the command line
+140470:	BNE	140500		; branch if comand with parameters
+140472:	CLR	034400
+140476:	BR	140510
+140500:	CALL	136270		; fetch the device and file name
+140504:	MOV	(R0),034400
+140510:	JMP	103124
+
+; command HELP
+140514:	TRAP	072		; get a character other than space to r2
+140516:	DEC	R1
+140520:	TRAP	070		; is r2 a digit?
+140522:	BVS	140632
+140524:	BNE	140546
+140526:	BR	140632
+140530:	ASL	R0
+140532:	ADD	R3,R0
+140534:	MOV	(R0),R0
+140536:	CALL	140670
+140542:	JMP	103124
+140546:	MOV	R1,-(SP)
+140550:	CLR	R0
+140552:	MOV	#152511,R2
+140556:	CMPB	(R1)+,(R2)+
+140560:	BNE	140606
+140562:	CMPB	(R2),#044
+140566:	BNE	140556
+140570:	CMPB	(R1),#057
+140574:	BEQ	140606
+140576:	TST	(SP)+
+140600:	MOV	#140724,R3
+140604:	BR	140530
+140606:	MOV	(SP),R1
+140610:	CMPB	(R2)+,#044
+140614:	BNE	140610
+140616:	CMPB	(R2),#044
+140622:	BEQ	140630
+140624:	INC	R0
+140626:	BR	140556
+140630:	MOV	(SP)+,R1
+140632:	MOV	#141072,R0
+140636:	CMPB	(R1),#052
+140642:	BNE	140536
+140644:	MOV	#140724,R4
+140650:	MOV	(R4)+,R0
+140652:	BEQ	140542
+140654:	CALL	140670
+140660:	CMPB	R2,#015
+140664:	BNE	140542
+140666:	BR	140650
+140670:	MOVB	(R0)+,R3
+140672:	TRAP	066		; print a string pointed to by r0
+140674:	MOV	R0,-(SP)
+140676:	CALL	131120		; wait for a key
+140702:	MOV	(SP)+,R0
+140704:	DEC	R3
+140706:	BMI	140722
+140710:	CMPB	R2,#015
+140714:	BEQ	140672
+140716:	TST	(SP)+
+140720:	BR	140542
+140722:	RETURN
+
+; command LLIST
+153144:	MOV	#001,034402	; select the printer as the output device
+153152:	JMP	102314
+
+; print character r2 on the printer
+153156:	TSTB	@#177514	; check printer status
+153162:	BPL	153156
+153164:	MOVB	R2,@#177516	; send data to the printer
+153170:	RETURN
+
+; command LPRINT
+153172:	MOV	#001,034402	; select the printer as the output device
+153200:	JMP	107034		; command PRINT
+
+; command LFILES
+153204:	MOV	#001,034402	; select the printer as the output device
+153212:	JMP	137202		; command FILES
+
+; command MEM
+153216:	CALL	116622	; save registers on the stack
+153222:	MOV	033716,-(SP)
+153226:	MOV	#153432,R1	; string '   '
+153232:	CALL	153414		; print a string pointed to by r1
+153236:	MOV	034072,-(SP)
+153242:	BIS	#001,034072	; inverted print mode
+; r1 points to a string 'Raspredelenie pamjati (w bajtah)'
+153250:	CALL	153414		; print a string pointed to by r1
+153254:	MOV	(SP)+,034072
+153260:	MOV	#153507,R1	; string 'Programma: '
+153264:	CALL	153414		; print a string pointed to by r1
+153270:	MOV	R5,R3
+153272:	SUB	034354,R3
+153276:	CALL	153342		; print the word r3 in decimal form
+153302:	MOV	#153523,R1	; string 'Svobodno: '
+153306:	CALL	153414		; print a string pointed to by r1
+153312:	MOV	SP,R3
+153314:	SUB	R5,R3
+153316:	BPL	153322
+153320:	TRAP	001		; error 0 - out of memory
+153322:	CALL	153342		; print the word r3 in decimal form
+153326:	MOV	(SP)+,033716
+153332:	CALL	116646		; restore registers from the stack
+153336:	JMP	102774
+
+; print the word r3 in decimal form
+153342:	MOV	#034350,R4	; r4 points to the end of the output buffer
+153346:	CLRB	-(R4)
+153350:	MOVB	#012,-(R4)	; LF
+153354:	MOVB	#015,-(R4)	; CR
+; convert word r3 to decimal ASCII, leading zeros are suppressed,
+153360:	CLR	R2
+153362:	DIV	#012,R2
+153366:	BIS	#060,R3		; remainder
+153372:	MOVB	R3,-(R4)
+153374:	TST	R2		; quotient
+153376:	BEQ	153404
+153400:	MOV	R2,R3
+153402:	BR	153360
+153404:	MOV	R4,R1
+153406:	CALL	153414		; print a string pointed to by r1
+153412:	RETURN
+
+; print a zero terminated string pointed to by r1
+153414:	CLR	R2
+153416:	MOVB	(R1)+,R2
+153420:	BEQ	153430
+153422:	CALL	116542		; display character r2
+153426:	BR	153416
+153430:	RETURN
+
+153420:	03 03 F7 09  4C C6 FB 01  87 00 20 20  20 00 20 0E  ..w.LF{...   . .
+153440:	72 41 53 50  52 45 44 45  4C 45 4E 49  45 0D 0A 20  rASPREDELENIE.. 
+153460:	50 41 4D 51  54 49 20 28  57 20 42 41  4A 54 41 48  PAMQTI (W BAJTAH
+153500:	29 20 20 0D  0A 0A 00 70  52 4F 47 52  41 4D 4D 41  )  ....pROGRAMMA
+153520:	3A 20 00 73  57 4F 42 4F  44 4E 4F 20  3A 20 00 FF  : .sWOBODNO : ..
+153540:	0F 00 07 00  05 00 23 00  6C D8 86 D9  DE D7 6C D8  ......#.lX.Y^WlX
+153560:	07 00 05 00  01 00 08 00  01 00 01 00  01 00 01 00  ................
+153600:	01 00 0E 73  62 6F 6A 20  70 6F 20 61  64 72 20 20  ...sboj po adr  
+153620:	20 20 20 20  20 0F 00 0E  6F 7B 20 20  20 20 20 20       ...o{      
+153640:	20 20 73 74  72 20 0F 00  47 17 03 01  01 00 01 00    str ..G.......
+153660:	EA 38 00 30  00 00 22 39  00 00 00 00  00 00 28 39  j8.0.."9......(9
+
+; RAM initialisation
+153700:	MOV	#030000,R0
+153704:	MOV	#800,R1
+153710:	CLR	(R0)+
+153712:	SOB	R1,153710
+153714:	MOV	#153540,R0
+153720:	MOV	#060,R1
+153724:	MOV	#033700,R2
+153730:	MOV	(R0)+,(R2)+
+153732:	SOB	R1,153730
+153734:	RETURN
+
+; font data, 35 bits for each character (width = 5 pixels, height = 7 pixels)
+
+; character codes 0x20-0x3F
+153736:	                                             00 00
+153740:	00 00 04 21  08 40 11 4A  00 00 00 29  5F 57 D4 A2
+153760:	3E 8E 2F 89  8C 88 88 98  D1 4A 22 B2  69 84 40 00
+154000:	00 11 10 84  10 48 20 84  22 20 04 AB  AA 40 00 84
+154020:	F9 08 00 00  0C 61 10 00  03 E0 00 00  00 00 0C 60
+154040:	02 22 22 00  74 67 5C C5  C4 61 08 42  39 D1 08 88
+154060:	8F FC 44 10  62 E1 19 52  F8 85 F8 78  21 8B 8C 88
+154100:	7A 31 77 C2  22 21 08 74  62 E8 C5 CE  8C 5E 11 30
+154120:	0C 60 18 C0  01 8C 03 08  81 11 10 41  04 00 7C 1F
+154140:	00 10 41 04  44 43 A2 11  10 04 00 00
+
+; Latin characters, codes 0x40-0x7F
+154154:	                                       74 6F 5B C1
+154160:	E4 54 63 F8  C7 D1 8F A3  1F 3A 30 84  22 EE 4A 31
+154200:	8C B9 F8 43  D0 87 FF 08  7A 10 83 A3  0B C6 2F 8C
+154220:	63 F8 C6 2E  21 08 42 38  E2 10 85 26  46 54 C5 25
+154240:	18 42 10 84  3F 1D D6 B1  8C 63 1C D6  71 8B A3 18
+154260:	C6 2E F4 63  E8 42 0E 8C  63 59 37 D1  8F A9 28 BA
+154300:	30 70 62 EF  90 84 21 09  18 C6 31 8B  A3 18 C6 2A
+154320:	24 63 1A D6  AA 8C 54 45  46 31 8C 54  42 13 E1 11
+154340:	11 0F B9 08  42 10 E0 41  04 10 40 E1  08 42 13 80
+154360:	00 7C 20 00  00 00 00 1F  22 18 00 00  00 07 82 F8
+154400:	BE 10 F4 63  1F 00 0F 84  20 F0 85 F1  8C 5E 00 3A
+154420:	3F 83 C6 42  7C 84 20 00  F8 BC 2E 84  3D 18 C6 24
+154440:	03 08 42 38  80 61 08 4C  42 12 A6 29  26 10 84 21
+154460:	1C 00 6A B5  AD 40 0F 46  31 88 00 E8  C6 2E 00 3D
+154500:	1F 42 00 03  E2 F0 84 00  B6 21 08 00  0F 83 83 E2
+154520:	13 E4 21 06  00 46 31 8B  C0 08 C6 2A  20 01 18 D6
+154540:	AA 00 22 A2  2A 20 04 62  F0 B8 00 F8  88 8F 8C 84
+154560:	41 08 32 10  84 21 09 82  10 44 26 3E  00 00 00 07
+154600:	FF FF FF FF  00 00
+
+; Cyrillic characters, codes 0x40-0x7F
+154606:	                   00 25  5E D6 40 07  82 F8 BC 2E
+154620:	87 A3 17 00  12 94 BE 10  01 CA 57 E2  00 3A 3F 83
+154640:	C0 07 56 AE  20 01 E8 42  10 00 22 A2  2A 20 04 67
+154660:	5C C4 00 AC  EB 98 80 12  A6 29 20 00  E5 2D 52 00
+154700:	47 75 8C 40  08 C7 F1 88  00 E8 C6 2E  00 3F 18 C6
+154720:	20 03 E2 F2  E4 00 F4 7D  08 00 0F 84  20 F0 03 E4
+154740:	21 08 00 46  2F 0B 80 0A  B9 D5 A8 01  E8 FA 3E 00
+154760:	21 0F 47 C0  04 63 D9 F4  00 74 4D 17  00 15 AD 6B
+155000:	F0 03 C1 38  7C 00 56 B5  F8 40 08 C5  E1 08 01 84
+155020:	39 2E 95 6B  DA D6 44 54  63 F8 C7 F0  F4 63 1F 4A
+155040:	52 94 BE 17  29 4A 57 E3  F8 43 F0 87  DD 5A D6 AE
+155060:	27 E1 08 42  10 8C 54 45  46 31 8C EB  98 C6 B5 9D
+155100:	73 18 C6 54  C5 25 17 94  A5 2D 53 1D  D6 B1 8C 63
+155120:	18 FE 31 8B  A3 18 C6 2E  FC 63 18 C6  2F 8C 5E 54
+155140:	C7 D1 8F A1  08 3A 30 84  22 EF 90 84  21 09 18 C5
+155160:	E1 8B AB 57  3A B5 AF A3  1F 46 3E 84  21 E8 C7 D1
+155200:	8C 7B 39 F5  D1 09 83 17  56 B5 AD 6B  F7 44 2F 0C
+155220:	5D 5A D6 B5  F8 63 18 BC  21 0F FF FF  FF FF
+
+; tests
+166672:	MOV	#200,SP
+166676:	CALL	166704
+166702:	BR	166774
+
+166704:	CALL	@#153700	; RAM initialisation
+166710:	MOV	#001,@#034074
+166716:	CALL	@#120536
+166722:	MOV	#003,033734
+166730:	MOV	#130514,@#310	; keyboard controller interrupt vector
+166736:	CLR	@#312
+166742:	MOV	#066,@#164022
+166750:	MOV	#342,@#164024
+166756:	MOV	@#034022,@#164000	; address of the display RAM
+166764:	MOV	#104306,@#164002
+166772:	RETURN
+
+166774:	MOV	#010,@#033726
+167002:	CLR	@#034044
+167006:	CALL	@#120164
+167012:	MOV	#167076,R1	; string containing the tests menu
+167016:	MOVB	(R1)+,R2
+167020:	BEQ	167030
+167022:	CALL	@#116542	; display character r2
+167026:	BR	167016
+167030:	CALL	@#131120	; wait for a key
+167034:	CALL	@#116542	; display character r2
+167040:	BIC	#177770,R2
+167044:	DEC	R2
+167046:	CMP	R2,#004
+167052:	BHIS	166672
+167054:	ASL	R2
+167056:	CLR	@#034074
+167062:	JMP	@167066(R2)
+
+; addresses of test procedures
+167060:	.WORD	167250		; memory module
+167062:	.WORD	172524		; keyboard
+167064:	.WORD	172004		; LCD
+167066:	.WORD	173000		; system restart
+
+167076:	                                             0E 0D
+167100:	0A 31 3A 20  74 45 53 54  20 73 6D 70  0D 0A 32 3A  .1: tEST smp..2:
+167120:	20 74 45 53  54 20 4B 4C  41 57 49 41  54 55 52 59   tEST KLAWIATURY
+167140:	0D 0A 33 3A  20 74 45 53  54 20 76 6B  69 0D 0A 34  ..3: tEST vki..4
+167160:	3A 20 77 59  48 4F 44 20  57 20 5A 41  47 52 55 5A  : wYHOD W ZAGRUZ
+167200:	5E 49 4B 0D  0A 77 57 45  44 49 54 45  20 4E 4F 4D  ^IK..wWEDITE NOM
+167220:	45 52 20 54  45 53 54 41  20 28 31 2C  32 20 49 4C  ER TESTA (1,2 IL
+167240:	49 20 33 29  3A 0F 00 FF  F7 09 18 FF  DF 15 08 00  I 3):...w..._...
+
+; test of the memory module
+167250:	CALL	166704
+167254:	MOV	#010,@#033726
+167262:	CLR	@#034044
+167266:	CALL	@#120164
+; ask the user to select the device number
+167272:	MOV	#054,R3		; number of characters
+167276:	MOV	#171376,R1	; string 'enter the device number'
+167302:	MOVB	(R1)+,R2
+167304:	CALL	@#116542	; display character r2
+167310:	SOB	R3,167302
+167312:	CALL	@#131120	; wait for a key
+167316:	CALL	@#116542	; display character r2
+167322:	MOV	R2,-(SP)
+; ask the user to enter the starting address
+167324:	MOV	#046,R3		; number of characters
+167330:	MOV	#171452,R1	; string 'enter the starting address'
+167334:	MOVB	(R1)+,R2
+167336:	CALL	@#116542	; display character r2
+167342:	SOB	R3,167334
+167344:	MOV	#031724,R4	; input buffer
+167350:	MOV	#006,031712	; number of expected characters
+167356:	CALL	@#131120	; wait for a key
+167362:	CALL	@#116542	; display character r2
+167366:	MOVB	R2,(R4)+
+167370:	MOV	@-(R3),031712	; here should have been DEC 33CA !!!
+167374:	BNE	167356		; next character
+167376:	MOV	#031724,R3	; input buffer
+167402:	MOV	#031704,R4	; buffer for the value
+167406:	CALL	167532		; convert an ASCII octal number to integer
+; ask the user to enter the ending address
+167412:	MOV	#045,R3		; number of characters
+167416:	MOV	#171520,R1	; string 'enter the ending address'
+167422:	MOVB	(R1)+,R2
+167424:	CALL	@#116542	; display character r2
+167430:	SOB	R3,167422
+167432:	MOV	#031724,R4	; input buffer
+167436:	MOV	#006,031712	; number of expected characters
+167444:	CALL	@#131120	; wait for a key
+167450:	CALL	@#116542	; display character r2
+167454:	MOVB	R2,(R4)+
+167456:	DEC	031712		; character counter
+167462:	BNE	167444		; next character
+167464:	MOV	#031724,R3	; input buffer
+167470:	MOV	#031706,R4	; buffer for the value
+167474:	CALL	167532	; convert an ASCII octal number to integer
+; check if the selected ending address is in allowed range
+167500:	CMP	031706,#023777	; check the upper address limit
+167506:	BLOS	167570		; branch if ok
+167510:	MOV	#030,R3		; number of characters
+167514:	MOV	#171564,R1	; string 'out of allowed address range'
+167520:	MOVB	(R1)+,R2
+167522:	CALL	@#116542	; display character r2
+167526:	SOB	R3,167520
+167530:	BR	167412		; enter new ending address
+
+; convert an octal number in ASCII form pointed to by R3
+; the result will be stored at the memory location pointed to by R4
+167532:	MOV	#006,R0
+167536:	CLR	R1
+167540:	MOVB	(R3)+,R2
+167542:	BIC	#177770,R2
+167546:	ADD	R2,R1
+167550:	DEC	R0
+167552:	BEQ	167564
+167554:	ASL	R1
+167556:	ASL	R1
+167560:	ASL	R1
+167562:	BR	167540
+167564:	MOV	R1,(R4)
+167566:	RETURN
+
+; test the memory module specified by the value on the stack in the address
+; range specified in the memory locations 031704, 031706
+167570:	MOVB	#370,031700	; writting to the SMP
+167576:	MOV	031704,031710
+167604:	MOV	(SP)+,R1	; device number
+167606:	BICB	#376,R1
+167612:	BISB	R1,031700	; writting to the SMP 0 or 1
+167616:	MOV	#000,031720
+167624:	MOV	#001,031702
+167632:	MOV	#000020,@#164022	; transfer rate
+167640:	MOV	031700,@#164024
+167646:	MOV	#252,R1
+167652:	CLR	R2
+167654:	MOV	031704,R0
+167660:	MOV	031704,R3
+167664:	CALL	171230		; set address R3
+167670:	MOV	#300,@#164026	; Write Postincrement
+167676:	CALL	171220		; wait for the transfer to complete
+167702:	CMP	#001,031702
+167710:	BEQ	167750
+167712:	CMP	#002,031702
+167720:	BEQ	167750
+167722:	CMP	R0,R3
+167724:	BEQ	167750
+167726:	MOVB	R2,@#164020	; write the data byte to the SMP
+167732:	CALL	171220		; wait for the transfer to complete
+;
+167736:	CMP	031706,R3
+167742:	BEQ	170002
+167744:	INC	R3
+167746:	BR	167722
+167750:	MOVB	R1,@#164020	; write the data byte to the SMP
+167754:	CALL	171220		; wait for the transfer to complete
+167760:	CMP	#001,031702
+167766:	BEQ	170002
+167770:	BIT	#010002,031702
+167776:	BEQ	170002
+170000:	BR	167736
+170002:	TST	@#164026	; end of the transfer
+170006:	CALL	171220		; wait for the transfer to complete
+170012:	CMP	#001,031702
+170020:	BEQ	170036
+170022:	CMP	#002,031702
+170030:	BEQ	170036
+170032:	MOV	031704,R3
+170036:	CALL	171230		; set address R3
+170042:	MOV	#320,@#164026	; Read Postincrement
+170050:	CALL	171220		; wait for the transfer to complete
+170054:	BICB	#010,031700	; reading from the SMP
+170062:	MOV	031700,@#164024
+170070:	CALL	171220		; wait for the transfer to complete
+;
+170074:	MOV	@#164020,R4	; read a data byte from the SMP
+170100:	CALL	171220		; wait for the transfer to complete
+170104:	CMP	R0,R3
+170106:	BEQ	170120
+170110:	CMPB	R4,R2		; compare the data written and read back
+170112:	BNE	170130		; branch if mismatch
+170114:	JMP	170564
+170120:	CMPB	R4,R1		; compare the data written and read back
+170122:	BNE	170130		; branch if mismatch
+170124:	JMP	170564
+; test failed
+170130:	TST	@#164026	; end of the transfer
+170134:	CALL	171220		; wait for the transfer to complete
+170140:	MOV	#003,031722	; number of octal numbers to display
+170146:	MOV	R2,-(SP)
+170150:	MOV	#171634,R5	; string 'error, address of faulty location:'
+170154:	MOV	#044,031712	; number of characters
+170162:	CALL	170170		; display string
+170166:	BR	170206
+
+; display a string pointed to by the register R5
+; number of characters in the variable 33CA
+170170:	MOVB	(R5)+,R2
+170172:	CALL	@#116542	; display character r2
+170176:	DEC	031712
+170202:	BNE	170170
+170204:	RETURN
+
+; display octal an integer number R3
+170206:	MOV	R3,031712
+170212:	MOV	#005,031716	; number of digits
+170220:	CLC
+170222:	ROL	031712
+170226:	ROL	031712
+170232:	ROL	031712
+170236:	ROL	031712
+170242:	ROLB	031712
+170246:	MOV	031712,-(SP)
+170252:	BIC	#177770,(SP)
+170256:	ADD	#060,(SP)
+170262:	MOVB	(SP)+,R2
+170264:	CLC
+170266:	ROL	031712
+170272:	ROL	031712
+170276:	ROL	031712
+170302:	ROLB	031712
+170306:	CALL	@#116542	; display character r2
+170312:	DEC	031716
+170316:	BNE	170246
+;
+170320:	DEC	031722		; counter of displayed numbers
+170324:	CMP	#002,031722	; second item?
+170332:	BNE	170444
+; 33D2 = #2, display the second item
+170334:	MOV	#171700,R5	; string 'data written:'
+170340:	MOV	#032,031712	; number of characters
+170346:	CALL	170170		; display string
+170352:	CMP	R0,R3
+170354:	BEQ	170370
+170356:	MOV	(SP)+,R2
+170360:	MOV	R2,031712
+170364:	MOV	R2,-(SP)
+170366:	BR	170374
+170370:	MOV	R1,031712
+170374:	MOV	#003,031716
+170402:	CALL	170412
+170406:	JMP	170220
+170412:	ROL	031712
+170416:	ROL	031712
+170422:	ROL	031712
+170426:	ROL	031712
+170432:	ROL	031712
+170436:	ROL	031712
+170442:	RETURN
+;
+170444:	CMP	#000,031722	; all three numbers displayed?
+; 031722 = #1, display the third item
+170452:	BEQ	170514
+170454:	MOV	#171732,R5	; string 'data read:'
+170460:	MOV	#031,031712	; number of characters
+170466:	CALL	170170		; display string
+170472:	MOV	R4,031712
+170476:	MOV	#003,031716
+170504:	CALL	170412
+170510:	JMP	170220
+;
+170514:	MOV	#171764,R5	; string 'test number:'
+170520:	MOV	#020,031712	; number of characters
+170526:	CALL	170170		; display string
+170532:	MOV	031702,031712
+170540:	ADD	#060,031712
+170546:	MOVB	031712,R2
+170552:	CALL	@#116542	; display character r2
+170556:	MOV	(SP)+,R2
+170560:	JMP	171314
+
+; next location
+170564:	CMP	031706,R3	; compare current address against upper limit
+170570:	BEQ	170640
+170572:	CMP	#001,031702
+170600:	BEQ	170620
+170602:	CMP	#002,031702
+170610:	BEQ	170620
+170612:	INC	R3		; increment the current address
+170614:	JMP	170074
+;
+170620:	TST	@#164026	; end of the transfer
+170624:	CALL	171220		; wait for the transfer to complete
+170630:	INC	R0
+170632:	INC	R3
+170634:	JMP	167664
+
+170640:	TST	@#164026	; end of the transfer
+170644:	CALL	171220		; wait for the transfer to complete
+170650:	CMP	#003,031702
+170656:	BEQ	170672
+170660:	CMP	#004,031702
+170666:	BEQ	170732
+170670:	BR	170770
+;
+170672:	DEC	031714
+170676:	CMP	#000,031714
+170704:	BEQ	170716
+170706:	CLC
+170710:	RORB	R1
+170712:	JMP	167660
+170716:	MOV	#200,R1
+170722:	MOV	#010,031714
+170730:	BR	170770
+170732:	DEC	031714
+170736:	CMP	#000,031714
+170744:	BEQ	170756
+170746:	NOP
+170750:	RORB	R1
+170752:	JMP	167660
+170756:	MOV	#177,R1
+170762:	MOV	#010,031714
+170770:	CMP	#001,031702
+170776:	BEQ	171036
+171000:	CMP	#002,031702
+171006:	BEQ	171036
+171010:	ADD	#800,R0
+171014:	ADD	#800,031704
+171022:	CMP	031706,031704
+171030:	BLO	171036
+171032:	JMP	167660
+171036:	INC	031702
+171042:	CMP	#002,031702
+171050:	BNE	171062
+171052:	MOV	#125,R1
+171056:	JMP	167654
+171062:	CMP	#003,031702
+171070:	BNE	171116
+171072:	MOV	031710,031704
+171100:	MOV	#200,R1
+171104:	MOV	#010,031714
+171112:	JMP	167654
+171116:	CMP	#004,031702
+171124:	BEQ	171174
+171126:	MOV	#017,R3		; number of characters
+171132:	MOV	#171614,R1	; string 'test passed'
+171136:	MOVB	(R1)+,R2
+171140:	CALL	@#116542	; display character r2
+171144:	SOB	R3,171136
+171146:	MOV	031710,031704
+171154:	INC	031720
+171160:	CMP	#005,031720
+171166:	BEQ	171372
+171170:	JMP	167624
+171174:	MOV	#177,R1
+171200:	MOV	#010,031714
+171206:	MOV	031710,031704
+171214:	JMP	167654
+
+; wait for the transfer to complete
+171220:	TSTB	@#164024
+171224:	BPL	171220
+171226:	RETURN
+
+; set address R3
+171230:	BISB	#010,031700	; writting to the SMP
+171236:	MOV	031700,@#164024
+171244:	MOV	#240,@#164026	; Write Address
+171252:	CALL	171220		; wait for the transfer to complete
+171256:	SWAB	R3
+171260:	MOVB	R3,@#164020	; high address byte
+171264:	CALL	171220		; wait for the transfer to complete
+171270:	SWAB	R3
+171272:	MOVB	R3,@#164020	; low address byte
+171276:	CALL	171220		; wait for the transfer to complete
+171302:	TST	@#164026	; end of the transfer
+171306:	CALL	171220		; wait for the transfer to complete
+171312:	RETURN
+
+171314:	MOV	#000,-(SP)
+171320:	ADD	#001,(SP)
+171324:	CMP	#177777,(SP)
+171330:	BNE	171320
+171332:	ADD	#002,SP
+171336:	CMP	R3,031706
+171342:	BEQ	171362
+171344:	INC	R3
+171346:	CMP	#002,031702
+171354:	BLO	171366
+171356:	JMP	167664
+171362:	JMP	170650
+171366:	JMP	170036
+171372:	JMP	@#166672
+
+171376:	                                             0E 0D
+171400:	0A 74 45 53  54 20 73 6D  70 0D 0A 77  57 45 44 49  .tEST smp..wWEDI
+171420:	54 45 20 4E  4F 4D 45 52  0A 0D 55 53  54 52 4F 4A  TE NOMER..USTROJ
+171440:	53 54 57 41  0F 5B 58 5D  3A FF 0E 0D  0A 7A 41 44  STWA.[X]:....zAD
+171460:	41 4A 54 45  20 4E 41 5E  41 4C 58 4E  59 4A 0A 0D  AJTE NA^ALXNYJ..
+171500:	41 44 52 45  53 0F 5B 58  58 58 58 58  58 5D 3A FF  ADRES.[XXXXXX]:.
+171520:	0E 0D 0A 7A  41 44 41 4A  54 45 20 4B  4F 4E 45 5E  ...zADAJTE KONE^
+171540:	4E 59 4A 0A  0D 41 44 52  45 53 0F 5B  58 58 58 58  NYJ..ADRES.[XXXX
+171560:	58 58 5D 3A  0E 0D 0A 77  59 48 4F 44  20 5A 41 20  XX]:...wYHOD ZA 
+171600:	47 52 41 4E  49 43 59 20  73 6D 70 0F  0E 0D 0A 74  GRANICY smp....t
+171620:	45 53 54 20  50 52 4F 48  4F 44 0F FF  0E 0D 0A 6F  EST PROHOD.....o
+171640:	5B 49 42 4B  41 2C 41 44  52 45 53 20  4E 45 49 53  [IBKA,ADRES NEIS
+171660:	50 52 41 57  4E 4F 47 4F  20 42 41 4A  54 41 3A 0F  PRAWNOGO BAJTA:.
+171700:	0E 0D 0A 7A  41 50 49 53  41 4E 4E 41  51 20 49 4E  ...zAPISANNAQ IN
+171720:	46 4F 52 4D  41 43 49 51  3A 0F 0E 0D  0A 73 5E 49  FORMACIQ:....s^I
+171740:	54 41 4E 4E  41 51 20 49  4E 46 4F 52  4D 41 43 49  TANNAQ INFORMACI
+171760:	51 3A 0F FF  0E 0D 0A 6E  4F 4D 45 52  20 54 45 53  Q:.....nOMER TES
+172000:	54 41 3A 0F                                         TA:.
+
+; test of the LCD
+172004:	CALL	166704
+172010:	MOV	#010,@#033726
+172016:	CLR	@#034044
+172022:	CALL	@#120164
+; ask the user to select the test pattern
+172026:	MOV	#065,R3		; number of characters
+172032:	MOV	#172414,R1	; string asking for the number or 'N'
+172036:	MOVB	(R1)+,R2
+172040:	CALL	@#116542	; display character r2
+172044:	SOB	R3,172036
+172046:	CALL	@#131120	; wait for a key
+172052:	CALL	@#116542	; display character r2
+172056:	CMP	#116,R2		; key 'N'? (end of the test)
+172062:	BNE	172070		; branch if not
+172064:	JMP	172364
+; test if the selected number is in allowed range
+172070:	MOV	R2,R5
+172072:	SUB	#060,R5
+172076:	CMP	#006,R5
+172102:	BLT	172112
+172104:	CMP	#000,R5
+172110:	BLT	172136
+; invalid key was pressed
+172112:	MOV	#022,R4		; number of characters
+172116:	MOV	#172502,R1	; string 'error'
+172122:	MOVB	(R1)+,R2
+172124:	CALL	@#116542	; display character r2
+172130:	SOB	R4,172122
+172132:	JMP	172046
+; perform the test
+172136:	MOV	@#034022,R3
+172142:	DEC	R5
+172144:	ADD	R5,R5
+172146:	CALL	@172400(R5)	; call the selected test procedure
+172152:	CALL	@#131120	; wait for a key
+172156:	CMP	#116,R2		; key 'N'? (end of the test)
+172162:	BEQ	172210		; branch if yes
+172164:	CALL	172232		; clear screen
+172170:	MOV	@#034022,R3
+172174:	MOV	#000740,R0
+172200:	CLR	(R3)+
+172202:	SOB	R0,172200
+172204:	JMP	172010
+172210:	JMP	172364
+
+; test pattern 0 (all pixels dark)
+172214:	MOV	#177777,R2
+172220:	MOV	#000740,R4
+172224:	MOV	R2,(R3)+
+172226:	SOB	R4,172224
+172230:	RETURN
+
+; test pattern 1 (blank), can be also used to clear the screen
+172232:	CLR	R2
+172234:	CALL	172220
+172240:	RETURN
+
+; test pattern 2
+172242:	MOV	#177777,R2
+172246:	MOV	#010,R5
+172252:	MOV	@#034022,R3
+172256:	MOV	R3,R4
+172260:	MOV	#004,R1
+172264:	MOV	#017,R0
+172270:	MOV	R2,(R4)+
+172272:	COM	R2
+172274:	SOB	R0,172270
+172276:	ADD	#322,R4
+172302:	SOB	R1,172264
+172304:	ADD	#036,R3
+172310:	SOB	R5,172256
+172312:	RETURN
+
+; test pattern 3
+172314:	CLR	R2
+172316:	CALL	172246
+172322:	RETURN
+
+; test pattern 4
+172324:	MOV	#125252,R2
+172330:	CALL	172220
+172334:	RETURN
+
+; test pattern 5
+172336:	MOV	#177777,R2
+172342:	MOV	#040,R1
+172346:	MOV	#017,R4
+172352:	MOV	R2,(R3)+
+172354:	SOB	R4,172352
+172356:	COM	R2
+172360:	SOB	R1,172346
+172362:	RETURN
+
+172364:	MOV	@#034022,R3
+172370:	CALL	172232		; clear screen
+172374:	JMP	@#166672
+
+; addresses of the LCD test procedures
+172400:	.WORD	172214, 172232, 172242, 172314, 172324, 172336
+
+172414:	                                       0E 74 45 53  tES
+172420:	54 20 56 4B  2D 5C 4B 52  41 4E 41 0D  0A 31 20 20  T VK-\KRANA..1  
+172440:	32 20 20 33  20 20 34 20  20 35 20 20  36 0D 0A 6E  2  3  4  5  6..n
+172460:	4F 4D 45 52  20 28 0F 4E  0E 2D 4B 4F  4E 45 43 29  OMER (.N.-KONEC)
+172500:	3F 0F 0D 0A  0E 6F 5B 49  42 4B 41 21  20 6E 4F 4D  ?....o[IBKA! nOM
+172520:	45 52 3F 0F  F7 09 6C F8  DF 15 08 00  D6 37 1F 0A  ER?.w.lx_...V7..
+
+; test of the keyboard
+172524:	CALL	166704
+172530:	MOV	#010,@#033726
+172536:	CLR	@#034044
+172542:	CALL	@#120164
+172546:	MOV	#036,R3
+172552:	MOV	#172742,R1
+172556:	MOVB	(R1)+,R2
+172560:	CALL	@#116542	; display character r2
+172564:	SOB	R3,172556
+172566:	CLR	R3
+172570:	CLR	R4
+172572:	CALL	@#131120	; wait for a key
+172576:	CALL	@#116542	; display character r2
+172602:	CMP	#104,R2
+172606:	BNE	172630
+172610:	CMP	#116,R3
+172614:	BNE	172630
+172616:	CMP	#105,R4
+172622:	BNE	172630
+172624:	JMP	172720
+172630:	MOV	R3,R4
+172632:	MOV	R2,R3
+172634:	MOV	#012,-(SP)
+172640:	MOV	#015,-(SP)
+172644:	MOV	#003,R0
+172650:	MOV	R2,R5
+172652:	BIC	#177770,R5
+172656:	ADD	#060,R5
+172662:	MOV	R5,-(SP)
+172664:	ASR	R2
+172666:	ASR	R2
+172670:	ASR	R2
+172672:	SOB	R0,172650
+172674:	MOV	#040,-(SP)
+172700:	MOV	#006,R0
+172704:	MOV	(SP)+,R2
+172706:	CALL	@#116542	; display character r2
+172712:	SOB	R0,172704
+172714:	JMP	172572
+172720:	MOV	@#034022,R1
+172724:	MOV	#000740,R3
+172730:	CLR	R2
+172732:	MOV	R2,(R1)+
+172734:	SOB	R3,172732
+172736:	JMP	@#166672
+
+172740:	BA ED 0E 74  45 53 54 20  20 4B 4C 41  57 49 41 54  :m.tEST  KLAWIAT
+172760:	55 52 59 0D  0A 6B 4C 41  57 49 5B 41  3F 0D 0A 0F  URY..kLAWI[A?...
+
+; system restart
+173000:	MOV	#200,SP
+173004:	MOV	#000000,@#164034
+173012:	MOV	#005000,@#164032	; RAM address range 000000-077777, 164000-165777
+				; ROM address range 100000-157777, 166000-176777
+173020:	BIT	#000400,@#165032	; RTC register D, valid data?
+173026:	BEQ	173060		; branch if not
+173030:	MOV	@#165036,R0	; RTC user RAM, address 017
+173034:	ASR	R0
+173036:	SWAB	R0
+173040:	CLRB	R0
+173042:	MOV	@#165034,R1	; RTC user RAM, address 016
+173046:	ASR	R1
+173050:	BISB	R1,R0
+173052:	CLR	-(SP)
+173054:	MOV	R0,-(SP)
+173056:	RTI
+;
+173060:	MOV	#166140,@#165034	; 30 shl 1 -> RTC user RAM, address 016
+173066:	MOV	#000754,@#165036	; F6 shl 1 -> RTC user RAM, address 017
+173074:	CALL	153700		; RAM initialisation
+173100:	CALL	174152		; LCD controller initialisation
+173104:	MOV	#173776,@#310	; keyboard controller interrupt vector
+173112:	CLR	@#312
+173116:	MOV	#066,@#164022
+173124:	MOV	#352,@#164024
+173132:	CALL	120536
+173136:	MOV	#020,033726
+173144:	MOV	#004,034044
+173152:	MOV	#174600,R0
+173156:	CALL	174522
+173162:	CLR	034044
+173166:	CLR	033726
+173172:	BIS	#040,034072
+173200:	MOV	#174655,R0
+173204:	CALL	174522
+173210:	BIC	#040,034072
+173216:	MOV	#010,033726
+173224:	CLR	034044
+173230:	MOV	#174661,R0
+173234:	CALL	174522
+173240:	MOV	#030,033726
+173246:	CLR	034044
+173252:	MOV	#174661,R0
+173256:	CALL	174522
+173262:	MOV	#040,033726
+173270:	CLR	034044
+173274:	MOV	#174655,R0
+173300:	CALL	174522
+173304:	MOV	#003,R3
+173310:	CLR	R2
+173312:	MOV	173560(R2),034044
+173320:	MOV	173552(R2),033726
+173326:	MOV	174514(R2),R0
+173332:	CALL	174522
+173336:	TST	(R2)+
+173340:	SOB	R3,173312
+173342:	MOV	#004,R1
+173346:	MOV	173560(R1),034044
+173354:	MOV	173552(R1),033726
+173362:	CALL	173602
+173366:	ASR	R1
+173370:	CALL	174152
+173374:	CALL	173762		; wait for a key
+173400:	CMPB	R0,#273		; cursor right?
+173404:	BEQ	173442
+173406:	CMPB	R0,#133		; cursor left?
+173412:	BEQ	173514
+173414:	CMPB	R0,#373		; key VK (enter) ?
+173420:	BEQ	173530
+173422:	CMPB	R0,#123		; key T ?
+173426:	BNE	173434
+173430:	JMP	@#166672	; tests
+173434:	CALL	174042		; make a beep when unsupported key pressed
+173440:	BR	173374
+
+; cursor right (on the welcome screen)
+173442:	MOV	R1,R0
+173444:	INC	R0
+173446:	CMP	R1,#002
+173452:	BLT	173456
+173454:	CLR	R0
+173456:	ASL	R1
+173460:	CALL	173602
+173464:	MOV	R0,R1
+173466:	ASL	R1
+173470:	MOV	173552(R1),033726
+173476:	MOV	173560(R1),034044
+173504:	CALL	173602
+173510:	ASR	R1
+173512:	BR	173374
+
+; cursor left (on the welcome screen)
+173514:	MOV	R1,R0
+173516:	DEC	R0
+173520:	BPL	173456
+173522:	ADD	#003,R0
+173526:	BR	173456
+
+; enter (on the welcome screen)
+173530:	CLR	R0
+173532:	ASR	R1
+173534:	ADC	R0
+173536:	ASL	R1
+173540:	RESET
+173542:	JMP	@173546(R1)
+
+173546:	.WORD	174170		; boot from the SMP
+173550:	.WORD	174502		; start the BASIC system
+173552:	.WORD	000070, 000070, 000070
+173560:	.WORD	000056, 000114, 000004, 000031, 000031
+173572:	.WORD	000045, 000011, 000011, 000011, 010146
+
+173602:	MOV	R1,-(SP)
+173604:	MOV	034044,-(SP)
+173610:	DEC	034044
+173614:	MOV	R0,-(SP)
+173616:	MOVB	#002,033734
+173624:	MOV	173566(R1),R3
+173630:	BEQ	173712
+173632:	MOV	173574(R1),R2
+173636:	BEQ	173712
+173640:	MOV	#177400,R1
+173644:	MOV	R3,R4
+173646:	BIC	#177770,R4
+173652:	ASH	#177775,R3
+173656:	BEQ	173674
+173660:	CALL	173730
+173664:	ADD	#010,034044
+173672:	SOB	R3,173660
+173674:	MOV	#010,R0
+173700:	SUB	R4,R0
+173702:	ASH	R0,R1
+173704:	BEQ	173712
+173706:	CALL	173730
+173712:	MOV	(SP)+,R0
+173714:	MOV	(SP)+,034044
+173720:	MOV	(SP)+,R1
+173722:	CLRB	033734
+173726:	RETURN
+173730:	MOV	R2,R5
+173732:	MOV	033726,-(SP)
+173736:	DEC	033726
+173742:	CALL	117722		; plot a dot
+173746:	INC	033726
+173752:	SOB	R5,173742
+173754:	MOV	(SP)+,033726
+173760:	RETURN
+
+; wait for a key, return the row and column of a pressed key in r0
+173762:	MTPS	#000
+173766:	WAIT
+173770:	MOV	@#054,R0
+173774:	RETURN
+
+; keyboard interrupt service routine
+173776:	MOV	#362,@#164024
+174004:	CLR	@#164026	; start of the transfer
+174010:	TSTB	@#164024
+174014:	BPL	174010
+174016:	MOV	@#164026,@#054	; key scan code, end of the transfer
+174024:	TSTB	@#164024
+174030:	BPL	174024
+174032:	MOV	#352,@#164024
+174040:	RTI
+
+; make a warning beep
+174042:	MOV	#100,R0		; sound duration, 64 * 8 / 660Hz = 0.8 sec.
+174046:	MOV	#173776,@#310	; keyboard controller interrupt vector
+174054:	CLR	@#312
+174060:	MOV	#373,@#164024
+174066:	MOV	#002274,@#164022	; 660Hz
+174074:	CLR	@#164026	; start of the transfer
+174100:	TSTB	@#164024
+174104:	BPL	174100
+174106:	CLR	@#164020	; dummy data to emit 8 clock cycles
+174112:	TSTB	@#164024
+174116:	BPL	174112
+174120:	SOB	R0,174106
+174122:	TST	@#164026	; end of the transfer
+174126:	TSTB	@#164024
+174132:	BPL	174126
+174134:	MOV	#352,@#164024
+174142:	MOV	#000066,@#164022
+174150:	RETURN
+
+; LCD controller initialisation
+174152:	MOV	034022,@#164000
+174160:	MOV	#104306,@#164002
+174166:	RETURN
+
+; boot from the SMP, r0 selects between the SMP0/1
+174170:	MOV	#000011,@#164022	; transfer rate
+174176:	MOV	#164024,R1	; control/status register
+174202:	MOV	#000370,R5	; writing to the SMP
+174206:	ADD	R0,R5
+174210:	MOV	#174506,R2	; procedure 'wait for the transfer completed'
+174214:	MOV	R5,(R1)
+174216:	CLR	@#164026	; Read Status
+174222:	CALL	(R2)
+174224:	BIC	#010,R5		; reading from the SMP
+174230:	MOV	R5,(R1)
+174232:	MOV	@#164026,R3	; read from the SMP, end of the transfer
+174236:	CALL	(R2)
+; test whether the password protection is active
+174240:	TSTB	R3
+174242:	BPL	174354		; branch if inactive password protection
+; test the attempt counter
+174244:	ASLB	R3
+174246:	BPL	174254		; less than 3 attempts counted, try to unlock
+174250:	ASLB	R3
+174252:	BMI	174460		; three attempts counted, don't even try
+;
+; the password protection is active,
+; an attempt to unlock the memory module
+174254:	BIS	#010,R5		; writing to the SMP
+174260:	MOV	R5,(R1)
+174262:	MOV	#240,@#164026	; Write Address
+174270:	CALL	(R2)
+174272:	CLRB	@#164020	; high address byte
+174276:	CALL	(R2)
+174300:	CLRB	@#164020	; low address byte
+174304:	CALL	(R2)
+174306:	TST	@#164026	; end of the transfer
+174312:	CALL	(R2)
+;
+174314:	MOV	#220,@#164026	; Unlock
+174322:	CALL	(R2)
+174324:	MOV	#174570,R4	; password A0 00 A0 00 A0 00 A0 00
+174330:	MOV	#010,R3
+174334:	MOVB	(R4)+,@#164020
+174340:	CALL	(R2)
+174342:	SOB	R3,174334
+174344:	TST	@#164026	; end of the transfer
+174350:	CALL	(R2)
+174352:	BR	174176		; back to the begin of the boot routine
+;
+; the password protection is inactive,
+; continue with boot sector loading
+174354:	BIS	#010,R5		; writing to the SMP
+174360:	MOV	R5,(R1)
+174362:	MOV	#240,@#164026	; Write Address
+174370:	CALL	(R2)
+174372:	CLR	@#164020	; high address byte
+174376:	CALL	(R2)
+174400:	CLR	@#164020	; low address byte
+174404:	CALL	(R2)
+174406:	TST	@#164026	; end of the transfer
+174412:	CALL	(R2)
+; read the SMP boot sector to the RAM 000000..000777
+174414:	MOV	#001000,R4	; number of bytes
+174420:	CLR	R3
+174422:	MOV	#320,@#164026	; Read Postincrement
+174430:	CALL	(R2)
+174432:	BIC	#010,R5		; reading from the SMP
+174436:	MOV	R5,(R1)
+174440:	CALL	(R2)
+174442:	MOVB	@#164020,(R3)+	; read data byte from the SMP to the RAM
+174446:	CALL	(R2)
+174450:	SOB	R4,174442	; next data byte
+174452:	TST	@#164026	; end of the transfer
+174456:	CALL	(R2)
+174460:	CMPB	#240,@#000000	; test for instruction NOP at address 0000
+174466:	BNE	174472
+174470:	CLR	PC		; start the program from address 0000
+;
+174472:	CALL	174042		; make a beep when wrong bootloader code
+174476:	JMP	173000		; system restart
+
+; start the BASIC system
+174502:	JMP	@#116422
+
+174506:	TSTB	(R1)
+174510:	BPL	174506
+174512:	RETURN
+
+174514:	.WORD	174626
+174516:	.WORD	174635
+174520:	.WORD	174644
+
+; print a zero terminated string pointed to by r0
+174522:	MOVB	(R0)+,033740
+174526:	MOVB	(R0)+,033736
+174532:	MOV	033712,033716
+174540:	MOV	#001,033734
+174546:	MOV	R2,-(SP)
+174550:	CLR	R2
+174552:	MOVB	(R0)+,R2
+174554:	BEQ	174564
+174556:	CALL	116664
+174562:	BR	174550
+174564:	MOV	(SP)+,R2
+174566:	RETURN
+
+174570:	A0 00 A0 00 A0 00 A0 00
+
+174600:	01 01 7C 6C  65 6B 74 72  6F 6E 69 6B  61 20 2D 20  ..|lektronika - 
+174620:	70 6B 31 30  30 00 01 01  73 6D 70 30  00 01 01 73  pk100...smp0...s
+174640:	6D 70 31 00  01 01 62 65  6A 73 69 6B  00 18 01 3D  mp1...bejsik...=
+174660:	00 18 01 7F  00
