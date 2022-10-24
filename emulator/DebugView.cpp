@@ -16,16 +16,16 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "Views.h"
 #include "ToolWindow.h"
 #include "Emulator.h"
-#include "emubase\Emubase.h"
+#include "emubase/Emubase.h"
 
 //////////////////////////////////////////////////////////////////////
 
 
-HWND g_hwndDebug = (HWND) INVALID_HANDLE_VALUE;  // Debug View window handle
+HWND g_hwndDebug = (HWND)INVALID_HANDLE_VALUE;  // Debug View window handle
 WNDPROC m_wndprocDebugToolWindow = NULL;  // Old window proc address of the ToolWindow
 
-HWND m_hwndDebugViewer = (HWND) INVALID_HANDLE_VALUE;
-HWND m_hwndDebugToolbar = (HWND) INVALID_HANDLE_VALUE;
+HWND m_hwndDebugViewer = (HWND)INVALID_HANDLE_VALUE;
+HWND m_hwndDebugToolbar = (HWND)INVALID_HANDLE_VALUE;
 
 WORD m_wDebugCpuR[9];  // Old register values - R0..R7, PSW
 BOOL m_okDebugCpuRChanged[9];  // Register change flags
@@ -85,7 +85,7 @@ void DebugView_Create(HWND hwndParent, int x, int y, int width, int height)
     DebugView_UpdateWindowText();
 
     // ToolWindow subclassing
-    m_wndprocDebugToolWindow = (WNDPROC) LongToPtr( SetWindowLongPtr(
+    m_wndprocDebugToolWindow = (WNDPROC)LongToPtr( SetWindowLongPtr(
             g_hwndDebug, GWLP_WNDPROC, PtrToLong(DebugViewWndProc)) );
 
     RECT rcClient;  GetClientRect(g_hwndDebug, &rcClient);
@@ -100,13 +100,13 @@ void DebugView_Create(HWND hwndParent, int x, int y, int width, int height)
     m_hwndDebugToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, NULL,
             WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_TRANSPARENT | TBSTYLE_TOOLTIPS | CCS_NOPARENTALIGN | CCS_NODIVIDER | CCS_VERT,
             4, 4, 32, rcClient.bottom, m_hwndDebugViewer,
-            (HMENU) 102,
+            (HMENU)102,
             g_hInst, NULL);
 
     TBADDBITMAP addbitmap;
     addbitmap.hInst = g_hInst;
     addbitmap.nID = IDB_TOOLBAR;
-    SendMessage(m_hwndDebugToolbar, TB_ADDBITMAP, 2, (LPARAM) &addbitmap);
+    SendMessage(m_hwndDebugToolbar, TB_ADDBITMAP, 2, (LPARAM)&addbitmap);
 
     SendMessage(m_hwndDebugToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM) sizeof(TBBUTTON), 0);
     SendMessage(m_hwndDebugToolbar, TB_SETBUTTONSIZE, 0, (LPARAM) MAKELONG (26, 26));
@@ -127,7 +127,7 @@ void DebugView_Create(HWND hwndParent, int x, int y, int width, int height)
     buttons[2].idCommand = ID_DEBUG_STEPOVER;
     buttons[2].iBitmap = ToolbarImageStepOver;
 
-    SendMessage(m_hwndDebugToolbar, TB_ADDBUTTONS, (WPARAM) sizeof(buttons) / sizeof(TBBUTTON), (LPARAM) &buttons);
+    SendMessage(m_hwndDebugToolbar, TB_ADDBUTTONS, (WPARAM) sizeof(buttons) / sizeof(TBBUTTON), (LPARAM)&buttons);
 }
 
 void DebugView_Redraw()
@@ -140,7 +140,7 @@ void DebugView_AdjustWindowLayout()
 {
     RECT rc;  GetClientRect(g_hwndDebug, &rc);
 
-    if (m_hwndDebugViewer != (HWND) INVALID_HANDLE_VALUE)
+    if (m_hwndDebugViewer != (HWND)INVALID_HANDLE_VALUE)
         SetWindowPos(m_hwndDebugViewer, NULL, 0, 0, rc.right, rc.bottom, SWP_NOZORDER);
 }
 
@@ -151,7 +151,7 @@ LRESULT CALLBACK DebugViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
     switch (message)
     {
     case WM_DESTROY:
-        g_hwndDebug = (HWND) INVALID_HANDLE_VALUE;  // We are closed! Bye-bye!..
+        g_hwndDebug = (HWND)INVALID_HANDLE_VALUE;  // We are closed! Bye-bye!..
         return CallWindowProc(m_wndprocDebugToolWindow, hWnd, message, wParam, lParam);
     case WM_SIZE:
         lResult = CallWindowProc(m_wndprocDebugToolWindow, hWnd, message, wParam, lParam);
@@ -169,6 +169,7 @@ LRESULT CALLBACK DebugViewViewerWndProc(HWND hWnd, UINT message, WPARAM wParam, 
     switch (message)
     {
     case WM_COMMAND:
+        // Forward commands to the main window
         ::PostMessage(g_hwnd, WM_COMMAND, wParam, lParam);
         break;
     case WM_PAINT:
@@ -265,13 +266,13 @@ void DebugView_DoDraw(HDC hdc)
     DebugView_DrawProcessor(hdc, pDebugPU, 30 + cxChar * 2, 2 + 1 * cyLine, arrR, arrRChanged, oldPsw);
 
     // Draw stack for the current processor
-    DebugView_DrawMemoryForRegister(hdc, 6, pDebugPU, 30 + 36 * cxChar, 2 + 0 * cyLine, oldSP);
+    DebugView_DrawMemoryForRegister(hdc, 6, pDebugPU, 30 + 35 * cxChar, 2 + 0 * cyLine, oldSP);
 
-    BOOL okWatches = DebugView_DrawWatchpoints(hdc, pDebugPU, 30 + 57 * cxChar, 2 + 0 * cyLine);
+    BOOL okWatches = DebugView_DrawWatchpoints(hdc, pDebugPU, 30 + 54 * cxChar, 2 + 0 * cyLine);
     if (!okWatches)
-        DebugView_DrawPorts(hdc, g_pBoard, 30 + 57 * cxChar, 2 + 0 * cyLine);
+        DebugView_DrawPorts(hdc, g_pBoard, 30 + 54 * cxChar, 2 + 0 * cyLine);
 
-    DebugView_DrawBreakpoints(hdc, 30 + 83 * cxChar, 2 + 0 * cyLine);
+    DebugView_DrawBreakpoints(hdc, 30 + 77 * cxChar, 2 + 0 * cyLine);
 
     SetTextColor(hdc, colorOld);
     SetBkColor(hdc, colorBkOld);
@@ -322,12 +323,12 @@ void DebugView_DrawProcessor(HDC hdc, const CProcessor* pProc, int x, int y, WOR
 
     // PSW value
     ::SetTextColor(hdc, arrRChanged[8] ? colorChanged : colorText);
-    TextOut(hdc, x, y + 9 * cyLine, _T("PS"), 2);
+    TextOut(hdc, x, y + 10 * cyLine, _T("PS"), 2);
     WORD psw = arrR[8]; // pProc->GetPSW();
-    DrawOctalValue(hdc, x + cxChar * 3, y + 9 * cyLine, psw);
-    DrawHexValue(hdc, x + cxChar * 10, y + 9 * cyLine, psw);
+    DrawOctalValue(hdc, x + cxChar * 3, y + 10 * cyLine, psw);
+    DrawHexValue(hdc, x + cxChar * 10, y + 10 * cyLine, psw);
     ::SetTextColor(hdc, colorText);
-    TextOut(hdc, x + cxChar * 15, y + 8 * cyLine, _T("       HP  TNZVC"), 16);
+    TextOut(hdc, x + cxChar * 15, y + 9 * cyLine, _T("       HP  TNZVC"), 16);
 
     // PSW value bits colored bit-by-bit
     TCHAR buffera[2];  buffera[1] = 0;
@@ -336,19 +337,19 @@ void DebugView_DrawProcessor(HDC hdc, const CProcessor* pProc, int x, int y, WOR
         WORD bitpos = 1 << i;
         buffera[0] = (psw & bitpos) ? '1' : '0';
         ::SetTextColor(hdc, ((psw & bitpos) != (oldPsw & bitpos)) ? colorChanged : colorText);
-        TextOut(hdc, x + cxChar * (15 + 15 - i), y + 9 * cyLine, buffera, 1);
+        TextOut(hdc, x + cxChar * (15 + 15 - i), y + 10 * cyLine, buffera, 1);
     }
 
     ::SetTextColor(hdc, colorText);
 
     // Processor mode - HALT or USER
     BOOL okHaltMode = pProc->IsHaltMode();
-    TextOut(hdc, x, y + 11 * cyLine, okHaltMode ? _T("HALT") : _T("USER"), 4);
+    TextOut(hdc, x, y + 12 * cyLine, okHaltMode ? _T("HALT") : _T("USER"), 4);
 
     // "Stopped" flag
     BOOL okStopped = pProc->IsStopped();
     if (okStopped)
-        TextOut(hdc, x + 6 * cxChar, y + 11 * cyLine, _T("STOP"), 4);
+        TextOut(hdc, x + 6 * cxChar, y + 12 * cyLine, _T("STOP"), 4);
 }
 
 void DebugView_DrawAddressAndValue(HDC hdc, const CProcessor* pProc, CMotherboard* pBoard, uint16_t address, int x, int y, int cxChar)
@@ -474,21 +475,21 @@ void DebugView_DrawPorts(HDC hdc, const CMotherboard* /*pBoard*/, int x, int y)
     y += cyLine;
     value = g_pBoard->GetPortView(0170006);
     DrawOctalValue(hdc, x + 0 * cxChar, y, 0170006);
-    DrawOctalValue(hdc, x + 8 * cxChar, y, value);
+    DrawOctalValue(hdc, x + 7 * cxChar, y, value);
     //DrawBinaryValue(hdc, x + 15 * cxChar, y, value);
-    TextOut(hdc, x + 16 * cxChar, y, _T("System"), 6);
+    TextOut(hdc, x + 14 * cxChar, y, _T("System"), 6);
     y += cyLine;
     value = g_pBoard->GetPortView(0177660);
     DrawOctalValue(hdc, x + 0 * cxChar, y, 0177572);
-    DrawOctalValue(hdc, x + 8 * cxChar, y, value);
+    DrawOctalValue(hdc, x + 7 * cxChar, y, value);
     //DrawBinaryValue(hdc, x + 15 * cxChar, y, value);
-    TextOut(hdc, x + 16 * cxChar, y, _T("VADDR"), 5);
+    TextOut(hdc, x + 14 * cxChar, y, _T("VADDR"), 5);
     y += cyLine;
     value = g_pBoard->GetPortView(0177570);
     DrawOctalValue(hdc, x + 0 * cxChar, y, 0177570);
-    DrawOctalValue(hdc, x + 8 * cxChar, y, value);
+    DrawOctalValue(hdc, x + 7 * cxChar, y, value);
     //DrawBinaryValue(hdc, x + 15 * cxChar, y, value);
-    TextOut(hdc, x + 16 * cxChar, y, _T("VDATA"), 5);
+    TextOut(hdc, x + 14 * cxChar, y, _T("VDATA"), 5);
     //y += cyLine;
 }
 
@@ -500,7 +501,7 @@ BOOL DebugView_DrawBreakpoints(HDC hdc, int x, int y)
 
     int cxChar, cyLine;  GetFontWidthAndHeight(hdc, &cxChar, &cyLine);
 
-    TextOut(hdc, x, y, _T("Breakpts:"), 9);
+    TextOut(hdc, x, y, _T("Breakpts"), 8);
     y += cyLine;
     while (*pbps != 0177777)
     {

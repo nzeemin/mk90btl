@@ -76,7 +76,6 @@ void DebugView_Redraw();
 LRESULT CALLBACK DebugViewWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK DebugViewViewerWndProc(HWND, UINT, WPARAM, LPARAM);
 void DebugView_OnUpdate();
-BOOL DebugView_IsRegisterChanged(int regno);
 
 
 //////////////////////////////////////////////////////////////////////
