@@ -274,7 +274,7 @@ void ScreenView_OnDraw(HDC hdc)
         case 8: nKeyboardResource = IDB_KEYBOARD8; break;
         }
 
-        HBITMAP hBmp = LoadPngFromResources(MAKEINTRESOURCE(nKeyboardResource));
+        HBITMAP hBmp = BitmapFile_LoadPngFromResource(MAKEINTRESOURCE(nKeyboardResource));
         HDC hdcMem = ::CreateCompatibleDC(hdc);
         HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
 
@@ -469,12 +469,11 @@ BOOL ScreenView_SaveScreenshot(LPCTSTR sFileName)
     ASSERT(m_bits != NULL);
 
     DWORD* pBits = (DWORD*) ::calloc(m_cxScreenWidth * m_cyScreenHeight, 4);
-    const uint32_t* colors = Emulator_GetPalette(m_ScreenPalette);
     Emulator_PrepareScreenRGB32(pBits, m_ScreenMode, m_ScreenPalette);
 
     LPCTSTR sFileNameExt = _tcsrchr(sFileName, _T('.'));
     BOOL result = FALSE;
-    result = PngFile_SaveScreenshot((uint32_t*)pBits, colors, sFileName, m_cxScreenWidth, m_cyScreenHeight);
+    result = BitmapFile_SavePngFile((uint32_t*)pBits, sFileName, m_cxScreenWidth, m_cyScreenHeight);
 
     ::free(pBits);
 

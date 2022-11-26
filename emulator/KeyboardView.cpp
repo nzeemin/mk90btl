@@ -271,7 +271,7 @@ void KeyboardView_OnDraw(HDC hdc)
     if (yScreenOffset < cyScreenHeader) yScreenOffset = cyScreenHeader;
     int yBitmapTop = yScreenOffset - cyScreenHeader;
 
-    HBITMAP hBmp = LoadPngFromResources(MAKEINTRESOURCE(nKeyboardResource));
+    HBITMAP hBmp = BitmapFile_LoadPngFromResource(MAKEINTRESOURCE(nKeyboardResource));
     HDC hdcMem = ::CreateCompatibleDC(hdc);
     HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
 

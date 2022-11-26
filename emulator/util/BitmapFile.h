@@ -18,13 +18,11 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 void BitmapFile_Init();
 void BitmapFile_Done();
 
+HBITMAP BitmapFile_LoadPngFromResource(LPCTSTR lpName);
 
-HBITMAP LoadPngFromResources(LPCTSTR lpName);
-
-// Save screenshot as .PNG file
-bool PngFile_SaveScreenshot(
-    const uint32_t* bits,
-    const uint32_t* colors,
+// Save the image as .PNG file
+bool BitmapFile_SavePngFile(
+    const uint32_t* pBits,
     LPCTSTR sFileName,
     int screenWidth, int screenHeight);
 
