@@ -14,6 +14,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "Main.h"
 #include "Views.h"
 #include "Emulator.h"
+#include "util/BitmapFile.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -270,14 +271,14 @@ void KeyboardView_OnDraw(HDC hdc)
     if (yScreenOffset < cyScreenHeader) yScreenOffset = cyScreenHeader;
     int yBitmapTop = yScreenOffset - cyScreenHeader;
 
-    HBITMAP hBmp = ::LoadBitmap(g_hInst, MAKEINTRESOURCE(nKeyboardResource));
+    HBITMAP hBmp = LoadPngFromResources(MAKEINTRESOURCE(nKeyboardResource));
     HDC hdcMem = ::CreateCompatibleDC(hdc);
     HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
 
     BITMAP bitmap;
     VERIFY(::GetObject(hBmp, sizeof(BITMAP), &bitmap));
-    int cxBitmap = (int)bitmap.bmWidth;
-    int cyBitmap = (int)bitmap.bmHeight;
+    int cxBitmap = bitmap.bmWidth;
+    int cyBitmap = bitmap.bmHeight;
     m_nKeyboardBitmapLeft = -m_nKeyboardViewScale * 160; //(rc.right - 300) / 2;
     m_nKeyboardBitmapTop = yBitmapTop;  //(rc.bottom - cyBitmap) / 2;
     if (m_nKeyboardBitmapTop < 0) m_nKeyboardBitmapTop = 0;

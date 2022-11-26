@@ -274,7 +274,7 @@ void ScreenView_OnDraw(HDC hdc)
         case 8: nKeyboardResource = IDB_KEYBOARD8; break;
         }
 
-        HBITMAP hBmp = ::LoadBitmap(g_hInst, MAKEINTRESOURCE(nKeyboardResource));
+        HBITMAP hBmp = LoadPngFromResources(MAKEINTRESOURCE(nKeyboardResource));
         HDC hdcMem = ::CreateCompatibleDC(hdc);
         HGDIOBJ hOldBitmap = ::SelectObject(hdcMem, hBmp);
 
@@ -474,10 +474,7 @@ BOOL ScreenView_SaveScreenshot(LPCTSTR sFileName)
 
     LPCTSTR sFileNameExt = _tcsrchr(sFileName, _T('.'));
     BOOL result = FALSE;
-    if (sFileNameExt != NULL && _tcsicmp(sFileNameExt, _T(".png")) == 0)
-        result = PngFile_SaveScreenshot((uint32_t*)pBits, colors, sFileName, m_cxScreenWidth, m_cyScreenHeight);
-    else
-        result = BmpFile_SaveScreenshot((uint32_t*)pBits, colors, sFileName, m_cxScreenWidth, m_cyScreenHeight);
+    result = PngFile_SaveScreenshot((uint32_t*)pBits, colors, sFileName, m_cxScreenWidth, m_cyScreenHeight);
 
     ::free(pBits);
 

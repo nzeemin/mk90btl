@@ -12,106 +12,137 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "stdafx.h"
 #include "BitmapFile.h"
-#include <Share.h>
+#include <share.h>
+
+#include <wincodec.h>
+#include <wincodecsdk.h>
+#pragma comment(lib, "WindowsCodecs.lib")
+
+
+//////////////////////////////////////////////////////////////////////
+// Globals
+
+IWICImagingFactory * BitmapFile_pIWICFactory = NULL;
+
+
+void BitmapFile_Init()
+{
+    // Initialize COM
+    CoInitialize(NULL);
+
+    CoCreateInstance(
+        CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER,
+        IID_PPV_ARGS(&BitmapFile_pIWICFactory));
+}
+
+void BitmapFile_Done()
+{
+    BitmapFile_pIWICFactory->Release();
+    BitmapFile_pIWICFactory = NULL;
+}
 
 
 //////////////////////////////////////////////////////////////////////
 
-bool BmpFile_SaveScreenshot(
-    const uint32_t* pBits,
-    const uint32_t* palette,
-    LPCTSTR sFileName,
-    int screenWidth, int screenHeight)
+
+HBITMAP CreateHBITMAP(IWICBitmapSource * ipBitmap)
 {
-    ASSERT(pBits != NULL);
-    ASSERT(palette != NULL);
-    ASSERT(sFileName != NULL);
+    // get image attributes and check for valid image
+    UINT width = 0;
+    UINT height = 0;
+    if (FAILED(ipBitmap->GetSize(&width, &height)) || width == 0 || height == 0)
+        return NULL;
 
-    // Create file
-    HANDLE hFile = ::CreateFile(sFileName,
-            GENERIC_WRITE, FILE_SHARE_READ, NULL,
-            CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
-        return false;
+    // prepare structure giving bitmap information (negative height indicates a top-down DIB)
+    BITMAPINFO bminfo;
+    ZeroMemory(&bminfo, sizeof(bminfo));
+    bminfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bminfo.bmiHeader.biWidth = width;
+    bminfo.bmiHeader.biHeight = -((LONG)height);
+    bminfo.bmiHeader.biPlanes = 1;
+    bminfo.bmiHeader.biBitCount = 32;
+    bminfo.bmiHeader.biCompression = BI_RGB;
 
-    BITMAPFILEHEADER hdr;
-    ::ZeroMemory(&hdr, sizeof(hdr));
-    hdr.bfType = 0x4d42;  // "BM"
-    BITMAPINFOHEADER bih;
-    ::ZeroMemory(&bih, sizeof(bih));
-    bih.biSize = sizeof( BITMAPINFOHEADER );
-    bih.biWidth = screenWidth;
-    bih.biHeight = screenHeight;
-    bih.biSizeImage = bih.biWidth * bih.biHeight / 2;
-    bih.biPlanes = 1;
-    bih.biBitCount = 4;
-    bih.biCompression = BI_RGB;
-    bih.biXPelsPerMeter = bih.biYPelsPerMeter = 2000;
-    hdr.bfSize = (uint32_t) sizeof(BITMAPFILEHEADER) + bih.biSize + bih.biSizeImage;
-    hdr.bfOffBits = (uint32_t) sizeof(BITMAPFILEHEADER) + bih.biSize + sizeof(RGBQUAD) * 16;
+    // create a DIB section that can hold the image
+    void * pvImageBits = NULL;
+    HDC hdcScreen = ::GetDC(NULL);
+    HBITMAP hbmp = ::CreateDIBSection(hdcScreen, &bminfo, DIB_RGB_COLORS, &pvImageBits, NULL, 0);
+    ReleaseDC(NULL, hdcScreen);
+    if (hbmp == NULL)
+        return NULL;
 
-    DWORD dwBytesWritten = 0;
+    // extract the image into the HBITMAP
 
-    uint8_t * pData = (uint8_t *) ::calloc(bih.biSizeImage, 1);
-    if (pData == NULL)
+    const UINT cbStride = width * 4;
+    const UINT cbImage = cbStride * height;
+    if (FAILED(ipBitmap->CopyPixels(NULL, cbStride, cbImage, static_cast<BYTE *>(pvImageBits))))
     {
-        CloseHandle(hFile);
-        return false;
+        // couldn't extract image; delete HBITMAP
+        ::DeleteObject(hbmp);
+        return NULL;
     }
 
-    // Prepare the image data
-    const uint32_t * psrc = pBits;
-    uint8_t * pdst = pData;
-    for (int i = 0; i < screenWidth * screenHeight; i++)
-    {
-        uint32_t rgb = *psrc;
-        psrc++;
-        uint8_t color = 0;
-        for (uint8_t c = 0; c < 16; c++)
-        {
-            if (palette[c] == rgb)
-            {
-                color = c;
-                break;
-            }
-        }
-        if ((i & 1) == 0)
-            *pdst = (color << 4);
-        else
-        {
-            *pdst = (*pdst) & 0xf0 | color;
-            pdst++;
-        }
-    }
+    return hbmp;
+}
 
-    WriteFile(hFile, &hdr, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
-    if (dwBytesWritten != sizeof(BITMAPFILEHEADER))
-    {
-        ::free(pData);  CloseHandle(hFile);
-        return false;
-    }
-    WriteFile(hFile, &bih, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
-    if (dwBytesWritten != sizeof(BITMAPINFOHEADER))
-    {
-        ::free(pData);  CloseHandle(hFile);
-        return false;
-    }
-    WriteFile(hFile, palette, sizeof(RGBQUAD) * 16, &dwBytesWritten, NULL);
-    if (dwBytesWritten != sizeof(RGBQUAD) * 16)
-    {
-        ::free(pData);  CloseHandle(hFile);
-        return false;
-    }
-    WriteFile(hFile, pData, bih.biSizeImage, &dwBytesWritten, NULL);
-    if (dwBytesWritten != bih.biSizeImage)
-    {
-        ::free(pData);  CloseHandle(hFile);
-        return false;
-    }
-    ::free(pData);
-    CloseHandle(hFile);
+HBITMAP LoadPngFromResources(LPCTSTR lpName)
+{
+    IWICImagingFactory * pIWICFactory = BitmapFile_pIWICFactory;
+    HRESULT hr = NULL;
 
-    return true;
+    // find the resource
+    HRSRC hrsrc = FindResource(NULL, lpName, _T("IMAGE"));
+    if (hrsrc == NULL)
+        return NULL;
+
+    // load the resource
+    DWORD dwResourceSize = ::SizeofResource(NULL, hrsrc);
+    HGLOBAL hglbImage = ::LoadResource(NULL, hrsrc);
+    if (hglbImage == NULL)
+        return NULL;
+
+    // lock the resource, getting a pointer to its data
+    LPVOID pvSourceResourceData = ::LockResource(hglbImage);
+    if (pvSourceResourceData == NULL)
+        return NULL;
+
+    IWICStream *pIWICStream = NULL;
+    hr = pIWICFactory->CreateStream(&pIWICStream);
+    if (hr != S_OK)
+        return NULL;
+
+    hr = pIWICStream->InitializeFromMemory(reinterpret_cast<BYTE*>(pvSourceResourceData), dwResourceSize);
+    if (hr != S_OK)
+        return NULL;
+
+    IWICBitmapDecoder *pIDecoder = NULL;
+    hr = pIWICFactory->CreateDecoderFromStream(pIWICStream, NULL, WICDecodeMetadataCacheOnLoad, &pIDecoder);
+    if (hr != S_OK)
+        return NULL;
+
+    IWICBitmapFrameDecode *pIDecoderFrame = NULL;
+    hr = pIDecoder->GetFrame(0, &pIDecoderFrame);
+    VERIFY(::FreeResource(hglbImage) == 0);
+    if (hr != S_OK)
+        return NULL;
+
+    // convert the image to 32bpp BGRA format with pre-multiplied alpha
+    //   (it may not be stored in that format natively in the PNG resource,
+    //   but we need this format to create the DIB to use on-screen)
+    IWICBitmapSource * ipBitmap = NULL;
+    hr = WICConvertBitmapSource(GUID_WICPixelFormat32bppPBGRA, pIDecoderFrame, &ipBitmap);
+    pIDecoderFrame->Release();
+    if (hr != S_OK)
+        return NULL;
+
+    // create a HBITMAP containing the image
+    HBITMAP hbmp = CreateHBITMAP(ipBitmap);
+    ipBitmap->Release();
+    if (hbmp == NULL)
+        return NULL;
+
+    pIWICStream->Release();
+    return hbmp;
 }
 
 
