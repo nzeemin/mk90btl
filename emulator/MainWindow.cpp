@@ -14,8 +14,8 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <commdlg.h>
 #include <crtdbg.h>
 #include <mmintrin.h>
-#include <vfw.h>
-#include <commctrl.h>
+#include <Vfw.h>
+#include <CommCtrl.h>
 
 #include "Main.h"
 #include "emubase\Emubase.h"
@@ -996,7 +996,7 @@ void MainWindow_DoFileScreenshotSaveAs()
     TCHAR bufFileName[MAX_PATH];
     BOOL okResult = ShowSaveDialog(g_hwnd,
             _T("Save screenshot as"),
-            _T("PNG images (*.png)\0*.png\0All Files (*.*)\0*.*\0\0"),
+            _T("PNG bitmaps (*.png)\0*.png\0BMP bitmaps (*.bmp)\0*.bmp\0TIFF bitmaps (*.tiff)\0*.tiff\0All Files (*.*)\0*.*\0\0"),
             _T("png"),
             bufFileName);
     if (! okResult) return;

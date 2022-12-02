@@ -13,7 +13,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "stdafx.h"
 #include <windowsx.h>
 #include <mmintrin.h>
-#include <vfw.h>
+#include <Vfw.h>
 #include "Main.h"
 #include "Views.h"
 #include "Emulator.h"
@@ -116,7 +116,7 @@ void ScreenView_CreateDisplay()
     m_bmpinfo.bmiHeader.biClrUsed = 0;
     m_bmpinfo.bmiHeader.biClrImportant = 0;
 
-    m_hbmp = CreateDIBSection( hdc, &m_bmpinfo, DIB_RGB_COLORS, (void **) &m_bits, NULL, 0 );
+    m_hbmp = CreateDIBSection( hdc, &m_bmpinfo, DIB_RGB_COLORS, (void **)&m_bits, NULL, 0 );
 
     VERIFY(::ReleaseDC(g_hwnd, hdc));
 }
@@ -468,12 +468,17 @@ BOOL ScreenView_SaveScreenshot(LPCTSTR sFileName)
     ASSERT(sFileName != NULL);
     ASSERT(m_bits != NULL);
 
-    DWORD* pBits = (DWORD*) ::calloc(m_cxScreenWidth * m_cyScreenHeight, 4);
+    DWORD* pBits = (DWORD*)::calloc(m_cxScreenWidth * m_cyScreenHeight, sizeof(uint32_t));
     Emulator_PrepareScreenRGB32(pBits, m_ScreenMode, m_ScreenPalette);
 
     LPCTSTR sFileNameExt = _tcsrchr(sFileName, _T('.'));
-    BOOL result = FALSE;
-    result = BitmapFile_SavePngFile((uint32_t*)pBits, sFileName, m_cxScreenWidth, m_cyScreenHeight);
+    BitmapFileFormat format = BitmapFileFormatPng;
+    if (sFileNameExt != NULL && _tcsicmp(sFileNameExt, _T(".bmp")) == 0)
+        format = BitmapFileFormatBmp;
+    else if (sFileNameExt != NULL && (_tcsicmp(sFileNameExt, _T(".tif")) == 0 || _tcsicmp(sFileNameExt, _T(".tiff")) == 0))
+        format = BitmapFileFormatTiff;
+    bool result = BitmapFile_SaveImageFile(
+            (const uint32_t *)pBits, sFileName, format, m_cxScreenWidth, m_cyScreenHeight);
 
     ::free(pBits);
 
@@ -502,7 +507,7 @@ HGLOBAL ScreenView_GetScreenshotAsDIB()
         return NULL;
     }
 
-    LPBYTE p = (LPBYTE) ::GlobalLock(hDIB);
+    LPBYTE p = (LPBYTE)::GlobalLock(hDIB);
     ::CopyMemory(p, &bi, sizeof(BITMAPINFOHEADER));
     p += sizeof(BITMAPINFOHEADER);
     for (int line = 0; line < m_cyScreenHeight; line++)

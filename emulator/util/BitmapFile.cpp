@@ -12,7 +12,6 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #include "stdafx.h"
 #include "BitmapFile.h"
-#include <share.h>
 
 #include <wincodec.h>
 #include <wincodecsdk.h>
@@ -124,7 +123,7 @@ HBITMAP BitmapFile_LoadPngFromResource(LPCTSTR lpName)
 
     IWICBitmapFrameDecode *pIDecoderFrame = NULL;
     hr = pIDecoder->GetFrame(0, &pIDecoderFrame);
-    VERIFY(::FreeResource(hglbImage) == 0);
+    ::FreeResource(hglbImage);
     if (hr != S_OK)
         return NULL;
 
@@ -151,9 +150,9 @@ HBITMAP BitmapFile_LoadPngFromResource(LPCTSTR lpName)
 //////////////////////////////////////////////////////////////////////
 
 
-bool BitmapFile_SavePngFile(
+bool BitmapFile_SaveImageFile(
     const uint32_t* pBits,
-    LPCTSTR sFileName,
+    LPCTSTR sFileName, BitmapFileFormat format,
     int width, int height)
 {
     ASSERT(pBits != NULL);
@@ -161,6 +160,17 @@ bool BitmapFile_SavePngFile(
 
     IWICImagingFactory * piFactory = BitmapFile_pIWICFactory;
     ASSERT(piFactory != NULL);
+
+    GUID containerFormatGuid = GUID_ContainerFormatPng;
+    switch (format)
+    {
+    case BitmapFileFormatBmp:
+        containerFormatGuid = GUID_ContainerFormatBmp; break;
+    case BitmapFileFormatTiff:
+        containerFormatGuid = GUID_ContainerFormatTiff; break;
+    default:
+        containerFormatGuid = GUID_ContainerFormatPng;
+    }
 
     bool result = false;
     HRESULT hr = NULL;
@@ -170,7 +180,7 @@ bool BitmapFile_SavePngFile(
     WICPixelFormatGUID formatGUID = GUID_WICPixelFormat24bppBGR;
 
     IWICBitmapEncoder *piEncoder = NULL;
-    hr = piFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &piEncoder);
+    hr = piFactory->CreateEncoder(containerFormatGuid, NULL, &piEncoder);
     if (hr != S_OK) goto Cleanup;
 
     hr = piFactory->CreateStream(&piStream);
