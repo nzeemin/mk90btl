@@ -416,7 +416,7 @@ void MainWindow_AdjustWindowLayout()
     RECT rcStatus;  GetWindowRect(m_hwndStatusbar, &rcStatus);
     int cyStatus = rcStatus.bottom - rcStatus.top;
 
-    int yScreen = 0;
+    int xScreen = 0, yScreen = 0;
     int cxScreen = 0, cyScreen = 0;
 
     int cyToolbar = 0;
@@ -428,58 +428,43 @@ void MainWindow_AdjustWindowLayout()
     }
 
     RECT rc;  GetClientRect(g_hwnd, &rc);
-    int cxStatus = rc.right;
+    int cxClient = rc.right;
+    int cyClient = rc.bottom - cyToolbar - cyStatus;
+    int cxStatus = cxClient;
 
     if (!Settings_GetDebug())  // No debug views
     {
-        SIZE sizeScreen;  ScreenView_GetDesiredSize(sizeScreen);
-        cxScreen = rc.right;
+        int imageWidth, imageHeight;
+        Emulator_GetImageSize(ScreenView_GetScreenMode(), &imageWidth, &imageHeight);
 
-        int cxKeyboard = 0, cyKeyboard = 0;
+        xScreen = (imageWidth < cxClient) ? (cxClient - imageWidth) / 2 : 0;
+        cxScreen = imageWidth * 3 / 5;
+        int cxKeyboard = imageWidth * 2 / 5;
 
+        cyScreen = cyClient;
+        if (cyScreen > imageHeight)
+        {
+            cyScreen = imageHeight;
+            yScreen = (cyClient - cyScreen) / 2 + cyToolbar + 4;
+        }
+
+        int xKeyboard = xScreen + cxScreen;
         int yKeyboard = yScreen;
-        if (Settings_GetKeyboard())  // Snapped to bottom
-        {
-            RECT rcKeyboard;  GetWindowRect(g_hwndKeyboard, &rcKeyboard);
-            cyKeyboard = rcKeyboard.bottom - rcKeyboard.top;
-
-            cxScreen = sizeScreen.cx;
-            cxKeyboard = rc.right - cxScreen;
-        }
-
-        cyScreen = rc.bottom - cyToolbar - cyStatus;
-        if (cyScreen < DEFAULT_SCREEN_HEIGHT) cyScreen = DEFAULT_SCREEN_HEIGHT;
-
-        //m_MainWindowMinCx = cxScreen + ::GetSystemMetrics(SM_CXSIZEFRAME) * 2;
-        //m_MainWindowMinCy = ::GetSystemMetrics(SM_CYCAPTION) + ::GetSystemMetrics(SM_CYMENU) +
-        //    cyScreen + cyStatus + ::GetSystemMetrics(SM_CYSIZEFRAME) * 2;
-
-        if (Settings_GetKeyboard())
-        {
-            int xKeyboard = cxScreen;
-            cyKeyboard = cyScreen;
-            SetWindowPos(g_hwndKeyboard, NULL, xKeyboard, yKeyboard, cxKeyboard, cyKeyboard, SWP_NOZORDER | SWP_NOCOPYBITS);
-        }
+        int cyKeyboard = cyScreen;
+        SetWindowPos(g_hwndKeyboard, NULL, xKeyboard, yKeyboard, cxKeyboard, cyKeyboard, SWP_NOZORDER | SWP_NOCOPYBITS);
     }
     if (Settings_GetDebug())  // Debug views shown -- keyboard/tape snapped to top
     {
         cxScreen = 480/*MK90_SCREEN_WIDTH*/ + 16;
+        int cxKeyboard = 314;
         cyScreen = 312;
 
         int yKeyboard = yScreen;
-        int yTape = yKeyboard;
-        int yConsole = yTape;
-        int cxKeyboard = 0;
-
-        if (Settings_GetKeyboard())
-        {
-            cxKeyboard = 318;
-            int cyKeyboard = cyScreen;
-            int xKeyboard = cxScreen;
-            SetWindowPos(g_hwndKeyboard, NULL, xKeyboard, yKeyboard, cxKeyboard, cyKeyboard, SWP_NOZORDER);
-            yTape += cyKeyboard + 4;
-            yConsole += cyKeyboard + 4;
-        }
+        int yConsole = yKeyboard;
+        int cyKeyboard = cyScreen;
+        int xKeyboard = cxScreen;
+        SetWindowPos(g_hwndKeyboard, NULL, xKeyboard, yKeyboard, cxKeyboard, cyKeyboard, SWP_NOZORDER);
+        yConsole += cyKeyboard + 4;
 
         int cxConsole = cxScreen + cxKeyboard;
         int cyConsole = rc.bottom - cyStatus - yConsole - 4;
@@ -518,9 +503,9 @@ void MainWindow_AdjustWindowLayout()
         SetWindowPos(g_hwndMemory, NULL, xDebug, yMemory, cxMemory, cyMemory, SWP_NOZORDER);
     }
 
-    SetWindowPos(m_hwndToolbar, NULL, 4, 4, cxScreen, cyToolbar, SWP_NOZORDER);
+    SetWindowPos(m_hwndToolbar, NULL, 4, 4, cxStatus, cyToolbar, SWP_NOZORDER);
 
-    SetWindowPos(g_hwndScreen, NULL, 0, yScreen, cxScreen, cyScreen, SWP_NOZORDER);
+    SetWindowPos(g_hwndScreen, NULL, xScreen, yScreen, cxScreen, cyScreen, SWP_NOZORDER);
 
     int cyStatusReal = rcStatus.bottom - rcStatus.top;
     SetWindowPos(m_hwndStatusbar, NULL, 0, rc.bottom - cyStatusReal, cxStatus, cyStatusReal,
@@ -657,10 +642,6 @@ void MainWindow_UpdateMenu()
 
     // View menu
     CheckMenuItem(hMenu, ID_VIEW_TOOLBAR, (Settings_GetToolbar() ? MF_CHECKED : MF_UNCHECKED));
-    CheckMenuItem(hMenu, ID_VIEW_KEYBOARD, (Settings_GetKeyboard() ? MF_CHECKED : MF_UNCHECKED));
-    //// View|Color Screen
-    //MainWindow_SetToolbarImage(ID_VIEW_RGBSCREEN,
-    //    (ScreenView_GetScreenMode() & 1) ? ToolbarImageColorScreen : ToolbarImageBWScreen);
     // View|Screen Mode
     UINT scrmodecmd = 0;
     switch (ScreenView_GetScreenMode())
@@ -747,9 +728,6 @@ bool MainWindow_DoCommand(int commandId)
         break;
     case ID_VIEW_TOOLBAR:
         MainWindow_DoViewToolbar();
-        break;
-    case ID_VIEW_KEYBOARD:
-        MainWindow_DoViewKeyboard();
         break;
     case ID_VIEW_SCREENMODE0:
     case ID_VIEW_SCREENMODE1:

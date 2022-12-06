@@ -267,7 +267,7 @@ void KeyboardView_OnDraw(HDC hdc)
 
     // This part repeats calculations from ScreenView to get the same yBitmapTop
     int cyScreenHeader = m_nKeyboardViewScale * 19 - m_nKeyboardViewScale / 2;
-    int yScreenOffset = (rc.bottom - cyScreenHeight) / 2;
+    int yScreenOffset = (rc.bottom - cyScreenHeight) * 9 / 20;
     if (yScreenOffset < cyScreenHeader) yScreenOffset = cyScreenHeader;
     int yBitmapTop = yScreenOffset - cyScreenHeader;
 
@@ -279,7 +279,7 @@ void KeyboardView_OnDraw(HDC hdc)
     VERIFY(::GetObject(hBmp, sizeof(BITMAP), &bitmap));
     int cxBitmap = bitmap.bmWidth;
     int cyBitmap = bitmap.bmHeight;
-    m_nKeyboardBitmapLeft = -m_nKeyboardViewScale * 160; //(rc.right - 300) / 2;
+    m_nKeyboardBitmapLeft = -m_nKeyboardViewScale * 161; //(rc.right - 300) / 2;
     m_nKeyboardBitmapTop = yBitmapTop;  //(rc.bottom - cyBitmap) / 2;
     if (m_nKeyboardBitmapTop < 0) m_nKeyboardBitmapTop = 0;
     //if (m_nKeyboardBitmapTop > 16) m_nKeyboardBitmapTop = 16;
@@ -299,6 +299,15 @@ void KeyboardView_OnDraw(HDC hdc)
 
     if (m_nKeyboardKeyPressed != KEYSCAN_NONE)
         Keyboard_DrawKey(hdc, m_nKeyboardKeyPressed);
+
+    //// Draw client rect
+    //HPEN hpenRed = ::CreatePen(PS_SOLID, 1, COLOR_KEYBOARD_RED);
+    //HGDIOBJ hOldPen = ::SelectObject(hdc, hpenRed);
+    //HBRUSH hbrushOld = static_cast<HBRUSH>(::SelectObject(hdc, ::GetStockObject(NULL_BRUSH)));
+    //::Rectangle(hdc, rc.left, rc.top, rc.right, rc.bottom);
+    //::SelectObject(hdc, hbrushOld);
+    //::SelectObject(hdc, hOldPen);
+    //VERIFY(::DeleteObject(hpenRed));
 
     //// Draw keys
     //HPEN hpenRed = ::CreatePen(PS_SOLID, 1, COLOR_KEYBOARD_RED);

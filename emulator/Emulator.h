@@ -67,8 +67,9 @@ void Emulator_Reset();
 bool Emulator_SystemFrame();
 void Emulator_SetSpeed(uint16_t realspeed);
 
-void Emulator_GetScreenSize(int scrmode, int* pwid, int* phei);
 int  Emulator_GetScreenScale(int scrmode);
+void Emulator_GetScreenSize(int scrmode, int* pwid, int* phei);
+void Emulator_GetImageSize(int scrmode, int* pwid, int* phei);
 const uint32_t * Emulator_GetPalette(int palette);
 void Emulator_PrepareScreenRGB32(void* pBits, int screenMode, int palette);
 

@@ -141,12 +141,6 @@ void ScreenView_Create(HWND hwndParent, int x, int y)
     VERIFY(::GetKeyboardState(m_ScreenKeyState));
 }
 
-void ScreenView_GetDesiredSize(SIZE& size)
-{
-    size.cx = m_cxScreenWidth / 120 * 6 + m_cxScreenWidth;
-    size.cy = m_cyScreenHeight / 64 * 6 + m_cyScreenHeight;
-}
-
 LRESULT CALLBACK ScreenViewWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -254,9 +248,9 @@ void ScreenView_OnDraw(HDC hdc)
     m_xScreenOffset = 0;
     m_yScreenOffset = 0;
     if (rc.right > m_cxScreenWidth)
-        m_xScreenOffset = (rc.right - m_cxScreenWidth) / 2;
+        m_xScreenOffset = (rc.right - m_cxScreenWidth) * 11 / 20;
     if (rc.bottom > m_cyScreenHeight)
-        m_yScreenOffset = (rc.bottom - m_cyScreenHeight) / 2;
+        m_yScreenOffset = (rc.bottom - m_cyScreenHeight) * 9 / 20;
 
     int yBitmapTop = m_yScreenOffset;
     int yBitmapBottom = m_yScreenOffset + m_cyScreenHeight;
@@ -316,6 +310,15 @@ void ScreenView_OnDraw(HDC hdc)
 
     ::SelectObject(hdc, hOldBrush);
     VERIFY(::DeleteObject(hBrush));
+
+    //// Draw client rect
+    //HPEN hpenRed = ::CreatePen(PS_SOLID, 1, RGB(200, 80, 80));
+    //HGDIOBJ hOldPen = ::SelectObject(hdc, hpenRed);
+    //HBRUSH hbrushOld = static_cast<HBRUSH>(::SelectObject(hdc, ::GetStockObject(NULL_BRUSH)));
+    //::Rectangle(hdc, rc.left, rc.top, rc.right, rc.bottom);
+    //::SelectObject(hdc, hbrushOld);
+    //::SelectObject(hdc, hOldPen);
+    //VERIFY(::DeleteObject(hpenRed));
 }
 
 void ScreenView_RedrawScreen()

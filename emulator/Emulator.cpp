@@ -65,18 +65,18 @@ void CALLBACK Emulator_PrepareScreen960x512(const uint8_t* pVideoBuffer, const u
 
 struct ScreenModeStruct
 {
-    int width;
-    int height;
+    int width, height;
     PREPARE_SCREEN_CALLBACK callback;
     int scale;
+    int imageWidth, imageHeight;
 }
 static ScreenModeReference[] =
 {
-    { 360, 192, Emulator_PrepareScreen360x192, 3 },
-    { 480, 256, Emulator_PrepareScreen480x256, 4 },
-    { 600, 320, Emulator_PrepareScreen600x320, 5 },
-    { 720, 384, Emulator_PrepareScreen720x384, 6 },
-    { 960, 512, Emulator_PrepareScreen960x512, 8 },
+    { 360, 192, Emulator_PrepareScreen360x192, 3, 804, 311 },
+    { 480, 256, Emulator_PrepareScreen480x256, 4, 1071, 414 },
+    { 600, 320, Emulator_PrepareScreen600x320, 5, 1339, 518 },
+    { 720, 384, Emulator_PrepareScreen720x384, 6, 1607, 621 },
+    { 960, 512, Emulator_PrepareScreen960x512, 8, 2143, 829 },
 };
 
 // Palette colors:
@@ -558,6 +558,15 @@ void Emulator_GetScreenSize(int scrmode, int* pwid, int* phei)
     ScreenModeStruct* pinfo = ScreenModeReference + scrmode;
     *pwid = pinfo->width;
     *phei = pinfo->height;
+}
+
+void Emulator_GetImageSize(int scrmode, int* pwid, int* phei)
+{
+    if (scrmode < 0 || scrmode >= sizeof(ScreenModeReference) / sizeof(ScreenModeStruct))
+        return;
+    ScreenModeStruct* pinfo = ScreenModeReference + scrmode;
+    *pwid = pinfo->imageWidth;
+    *phei = pinfo->imageHeight;
 }
 
 void Emulator_PrepareScreenRGB32(void* pImageBits, int screenMode, int palette)

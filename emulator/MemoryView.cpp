@@ -11,23 +11,23 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 // MemoryView.cpp
 
 #include "stdafx.h"
-#include <commctrl.h>
+#include <CommCtrl.h>
 #include <windowsx.h>
 #include "Main.h"
 #include "Views.h"
 #include "ToolWindow.h"
 #include "Dialogs.h"
 #include "Emulator.h"
-#include "emubase\Emubase.h"
+#include "emubase/Emubase.h"
 
 //////////////////////////////////////////////////////////////////////
 
 
-HWND g_hwndMemory = (HWND) INVALID_HANDLE_VALUE;  // Memory view window handler
+HWND g_hwndMemory = (HWND)INVALID_HANDLE_VALUE;  // Memory view window handler
 WNDPROC m_wndprocMemoryToolWindow = NULL;  // Old window proc address of the ToolWindow
 
-HWND m_hwndMemoryViewer = (HWND) INVALID_HANDLE_VALUE;
-HWND m_hwndMemoryToolbar = (HWND) INVALID_HANDLE_VALUE;
+HWND m_hwndMemoryViewer = (HWND)INVALID_HANDLE_VALUE;
+HWND m_hwndMemoryToolbar = (HWND)INVALID_HANDLE_VALUE;
 
 int m_cxChar = 0;
 int m_cyLineMemory = 0;  // Line height in pixels
@@ -288,20 +288,35 @@ void MemoryView_OnRButtonDown(int mousex, int mousey)
 {
     ::SetFocus(m_hwndMemoryViewer);
 
+    POINT pt = { mousex, mousey };
+    HMENU hMenu = ::CreatePopupMenu();
+
     int addr = MemoryView_GetAddressByPoint(mousex, mousey);
     if (addr >= 0)
+    {
         MemoryView_GotoAddress((WORD)addr);
 
-    RECT rcValue;
-    MemoryView_GetCurrentValueRect(&rcValue, m_cxChar, m_cyLineMemory);
+        RECT rcValue;
+        MemoryView_GetCurrentValueRect(&rcValue, m_cxChar, m_cyLineMemory);
+        pt.x = rcValue.left;  pt.y = rcValue.bottom;
 
-    HMENU hMenu = ::CreatePopupMenu();
-    ::AppendMenu(hMenu, 0, ID_DEBUG_COPY_VALUE, _T("Copy Value"));
-    ::AppendMenu(hMenu, 0, ID_DEBUG_COPY_ADDRESS, _T("Copy Address"));
-    ::AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
-    ::AppendMenu(hMenu, 0, ID_DEBUG_GOTO_ADDRESS, _T("Go to Address..."));
+        bool okHaltMode = g_pBoard->GetCPU()->IsHaltMode();
+        int addrType;
+        uint16_t value = g_pBoard->GetWordView((uint16_t)addr, okHaltMode, false, &addrType);
 
-    POINT pt = { rcValue.left, rcValue.bottom };
+        TCHAR buffer[24];
+        if (addrType != ADDRTYPE_IO && addrType != ADDRTYPE_DENY)
+        {
+            _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("Copy Value: %06o"), value);
+            ::AppendMenu(hMenu, 0, ID_DEBUG_COPY_VALUE, buffer);
+        }
+        _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("Copy Address: %06o"), addr);
+        ::AppendMenu(hMenu, 0, ID_DEBUG_COPY_ADDRESS, buffer);
+        ::AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+    }
+
+    ::AppendMenu(hMenu, 0, ID_DEBUG_GOTO_ADDRESS, _T("Go to Address...\tG"));
+
     ::ClientToScreen(m_hwndMemoryViewer, &pt);
     ::TrackPopupMenu(hMenu, 0, pt.x, pt.y, 0, m_hwndMemoryViewer, NULL);
 
@@ -381,7 +396,7 @@ void MemoryView_CopyValueToClipboard(WPARAM command)
 
     // Prepare global memory object for the text
     HGLOBAL hglbCopy = ::GlobalAlloc(GMEM_MOVEABLE, sizeof(buffer));
-    LPTSTR lptstrCopy = (LPTSTR) ::GlobalLock(hglbCopy);
+    LPTSTR lptstrCopy = (LPTSTR)::GlobalLock(hglbCopy);
     memcpy(lptstrCopy, buffer, sizeof(buffer));
     ::GlobalUnlock(hglbCopy);
 
@@ -495,8 +510,10 @@ void MemoryView_OnDraw(HDC hdc)
     COLORREF colorMemoryRom = Settings_GetColor(ColorDebugMemoryRom);
     COLORREF colorMemoryIO = Settings_GetColor(ColorDebugMemoryIO);
     COLORREF colorMemoryNA = Settings_GetColor(ColorDebugMemoryNA);
-    COLORREF colorOld = SetTextColor(hdc, colorText);
-    COLORREF colorBkOld = SetBkColor(hdc, GetSysColor(COLOR_WINDOW));
+    COLORREF colorOld = ::SetTextColor(hdc, colorText);
+    COLORREF colorHighlight = Settings_GetColor(ColorDebugHighlight);
+    COLORREF colorBack = ::GetSysColor(COLOR_WINDOW);
+    COLORREF colorBkOld = SetBkColor(hdc, colorBack);
 
     m_cxChar = cxChar;
     m_cyLineMemory = cyLine;
@@ -528,6 +545,8 @@ void MemoryView_OnDraw(HDC hdc)
             bool okValid = (addrtype != ADDRTYPE_IO) && (addrtype != ADDRTYPE_DENY);
             WORD wChanged = Emulator_GetChangeRamStatus(address);
 
+            ::SetBkColor(hdc, (address == m_wCurrentAddress) ? colorHighlight : colorBack);
+
             if (okValid)
             {
                 if (addrtype == ADDRTYPE_ROM)
@@ -549,12 +568,12 @@ void MemoryView_OnDraw(HDC hdc)
                 if (addrtype == ADDRTYPE_IO)
                 {
                     ::SetTextColor(hdc, colorMemoryIO);
-                    TextOut(hdc, x, y, _T("  IO"), 4);
+                    TextOut(hdc, x, y, _T("  IO  "), 6);
                 }
                 else
                 {
                     ::SetTextColor(hdc, colorMemoryNA);
-                    TextOut(hdc, x, y, _T("  NA"), 4);
+                    TextOut(hdc, x, y, _T("  NA  "), 6);
                 }
             }
 
@@ -572,6 +591,7 @@ void MemoryView_OnDraw(HDC hdc)
             x += 7 * cxChar;
         }
         ::SetTextColor(hdc, colorText);
+        ::SetBkColor(hdc, colorBack);
 
         // Draw characters at right
         int xch = x + cxChar;
