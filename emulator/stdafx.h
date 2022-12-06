@@ -42,7 +42,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #define WIN32_LEAN_AND_MEAN     // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
-#include <windows.h>
+#include <Windows.h>
 
 // C RunTime Header Files
 #include <stdlib.h>
@@ -67,3 +67,4 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 // TODO: reference additional headers your program requires here
 
 #include "Common.h"
+#include "Main.h"

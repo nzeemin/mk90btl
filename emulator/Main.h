@@ -10,7 +10,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 #pragma once
 
-#include "res\\resource.h"
+#include "res/Resource.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -146,8 +146,6 @@ void Settings_SetSoundVolume(WORD value);
 WORD Settings_GetSoundVolume();
 void Settings_SetToolbar(BOOL flag);
 BOOL Settings_GetToolbar();
-void Settings_SetKeyboard(BOOL flag);
-BOOL Settings_GetKeyboard();
 void Settings_SetMemoryMap(BOOL flag);
 BOOL Settings_GetMemoryMap();
 WORD Settings_GetSpriteAddress();

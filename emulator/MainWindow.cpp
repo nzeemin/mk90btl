@@ -24,6 +24,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include "Views.h"
 #include "ToolWindow.h"
 
+
 //////////////////////////////////////////////////////////////////////
 
 
@@ -41,8 +42,6 @@ int m_MainWindowMinCy = DEFAULT_SCREEN_HEIGHT + 40;
 //////////////////////////////////////////////////////////////////////
 // Forward declarations
 
-BOOL MainWindow_InitToolbar();
-BOOL MainWindow_InitStatusbar();
 void MainWindow_RestorePositionAndShow();
 LRESULT CALLBACK MainWindow_WndProc(HWND, UINT, WPARAM, LPARAM);
 void MainWindow_AdjustWindowLayout();
@@ -50,7 +49,6 @@ bool MainWindow_DoCommand(int commandId);
 void MainWindow_DoViewDebug();
 void MainWindow_DoDebugMemoryMap();
 void MainWindow_DoViewToolbar();
-void MainWindow_DoViewKeyboard();
 void MainWindow_DoViewScreenMode(int newMode);
 void MainWindow_DoViewScreenPalette(int newPalette);
 void MainWindow_DoEmulatorRun();
@@ -352,9 +350,6 @@ LRESULT CALLBACK MainWindow_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 void MainWindow_AdjustWindowSize()
 {
-    const int MAX_DEBUG_WIDTH = 1450;
-    const int MAX_DEBUG_HEIGHT = 1400;
-
     WINDOWPLACEMENT placement;
     placement.length = sizeof(WINDOWPLACEMENT);
     ::GetWindowPlacement(g_hwnd, &placement);
@@ -375,13 +370,6 @@ void MainWindow_AdjustWindowSize()
     RECT rcStatus;  GetWindowRect(m_hwndStatusbar, &rcStatus);
     int cyStatus = rcStatus.bottom - rcStatus.top;
 
-    int cyKeyboard = 0;
-    if (Settings_GetKeyboard())
-    {
-        RECT rcKeyboard;  GetWindowRect(g_hwndKeyboard, &rcKeyboard);
-        cyKeyboard = rcKeyboard.bottom - rcKeyboard.top;
-    }
-
     // Adjust main window size
     int xLeft, yTop;
     int cxWidth, cyHeight;
@@ -391,9 +379,7 @@ void MainWindow_AdjustWindowSize()
         xLeft = rcWorkArea.left;
         yTop = rcWorkArea.top;
         cxWidth = rcWorkArea.right - rcWorkArea.left;
-        if (cxWidth > MAX_DEBUG_WIDTH) cxWidth = MAX_DEBUG_WIDTH;
         cyHeight = rcWorkArea.bottom - rcWorkArea.top;
-        if (cyHeight > MAX_DEBUG_HEIGHT) cyHeight = MAX_DEBUG_HEIGHT;
     }
     else
     {
@@ -404,8 +390,6 @@ void MainWindow_AdjustWindowSize()
         cyHeight = cyCaption + cyMenu + 4 + cyScreen + 4 + cyStatus + cyFrame * 2;
         if (Settings_GetToolbar())
             cyHeight += cyToolbar + 4;
-        if (Settings_GetKeyboard())
-            cyHeight += cyKeyboard + 4;
     }
 
     SetWindowPos(g_hwnd, NULL, xLeft, yTop, cxWidth, cyHeight, SWP_NOZORDER | SWP_NOMOVE);
@@ -584,26 +568,15 @@ void MainWindow_ShowHideToolbar()
 
 void MainWindow_ShowHideKeyboard()
 {
-    if (!Settings_GetKeyboard())
-    {
-        if (g_hwndKeyboard != INVALID_HANDLE_VALUE)
-        {
-            ::DestroyWindow(g_hwndKeyboard);
-            g_hwndKeyboard = (HWND) INVALID_HANDLE_VALUE;
-        }
-    }
-    else
-    {
-        // Calculate children positions
-        RECT rc;  GetClientRect(g_hwnd, &rc);
-        RECT rcScreen;  GetWindowRect(g_hwndScreen, &rcScreen);
-        int yKeyboardTop = rcScreen.bottom - rcScreen.top + 8;
-        int cxKeyboardWidth = rcScreen.right - rcScreen.left;
-        const int cyKeyboardHeight = 400;
+    // Calculate children positions
+    RECT rc;  GetClientRect(g_hwnd, &rc);
+    RECT rcScreen;  GetWindowRect(g_hwndScreen, &rcScreen);
+    int yKeyboardTop = rcScreen.bottom - rcScreen.top + 8;
+    int cxKeyboardWidth = rcScreen.right - rcScreen.left;
+    const int cyKeyboardHeight = 400;
 
-        if (g_hwndKeyboard == INVALID_HANDLE_VALUE)
-            KeyboardView_Create(g_hwnd, 4, yKeyboardTop, cxKeyboardWidth, cyKeyboardHeight);
-    }
+    if (g_hwndKeyboard == INVALID_HANDLE_VALUE)
+        KeyboardView_Create(g_hwnd, 4, yKeyboardTop, cxKeyboardWidth, cyKeyboardHeight);
 
     MainWindow_AdjustWindowSize();
     MainWindow_AdjustWindowLayout();
@@ -842,11 +815,6 @@ void MainWindow_DoViewToolbar()
 {
     Settings_SetToolbar(!Settings_GetToolbar());
     MainWindow_ShowHideToolbar();
-}
-void MainWindow_DoViewKeyboard()
-{
-    Settings_SetKeyboard(!Settings_GetKeyboard());
-    MainWindow_ShowHideKeyboard();
 }
 
 void MainWindow_DoViewScreenMode(int newMode)
