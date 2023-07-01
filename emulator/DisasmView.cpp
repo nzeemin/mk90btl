@@ -91,7 +91,7 @@ void DisasmView_OnRButtonDown(int mousex, int mousey);
 void DisasmView_CopyToClipboard(WPARAM command);
 BOOL DisasmView_ParseSubtitles();
 void DisasmView_DoDraw(HDC hdc);
-int  DisasmView_DrawDisassemble(HDC hdc, const CProcessor* pProc, uint16_t base, uint16_t previous);
+int  DisasmView_DrawDisassemble(HDC hdc, const CProcessor* pProc, uint16_t current, uint16_t previous);
 
 
 //////////////////////////////////////////////////////////////////////

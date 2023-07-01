@@ -176,8 +176,8 @@ void Emulator_Done()
     g_pBoard = nullptr;
 
     // Free memory used for old RAM values
-    ::free(g_pEmulatorRam);
-    ::free(g_pEmulatorChangedRam);
+    ::free(g_pEmulatorRam);  g_pEmulatorRam = nullptr;
+    ::free(g_pEmulatorChangedRam);  g_pEmulatorChangedRam = nullptr;
 }
 
 bool Emulator_InitConfiguration(uint16_t configuration)
@@ -247,9 +247,7 @@ void Emulator_Start()
 
     // For proper breakpoint processing
     if (m_wEmulatorCPUBpsCount != 0)
-    {
         g_pBoard->GetCPU()->ClearInternalTick();
-    }
 }
 void Emulator_Stop()
 {
@@ -290,7 +288,13 @@ bool Emulator_AddCPUBreakpoint(uint16_t address)
     }
     for (int i = 0; i < MAX_BREAKPOINTCOUNT; i++)  // Put in the first empty cell
     {
-        if (m_EmulatorCPUBps[i] == 0177777)
+        if (m_EmulatorCPUBps[i] > address)  // found the place
+        {
+            memcpy(m_EmulatorCPUBps + i + 1, m_EmulatorCPUBps + i, sizeof(uint16_t) * (m_wEmulatorCPUBpsCount - i));
+            m_EmulatorCPUBps[i] = address;
+            break;
+        }
+        if (m_EmulatorCPUBps[i] == 0177777)  // found empty place
         {
             m_EmulatorCPUBps[i] = address;
             break;
@@ -311,7 +315,7 @@ bool Emulator_RemoveCPUBreakpoint(uint16_t address)
             m_wEmulatorCPUBpsCount--;
             if (m_wEmulatorCPUBpsCount > i)  // fill the hole
             {
-                m_EmulatorCPUBps[i] = m_EmulatorCPUBps[m_wEmulatorCPUBpsCount];
+                memcpy(m_EmulatorCPUBps + i, m_EmulatorCPUBps + i + 1, sizeof(uint16_t) * (m_wEmulatorCPUBpsCount - i));
                 m_EmulatorCPUBps[m_wEmulatorCPUBpsCount] = 0177777;
             }
             return true;
