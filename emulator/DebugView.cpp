@@ -41,6 +41,7 @@ void DebugView_DrawMemoryForRegister(HDC hdc, int reg, const CProcessor* pProc, 
 int DebugView_DrawWatchpoints(HDC hdc, int x, int y);
 void DebugView_DrawPorts(HDC hdc, int x, int y);
 void DebugView_DrawBreakpoints(HDC hdc, int x, int y);
+void DebugView_DrawMemoryMap(HDC hdc, int x, int y, const CProcessor* pProc);
 void DebugView_UpdateWindowText();
 
 
@@ -299,8 +300,8 @@ void DebugView_DoDraw(HDC hdc)
     int xBreaks = x;
     x += cxChar * 9;
     ::PatBlt(hdc, x, 0, 4, cyHeight, PATCOPY);
-    //x += 4;
-    //int xMemmap = x;
+    x += 4;
+    int xMemmap = x;
     ::SelectObject(hdc, hOldBrush);
 
     DebugView_DrawProcessor(hdc, pDebugPU, xProc + cxChar, cyLine / 2, arrR, arrRChanged, oldPsw);
@@ -312,6 +313,8 @@ void DebugView_DoDraw(HDC hdc)
     DebugView_DrawPorts(hdc, xPorts + cxChar, cyLine / 2 + (nWatches > 0 ? 2 + nWatches : 0) * cyLine);
 
     DebugView_DrawBreakpoints(hdc, xBreaks + cxChar / 2, cyLine / 2);
+
+    DebugView_DrawMemoryMap(hdc, xMemmap + cxChar, 0, pDebugPU);
 
     SetTextColor(hdc, colorOld);
     SetBkColor(hdc, colorBkOld);
@@ -531,6 +534,58 @@ void DebugView_DrawBreakpoints(HDC hdc, int x, int y)
         y += cyLine;
         pbps++;
     }
+}
+
+void DebugView_DrawMemoryMap(HDC hdc, int x, int y, const CProcessor* pProc)
+{
+    int cxChar, cyLine;  GetFontWidthAndHeight(hdc, &cxChar, &cyLine);
+
+    int x1 = x + cxChar * 7;
+    int y1 = y + cxChar / 2;
+    int x2 = x1 + cxChar * 14;
+    int y2 = y1 + cyLine * 16;
+    int xtype = x1 + cxChar * 3;
+
+    HGDIOBJ hOldBrush = ::SelectObject(hdc, ::GetSysColorBrush(COLOR_BTNSHADOW));
+    PatBlt(hdc, x1, y1, 1, y2 - y1, PATCOPY);
+    PatBlt(hdc, x2, y1, 1, y2 - y1 + 1, PATCOPY);
+    PatBlt(hdc, x1, y1, x2 - x1, 1, PATCOPY);
+    PatBlt(hdc, x1, y2, x2 - x1, 1, PATCOPY);
+
+    int y174666 = y2 - ((y2 - y1) * 0174666 / 65536);
+    int y164000 = y2 - ((y2 - y1) * 0164000 / 65536);
+    int y166000 = y2 - ((y2 - y1) * 0166000 / 65536);
+    PatBlt(hdc, x1, y174666, x2 - x1, 1, PATCOPY);
+    PatBlt(hdc, x1, y164000, x2 - x1, 1, PATCOPY);
+    PatBlt(hdc, x1, y166000, x2 - x1, 1, PATCOPY);
+    PatBlt(hdc, x1, y2 - cyLine * 4, x2 - x1, 1, PATCOPY);  // 100000
+    PatBlt(hdc, x1, y2 - cyLine * 8, x2 - x1, 1, PATCOPY);  // 040000
+
+    TextOut(hdc, xtype, y2 - cyLine * 11 - cyLine / 2, _T("ROM"), 3);
+    TextOut(hdc, xtype + cxChar / 2, y2 - cyLine * 6 - cyLine / 2, _T("NA"), 2);
+    TextOut(hdc, xtype, y2 - cyLine * 2 - cyLine / 2, _T("RAM"), 3);
+
+    for (uint16_t window = 0; window < 8; window++)
+    {
+        int yp = y2 - window * cyLine * 2;
+        uint16_t address = window << 13;
+        DrawOctalValue(hdc, x, yp - cyLine / 2, address);
+    //    PatBlt(hdc, x1, yp, x2 - x1, 1, PATCOPY);
+    }
+
+    //PatBlt(hdc, x1, y1 + cyLine / 4, x2 - x1, 1, PATCOPY);
+
+    uint16_t sp = pProc->GetSP();
+    int ysp = y2 - ((y2 - y1) * sp / 65536);
+    PatBlt(hdc, x2, ysp, cxChar, 1, PATCOPY);
+    TextOut(hdc, x2 + cxChar, ysp - cyLine / 2, _T("SP"), 2);
+
+    uint16_t pc = pProc->GetPC();
+    int ypc = y2 - ((y2 - y1) * pc / 65536);
+    PatBlt(hdc, x2, ypc, cxChar, 1, PATCOPY);
+    TextOut(hdc, x2 + cxChar, ypc - cyLine / 2, _T("PC"), 2);
+
+    ::SelectObject(hdc, hOldBrush);
 }
 
 
