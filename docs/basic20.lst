@@ -56,7 +56,7 @@
 100002:	TST	(SP)+		; drop the PSW
 100004:	MOV	#C8B,R0		; buffer for the octal number 0C85-0C8A
 100010:	MOV	#006,R4		; number of digits
-100014:	CALL	100032	; convert the word in r1 to octal ASCII
+100014:	CALL	100032		; convert the word in r1 to octal ASCII
 100020:	MOV	#C78,R0		; string 'SBOJ PO ADR'
 100024:	TRAP	066		; print a string pointed to by r0
 100026:	JMP	103254		; restart the BASIC system
@@ -1206,7 +1206,7 @@
 
 ; Original labels and comments copied from equivalent FOCAL-11 functions.
 
-; trap 5E - EVAL, evaluate an arithmetical expression pointed to by r1.
+; trap 136 - EVAL, evaluate an arithmetical expression pointed to by r1.
 ; On exit r2,r3,r4 will contain the numeric value of the expression, r1 will
 ; contain the address where the scan failed. If the scan fails on any
 ; character other than a right parenthesis, r1 will point to the character
@@ -1762,7 +1762,7 @@
 110400:	CALL	110604
 110404:	BVC	110410
 110406:	TRAP	045		; error 12 - input line too long (more than 80
-				;characters)
+				; characters)
 110410:	CLR	-(SP)
 110412:	MOV	R1,-(SP)
 110414:	MOV	#077,R2
@@ -2954,7 +2954,7 @@
 115236:	CLR	R0
 115240:	RETURN
 
-9AA2:	      0F 42  41 53 49 43  20 56 32 2E  30 20 28 63  ...BASIC V2.0 (c
+115242:	      0F 42  41 53 49 43  20 56 32 2E  30 20 28 63  ...BASIC V2.0 (c
 115260:	29 20 31 39  38 37 0D 0A  00 0E 6D 49  4E 53 4B 2E  ) 1987....mINSK.
 115300:	20 70 6F 20  69 4E 54 45  47 52 41 4C  0F 0D 0A 00   po iNTEGRAL....
 
@@ -3394,7 +3394,7 @@
 117456:	TST	000002(R0)	; test the high word of mantissa
 117462:	BEQ	117620		; if zero, we have the answer
 117464:	BGE	117476		; negative?
-117466:	INC	000004(SP)	; yes, set neg_flag
+117466:	INC	000004(SP)	; yes, set the neg_flag
 117472:	MOV	R0,R1
 117474:	TRAP	024		; NEGF
 117476:	CLR	000002(SP)	; clear odd_flag (exponent odd or even)
@@ -3430,7 +3430,7 @@
 117624:	CLEAR	V
 117626:	RETURN
 
-; trap 30 - M.APPR, approximation of the form .5(Y0+X/Y0)
+; trap 060 - M.APPR, approximation of the form .5(Y0+X/Y0)
 117630:	MOV	SP,R0
 117632:	TST	(R0)+
 117634:	TRAP	054		; push a number pointed to by R0 on the stack
@@ -9681,14 +9681,14 @@
 ;
 174470:	CMPB	#240,@#000000	; test for instruction NOP at address 0000
 174476:	BNE	174524
-174500:	MOV	#010000,@#164032	; RAM address range 0000-3FFF, E800-EBFF
-				;ROM address range 4000-DFFF, EC00-FDFF
+174500:	MOV	#010000,@#164032	; RAM address range 000000-037777, 164000-165777
+				;ROM address range 40000-157777, 166000-176777
 174506:	TST	@#164036
 174512:	BMI	174522
 174514:	MOV	#020000,@#164200
 174522:	CLR	PC		; start the program from address 0000
 ;
-174524:	CALL	174036	; make a beep when wrong bootloader code
+174524:	CALL	174036		; make a beep when wrong bootloader code
 174530:	JMP	173000		; system restart
 
 174534:	MOV	#010000,@#164032	; RAM address range 0000-3FFF, E800-EBFF

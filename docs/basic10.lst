@@ -127,7 +127,7 @@
 100454:	.WORD	102254, 102270, 106414, 101232		; trap 140, 142, 144, 146
 100464:	.WORD	101252, 000000, 100066			; trap 150, 152, 154
 
-; trap 38 - test if r2 is a digit
+; trap 070 - test if r2 is a digit
 ; returns V set if r2 is not a digit
 ; returns Z set if r2 is a decimal digit '0'..'9'
 ; returns V cleared if r2 is a hex digit 'A'..'F'

@@ -180,6 +180,15 @@ void Emulator_Done()
     ::free(g_pEmulatorChangedRam);  g_pEmulatorChangedRam = nullptr;
 }
 
+LPCTSTR Emulator_GetConfigurationName()
+{
+    if (g_nEmulatorConfiguration == EMU_CONF_BASIC10)
+        return _T("BASIC V1.0");
+    if (g_nEmulatorConfiguration == EMU_CONF_BASIC20)
+        return _T("BASIC V2.0");
+    return _T("");
+}
+
 bool Emulator_InitConfiguration(uint16_t configuration)
 {
     g_pBoard->SetConfiguration(configuration);
@@ -188,6 +197,7 @@ bool Emulator_InitConfiguration(uint16_t configuration)
     uint16_t nRomResourceId;
     switch (configuration)
     {
+    default:
     case EMU_CONF_BASIC10:
         szRomFileName = FILENAME_ROM_BASIC10;
         nRomResourceId = IDR_MK90_ROM_BASIC10;
@@ -195,10 +205,6 @@ bool Emulator_InitConfiguration(uint16_t configuration)
     case EMU_CONF_BASIC20:
         szRomFileName = FILENAME_ROM_BASIC20;
         nRomResourceId = IDR_MK90_ROM_BASIC20;
-        break;
-    default:
-        szRomFileName = FILENAME_ROM_BASIC10;
-        nRomResourceId = IDR_MK90_ROM_BASIC10;
         break;
     }
 

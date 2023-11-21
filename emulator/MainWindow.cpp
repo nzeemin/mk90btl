@@ -59,6 +59,7 @@ void MainWindow_DoEmulatorSound();
 void MainWindow_DoEmulatorSmp(int slot);
 void MainWindow_DoFileSaveState();
 void MainWindow_DoFileLoadState();
+void MainWindow_DoEmulatorConf(uint16_t configuration);
 void MainWindow_DoFileScreenshot();
 void MainWindow_DoFileScreenshotToClipboard();
 void MainWindow_DoFileScreenshotSaveAs();
@@ -140,6 +141,7 @@ BOOL CreateMainWindow()
     UpdateWindow(g_hwnd);
     MainWindow_UpdateAllViews();
     MainWindow_UpdateMenu();
+    MainWindow_UpdateWindowTitle();
 
     // Autostart
     if (Settings_GetAutostart() || Option_AutoBoot >= 0)
@@ -278,9 +280,10 @@ void MainWindow_RestorePositionAndShow()
 
 void MainWindow_UpdateWindowTitle()
 {
+    LPCTSTR confName = Emulator_GetConfigurationName();
     LPCTSTR emustate = g_okEmulatorRunning ? _T("run") : _T("stop");
-    TCHAR buffer[100];
-    _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("%s [%s]"), g_szTitle, emustate);
+    TCHAR buffer[120];
+    _sntprintf(buffer, sizeof(buffer) / sizeof(TCHAR) - 1, _T("%s - %s - [%s]"), g_szTitle, confName, emustate);
     SetWindowText(g_hwnd, buffer);
 }
 
@@ -793,6 +796,12 @@ bool MainWindow_DoCommand(int commandId)
     case ID_FILE_SETTINGS_COLORS:
         MainWindow_DoFileSettingsColors();
         break;
+    case ID_CONF_BASIC10:
+        MainWindow_DoEmulatorConf(EMU_CONF_BASIC10);
+        break;
+    case ID_CONF_BASIC20:
+        MainWindow_DoEmulatorConf(EMU_CONF_BASIC20);
+        break;
     default:
         return false;
     }
@@ -964,6 +973,26 @@ void MainWindow_DoFileSettingsColors()
     {
         RedrawWindow(g_hwnd, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
     }
+}
+
+void MainWindow_DoEmulatorConf(uint16_t configuration)
+{
+    // Check if configuration changed
+    if (g_nEmulatorConfiguration == configuration)
+        return;
+
+    // Ask user -- we have to reset machine to change configuration
+    if (!AlertOkCancel(_T("Reset required after configuration change.\nAre you agree?")))
+        return;
+
+    // Change configuration
+    Emulator_InitConfiguration(configuration);
+
+    Settings_SetConfiguration(configuration);
+
+    MainWindow_UpdateMenu();
+    MainWindow_UpdateWindowTitle();
+    MainWindow_UpdateAllViews();
 }
 
 void MainWindow_DoEmulatorSmp(int slot)

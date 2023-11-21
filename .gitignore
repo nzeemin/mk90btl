@@ -7,13 +7,14 @@ Release
 *.suppress
 *.sdf
 *.opensdf
+*.VC.db
+*.VC.opendb
 .vs
 ipch
 *.bin
 trace.log
 /emulator/Version.h
 MK90BTL.APS
-trace.log
 *.dsk
 *.img
 *.lst

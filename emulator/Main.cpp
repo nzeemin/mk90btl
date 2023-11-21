@@ -14,8 +14,8 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 #include <commdlg.h>
 #include <crtdbg.h>
 #include <mmintrin.h>
-#include <vfw.h>
-#include <commctrl.h>
+#include <Vfw.h>
+#include <CommCtrl.h>
 #include <shellapi.h>
 
 #include "Main.h"
@@ -182,10 +182,12 @@ BOOL InitInstance(HINSTANCE /*hInstance*/, int /*nCmdShow*/)
 
     if (!Emulator_Init())
         return FALSE;
+
     WORD conf = (WORD) Settings_GetConfiguration();
     if (conf == 0) conf = EMU_CONF_BASIC10;
     if (!Emulator_InitConfiguration(conf))
         return FALSE;
+
     Emulator_SetSound(Settings_GetSound() != 0);
     Emulator_SetSpeed(Settings_GetRealSpeed());
 

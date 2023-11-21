@@ -570,7 +570,7 @@ void DebugView_DrawMemoryMap(HDC hdc, int x, int y, const CProcessor* pProc)
         int yp = y2 - window * cyLine * 2;
         uint16_t address = window << 13;
         DrawOctalValue(hdc, x, yp - cyLine / 2, address);
-    //    PatBlt(hdc, x1, yp, x2 - x1, 1, PATCOPY);
+        //    PatBlt(hdc, x1, yp, x2 - x1, 1, PATCOPY);
     }
 
     //PatBlt(hdc, x1, y1 + cyLine / 4, x2 - x1, 1, PATCOPY);
