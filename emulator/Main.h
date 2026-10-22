@@ -169,5 +169,7 @@ void Settings_SetColor(ColorIndices colorIndex, COLORREF color);
 
 extern int Option_AutoBoot;  // -1 = no autoboot, 0 = SMP0, 1 = SMP1
 
+extern LPCTSTR g_CommandLineHelp;  // Command line help text, see Main.cpp
+
 
 //////////////////////////////////////////////////////////////////////

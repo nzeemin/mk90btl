@@ -40,6 +40,21 @@ BOOL InitInstance(HINSTANCE, int);
 void DoneInstance();
 void ParseCommandLine();
 
+bool Option_ShowHelp = false;
+
+LPCTSTR g_CommandLineHelp =
+    _T("Usage: MK90BTL [options]\r\n\r\n")
+    _T("Command line options:\r\n\r\n")
+    _T("/h /help\r\n\tShow command line options (this box)\r\n")
+    _T("/autostart /autostarton\r\n\tStart emulation on window open\r\n")
+    _T("/noautostart /autostartoff\r\n\tDo not start emulation on window open\r\n")
+    _T("/boot[N]\r\n\tAutoboot from SMP slot N=0..1, default 0\r\n")
+    _T("/debug /debugon /debugger\r\n\tSwitch to debug mode\r\n")
+    _T("/nodebug /debugoff\r\n\tSwitch off the debug mode\r\n")
+    _T("/sound /soundon\r\n\tTurn sound on\r\n")
+    _T("/nosound /soundoff\r\n\tTurn sound off\r\n")
+    _T("/smpN:filePath\r\n\tAttach SMP file, N=0..1\r\n");
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -194,6 +209,9 @@ BOOL InitInstance(HINSTANCE /*hInstance*/, int /*nCmdShow*/)
     if (!CreateMainWindow())
         return FALSE;
 
+    if (Option_ShowHelp)
+        ::PostMessage(g_hwnd, WM_COMMAND, ID_HELP_COMMAND_LINE_HELP, NULL);
+
     return TRUE;
 }
 
@@ -221,7 +239,11 @@ void ParseCommandLine()
     {
         LPTSTR arg = args[curargn];
 
-        if (_tcslen(arg) >= 5 && _tcsncmp(arg, _T("/boot"), 5) == 0)
+        if (_tcscmp(arg, _T("/help")) == 0 || _tcscmp(arg, _T("/h")) == 0)
+        {
+            Option_ShowHelp = true;
+        }
+        else if (_tcslen(arg) >= 5 && _tcsncmp(arg, _T("/boot"), 5) == 0)
         {
             Option_AutoBoot = 0;
             if (_tcslen(arg) >= 6 && arg[5] >= _T('0') && arg[5] <= _T('1'))

@@ -18,8 +18,9 @@
 #define IDD_SETTINGS_COLORS             146
 #define IDR_MK90_KEYB                   147
 #define IDD_DCB_EDITOR                  148
-#define IDR_MK90_ROM_BASIC10            149
-#define IDR_MK90_ROM_BASIC20            150
+#define IDD_COMMANDLINEHELP             149
+#define IDR_MK90_ROM_BASIC10            158
+#define IDR_MK90_ROM_BASIC20            159
 #define IDB_KEYBOARD3                   163
 #define IDB_KEYBOARD4                   164
 #define IDB_KEYBOARD5                   165
@@ -116,7 +117,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        169
+#define _APS_NEXT_RESOURCE_VALUE        170
 #define _APS_NEXT_COMMAND_VALUE         32999
 #define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           110

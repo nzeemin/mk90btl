@@ -16,6 +16,7 @@ MK90BTL. If not, see <http://www.gnu.org/licenses/>. */
 
 
 void ShowAboutBox();
+void ShowCommandLineHelpBox();
 
 // Input octal value
 //   strTitle - dialog caption
